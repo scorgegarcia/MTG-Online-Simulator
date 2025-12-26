@@ -201,8 +201,8 @@ export default function DeckBuilder() {
                   {/* Quick Actions */}
                   <div className="flex items-center gap-2 mt-2">
                      <ActionButton onClick={() => addCard(card, 'main')} color="green" label="+ Main" />
-                     <ActionButton onClick={() => addCard(card, 'purple')} color="purple" label="+ Side" />
-                     <ActionButton onClick={() => addCard(card, 'amber')} color="amber" label="+ Cmd" />
+                     <ActionButton onClick={() => addCard(card, 'side')} color="purple" label="+ Side" />
+                     <ActionButton onClick={() => addCard(card, 'commander')} color="amber" label="+ Cmd" />
                   </div>
                 </div>
               </div>
@@ -217,20 +217,25 @@ export default function DeckBuilder() {
 
               {/* Versions List */}
               {viewingVersionsFor === card.id && (
-                <div className="mt-2 space-y-2 pl-3 border-l-2 border-slate-800/50 ml-1">
+                <div className="mt-2 pl-3 border-l-2 border-slate-800/50 ml-1 grid grid-cols-2 gap-2">
                   {versions.map(v => (
-                    <div key={v.id} className="flex gap-3 bg-slate-900/80 p-2 rounded border border-slate-800 hover:border-slate-600 transition-colors">
-                      <img src={v.image_uris?.small || v.card_faces?.[0]?.image_uris?.small} className="w-8 h-12 object-cover rounded opacity-80 hover:opacity-100" />
-                      <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-slate-300 font-serif">{v.set_name}</span>
-                          <span className="text-[10px] text-slate-600 font-mono">#{v.collector_number}</span>
+                    <div key={v.id} className="bg-slate-900/80 p-2 rounded border border-slate-800 hover:border-slate-600 transition-colors group">
+                      <div className="relative">
+                        <img
+                          src={v.image_uris?.normal || v.image_uris?.small || v.card_faces?.[0]?.image_uris?.normal || v.card_faces?.[0]?.image_uris?.small}
+                          className="w-full aspect-[63/88] object-cover rounded opacity-90 group-hover:opacity-100 transition-opacity"
+                        />
+                        <div className="absolute top-2 right-2 bg-slate-950/80 border border-slate-700 text-slate-200 text-[10px] font-mono px-2 py-0.5 rounded">
+                          #{v.collector_number}
                         </div>
-                        <div className="flex gap-1">
-                           <button onClick={() => addCard(v, 'main')} className="px-1.5 py-0.5 bg-emerald-950/50 hover:bg-emerald-900 text-emerald-500 text-[10px] rounded border border-emerald-900/50 hover:border-emerald-500 transition-colors">+M</button>
-                           <button onClick={() => addCard(v, 'side')} className="px-1.5 py-0.5 bg-indigo-950/50 hover:bg-indigo-900 text-indigo-500 text-[10px] rounded border border-indigo-900/50 hover:border-indigo-500 transition-colors">+S</button>
-                           <button onClick={() => addCard(v, 'commander')} className="px-1.5 py-0.5 bg-amber-950/50 hover:bg-amber-900 text-amber-500 text-[10px] rounded border border-amber-900/50 hover:border-amber-500 transition-colors">+C</button>
+                        <div className="absolute inset-x-2 bottom-2 bg-slate-950/80 border border-slate-700 text-slate-200 text-[10px] font-serif px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                          {v.set_name}
                         </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 mt-2">
+                        <button onClick={() => addCard(v, 'main')} className="w-full px-1.5 py-1 bg-emerald-950/50 hover:bg-emerald-900 text-emerald-500 text-[10px] rounded border border-emerald-900/50 hover:border-emerald-500 transition-colors">+M</button>
+                        <button onClick={() => addCard(v, 'side')} className="w-full px-1.5 py-1 bg-indigo-950/50 hover:bg-indigo-900 text-indigo-500 text-[10px] rounded border border-indigo-900/50 hover:border-indigo-500 transition-colors">+S</button>
+                        <button onClick={() => addCard(v, 'commander')} className="w-full px-1.5 py-1 bg-amber-950/50 hover:bg-amber-900 text-amber-500 text-[10px] rounded border border-amber-900/50 hover:border-amber-500 transition-colors">+C</button>
                       </div>
                     </div>
                   ))}
