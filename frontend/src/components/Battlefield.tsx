@@ -1,0 +1,178 @@
+import { Card } from './Card';
+import { categorizeObjects } from '../utils/gameUtils';
+import React, { memo } from 'react';
+
+interface BattlefieldSharedProps {
+    gameState: any;
+    mySeat: number; // The seat of the current user
+    cardScale: number;
+    hoverBlockedRef: any;
+    isDraggingRef?: any;
+    setHoveredCard: any;
+    menuOpen: any;
+    setMenuOpen: any;
+    sendAction: any;
+}
+
+export const MyBattlefield = memo(({
+    gameState,
+    seat,
+    mySeat,
+    cardScale,
+    hoverBlockedRef,
+    isDraggingRef,
+    setHoveredCard,
+    menuOpen,
+    setMenuOpen,
+    sendAction
+}: BattlefieldSharedProps & { seat: number }) => {
+    const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
+    const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
+    const { lands, creatures, others } = categorizeObjects(battlefield);
+    
+    const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+        const cardId = e.dataTransfer.getData("text/plain");
+        if (!cardId) return;
+        
+        const obj = gameState.objects[cardId];
+        console.log('Drop:', cardId, obj);
+
+        if (obj && obj.controller_seat == mySeat && obj.zone !== 'BATTLEFIELD') {
+            sendAction('MOVE', { objectId: cardId, fromZone: obj.zone, toZone: 'BATTLEFIELD', toOwner: mySeat });
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (!isDraggingOver) setIsDraggingOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+    };
+    
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true };
+
+    return (
+        <div className="flex h-full w-full gap-1">
+          <div 
+              className={`flex flex-col gap-0 p-0 bg-blue-900/10 rounded border ${isDraggingOver ? 'border-yellow-400 bg-blue-900/30' : 'border-blue-500/30'} h-full flex-1 transition-colors`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+          >
+            <div className="text-xs text-blue-300 mb-0 flex-shrink-0">My Battlefield</div>
+            
+            {/* Row 1: Creatures (40%) */}
+            <div className="flex gap-2 h-[40%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+                <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Creatures</div>
+                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                    {creatures.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                </div>
+            </div>
+
+            {/* Row 2: Others (40%) */}
+            <div className="flex gap-2 h-[40%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+                <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Non-Creatures</div>
+                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                    {others.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                </div>
+            </div>
+
+            {/* Row 3: Lands (20%) */}
+            <div className="flex gap-2 h-[20%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+                <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Lands</div>
+                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                    {lands.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                </div>
+            </div>
+          </div>
+
+          {/* Side Toolbar */}
+          <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700">
+              <button 
+                  className="w-full h-fit py-1 rounded bg-blue-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                  title="Untap All Permanents"
+                  onClick={() => sendAction('UNTAP_ALL', { seat: mySeat })}
+              >
+                  <span className="text-xl">🔄</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Untap All</span>
+              </button>
+
+              <button 
+                  className="w-full h-fit py-1 rounded bg-yellow-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                  title="Shuffle Library"
+                  onClick={() => sendAction('SHUFFLE', { seat: mySeat })}
+              >
+                  <span className="text-xl">🔀</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Shuffle</span>
+              </button>
+          </div>
+        </div>
+    );
+});
+
+export const OpponentBattlefield = memo(({
+    gameState,
+    player,
+    mySeat,
+    cardScale,
+    hoverBlockedRef,
+    isDraggingRef,
+    setHoveredCard,
+    menuOpen,
+    setMenuOpen,
+    sendAction
+}: { player: any } & BattlefieldSharedProps) => {
+    const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
+    const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
+    const { lands, creatures, others } = categorizeObjects(battlefield);
+    
+    const handCount = gameState.zoneIndex[player.seat]?.['HAND']?.length || 0;
+    const libraryCount = gameState.zoneIndex[player.seat]?.['LIBRARY']?.length || 0;
+    const graveyardCount = gameState.zoneIndex[player.seat]?.['GRAVEYARD']?.length || 0;
+    const exileCount = gameState.zoneIndex[player.seat]?.['EXILE']?.length || 0;
+
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const };
+
+    return (
+        <div className="p-1 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden">
+            <div className="flex justify-between items-center text-xs text-red-300 mb-1 flex-shrink-0">
+                <span className="font-bold">{player.username}'s Battlefield</span>
+                <div className="flex gap-3 mr-1">
+                    <span title="Hand" className="flex items-center gap-1">✋ {handCount}</span>
+                    <span title="Library" className="flex items-center gap-1">📚 {libraryCount}</span>
+                    <span title="Graveyard" className="flex items-center gap-1">🪦 {graveyardCount}</span>
+                    <span title="Exile" className="flex items-center gap-1">🌀 {exileCount}</span>
+                </div>
+            </div>
+            
+             {/* Row 1: Lands (Top for opponent - 20%) */}
+             <div className="flex gap-0 h-[20%] p-0 bg-red-900/20 rounded items-center overflow-x-auto overflow-y-hidden no-scrollbar">
+                 <div className="flex gap-2 h-full items-center px-2 min-w-full w-max justify-center">
+                     {lands.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                 </div>
+             </div>
+
+             {/* Row 2: Others (40%) */}
+             <div className="flex gap-0 h-[40%] p-0 bg-red-900/20 rounded items-center overflow-x-auto overflow-y-hidden no-scrollbar">
+                 <div className="flex gap-2 h-full items-center px-2 min-w-full w-max justify-center">
+                     {others.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                 </div>
+             </div>
+
+             {/* Row 3: Creatures (Bottom for opponent - 40%) */}
+             <div className="flex gap-0 h-[40%] p-0 bg-red-900/20 rounded items-center overflow-x-auto overflow-y-hidden no-scrollbar">
+                 <div className="flex gap-2 h-full items-center px-2 min-w-full w-max justify-center">
+                     {creatures.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
+                 </div>
+             </div>
+        </div>
+    );
+});

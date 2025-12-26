@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  username      String         @unique
+  password_hash String
+  created_at    DateTime       @default(now())
+  
+  refreshTokens RefreshToken[]
+  decks         Deck[]
+  hostedGames   Game[]         @relation("HostUser")
+  gamePlayers   GamePlayer[]
+  gameEvents    GameEvent[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token_hash String   @unique
+  user_id    String
+  expires_at DateTime
+  created_at DateTime @default(now())
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Deck {
+  id         String     @id @default(uuid())
+  user_id    String
+  name       String
+  format     String?
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cards      DeckCard[]
+  gamePlayers GamePlayer[]
+
+  @@map("decks")
+}
+
+model DeckCard {
+  id              String  @id @default(uuid())
+  deck_id         String
+  scryfall_id     String
+  qty             Int
+  board           String  @default("main") // main, side
+  
+  // Cache fields
+  name            String?
+  type_line       String?
+  mana_cost       String?
+  image_url_small String?
+  image_url_normal String?
+
+  deck            Deck    @relation(fields: [deck_id], references: [id], onDelete: Cascade)
+
+  @@map("deck_cards")
+}
+
+model Game {
+  id         String       @id @default(uuid())
+  code       String       @unique
+  host_id    String
+  status     String       @default("LOBBY") // LOBBY, ACTIVE, FINISHED
+  created_at DateTime     @default(now())
+  started_at DateTime?
+  
+  host       User         @relation("HostUser", fields: [host_id], references: [id])
+  players    GamePlayer[]
+  gameState  GameState?
+  events     GameEvent[]
+
+  @@map("games")
+}
+
+model GamePlayer {
+  id         String   @id @default(uuid())
+  game_id    String
+  user_id    String
+  deck_id    String?
+  seat       Int
+  life       Int      @default(20)
+  connected  Boolean  @default(true)
+  joined_at  DateTime @default(now())
+  
+  game       Game     @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id])
+  deck       Deck?    @relation(fields: [deck_id], references: [id])
+
+  @@unique([game_id, seat])
+  @@unique([game_id, user_id])
+  @@map("game_players")
+}
+
+model GameState {
+  id            String   @id @default(uuid())
+  game_id       String   @unique
+  state_version Int      @default(0)
+  snapshot      Json
+  updated_at    DateTime @updatedAt
+  
+  game          Game     @relation(fields: [game_id], references: [id], onDelete: Cascade)
+
+  @@map("game_states")
+}
+
+model GameEvent {
+  id         Int      @id @default(autoincrement())
+  game_id    String
+  user_id    String
+  type       String
+  payload    Json
+  created_at DateTime @default(now())
+  
+  game       Game     @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@map("game_events")
+}

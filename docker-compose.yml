@@ -1,0 +1,44 @@
+services:
+  mariadb:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-magicsandbox}
+      MYSQL_USER: ${MYSQL_USER:-magicuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-magicpassword}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-mysql://magicuser:magicpassword@mariadb:3306/magicsandbox}
+      PORT: ${PORT:-30007}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change_me_access_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_refresh_secret}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:30008}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SCRYFALL_BASE_URL: ${SCRYFALL_BASE_URL:-https://api.scryfall.com}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    expose:
+      - "30007"
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-30008}:80"
+    depends_on:
+      - backend
+
+volumes:
+  mariadb_data:

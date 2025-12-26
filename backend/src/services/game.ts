@@ -1,0 +1,404 @@
+import { Server, Socket } from 'socket.io';
+import prisma from '../utils/prisma';
+import { randomUUID } from 'crypto';
+
+// Types
+interface GameState {
+  version: number;
+  players: Record<number, PlayerState>; // seat -> player
+  objects: Record<string, GameObject>; // objectId -> object
+  zoneIndex: Record<number, Record<string, string[]>>; // seat -> zone -> [objectIds] (ordered)
+  battlefieldLayout: Record<number, any[]>; // seat -> layout info
+  chat: any[];
+}
+
+interface PlayerState {
+  seat: number;
+  userId: string;
+  username: string;
+  life: number;
+  counters: Record<string, number>;
+}
+
+interface GameObject {
+  id: string;
+  scryfall_id: string | null; // null if token
+  owner_seat: number;
+  controller_seat: number;
+  zone: string; // LIBRARY, HAND, BATTLEFIELD, GRAVEYARD, EXILE, COMMAND
+  face_state: string; // NORMAL, FACEDOWN
+  tapped: boolean;
+  counters: Record<string, number>;
+  note: string;
+  image_url?: string; // for tokens
+  power?: string;
+  toughness?: string;
+}
+
+// Helpers
+const getGameRoom = (gameId: string) => `game:${gameId}`;
+
+export const handleJoinGame = async (io: Server, socket: Socket, gameId: string, userId: string) => {
+  console.log('[handleJoinGame] start', { gameId, userId });
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { players: true }
+  });
+
+  if (!game) {
+    console.log('[handleJoinGame] game not found', { gameId });
+    socket.emit('game:error', { message: 'Game not found' });
+    return;
+  }
+
+  // Verify player is in game
+  const player = game.players.find(p => p.user_id === userId);
+  if (!player) {
+    console.log('[handleJoinGame] user not in game', { gameId, userId });
+    socket.emit('game:error', { message: 'You are not in this game' });
+    return;
+  }
+
+  socket.join(getGameRoom(gameId));
+  console.log('[handleJoinGame] joined room', { room: getGameRoom(gameId) });
+  
+  // Update connection status
+  await prisma.gamePlayer.updateMany({
+      where: { game_id: gameId, user_id: userId },
+      data: { connected: true }
+  });
+
+  // Send current state (query gameState by game_id)
+  try {
+    const gs = await prisma.gameState.findUnique({ where: { game_id: gameId } });
+    if (gs) {
+      console.log('[handleJoinGame] emit snapshot', { version: (gs.snapshot as any)?.version });
+      socket.emit('game:snapshot', { gameId, state: gs.snapshot });
+    } else {
+      console.log('[handleJoinGame] emit status', { status: game.status });
+      socket.emit('game:status', { status: game.status });
+    }
+  } catch {
+    console.log('[handleJoinGame] status fallback', { status: game.status });
+    socket.emit('game:status', { status: game.status });
+  }
+};
+
+export const handleRejoinGame = handleJoinGame;
+
+export const startGame = async (gameId: string) => {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { 
+        players: { include: { user: true, deck: { include: { cards: true } } } } 
+    }
+  });
+
+  if (!game || game.status !== 'LOBBY') throw new Error('Cannot start game');
+  if (game.players.length < 1) throw new Error('Not enough players'); // Allow 1 for testing
+
+  const initialState: GameState = {
+    version: 1,
+    players: {},
+    objects: {},
+    zoneIndex: {},
+    battlefieldLayout: {},
+    chat: []
+  };
+
+  // Initialize players
+  for (const p of game.players) {
+    initialState.players[p.seat] = {
+      seat: p.seat,
+      userId: p.user_id,
+      username: p.user.username,
+      life: 20,
+      counters: {}
+    };
+    initialState.zoneIndex[p.seat] = {
+      LIBRARY: [],
+      HAND: [],
+      BATTLEFIELD: [],
+      GRAVEYARD: [],
+      EXILE: [],
+      COMMAND: []
+    };
+    initialState.battlefieldLayout[p.seat] = [];
+
+    // Load Deck
+    if (p.deck) {
+      const mainboard = p.deck.cards.filter(c => c.board === 'main');
+      const libraryIds: string[] = [];
+      
+      for (const card of mainboard) {
+        for (let i = 0; i < card.qty; i++) {
+          const objId = randomUUID();
+          const obj: GameObject = {
+            id: objId,
+            scryfall_id: card.scryfall_id,
+            owner_seat: p.seat,
+            controller_seat: p.seat,
+            zone: 'LIBRARY',
+            face_state: 'NORMAL',
+            tapped: false,
+            counters: {},
+            note: '',
+            // Cache some info if needed, but client can fetch from scryfall_id
+          };
+          initialState.objects[objId] = obj;
+          libraryIds.push(objId);
+        }
+      }
+
+      // Shuffle
+      for (let i = libraryIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [libraryIds[i], libraryIds[j]] = [libraryIds[j], libraryIds[i]];
+      }
+      
+      initialState.zoneIndex[p.seat].LIBRARY = libraryIds;
+
+      // Draw 7
+      const drawCount = Math.min(7, libraryIds.length);
+      const drawn = libraryIds.splice(0, drawCount);
+      initialState.zoneIndex[p.seat].HAND = drawn;
+      drawn.forEach(id => {
+          initialState.objects[id].zone = 'HAND';
+      });
+    }
+  }
+
+  // Save State
+  await prisma.$transaction([
+    prisma.game.update({
+      where: { id: gameId },
+      data: { status: 'ACTIVE', started_at: new Date() }
+    }),
+    prisma.gameState.create({
+      data: {
+        game_id: gameId,
+        state_version: 1,
+        snapshot: initialState as any
+      }
+    })
+  ]);
+
+  return initialState;
+};
+
+export const handleGameAction = async (io: Server, socket: Socket, gameId: string, userId: string, action: any, expectedVersion: number) => {
+  console.log('[handleGameAction] start', { gameId, userId, type: action?.type, expectedVersion });
+  // Concurrency check and Apply
+  // 1. Lock/Transaction
+  // For simplicity in MVP, we might just read-modify-write in a transaction or strict sequence.
+  // Prisma doesn't support pessimistic locking easily on all DBs, but we can check version.
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const gameStateDb = await tx.gameState.findUnique({ where: { game_id: gameId } });
+      if (!gameStateDb) throw new Error('Game not started');
+
+      if (gameStateDb.state_version !== expectedVersion) {
+        throw new Error('OUT_OF_SYNC');
+      }
+
+      const currentState = gameStateDb.snapshot as unknown as GameState;
+      const newState = applyAction(currentState, action, userId); // Mutates or returns new
+      
+      newState.version = currentState.version + 1;
+
+      // Save event
+      await tx.gameEvent.create({
+        data: {
+          game_id: gameId,
+          user_id: userId,
+          type: action.type,
+          payload: action,
+        }
+      });
+
+      // Update State
+      await tx.gameState.update({
+        where: { id: gameStateDb.id },
+        data: {
+          state_version: newState.version,
+          snapshot: newState as any
+        }
+      });
+
+      return newState;
+    });
+
+    // Emit update
+    console.log('[handleGameAction] emit update', { version: (result as any)?.version });
+    io.to(getGameRoom(gameId)).emit('game:updated', { gameId, state: result });
+
+  } catch (error: any) {
+    if (error.message === 'OUT_OF_SYNC') {
+      // Fetch latest and send
+      const latest = await prisma.gameState.findUnique({ where: { game_id: gameId } });
+      console.log('[handleGameAction] out_of_sync', { latestVersion: latest?.state_version });
+      socket.emit('game:error', { code: 'OUT_OF_SYNC', state: latest?.snapshot });
+    } else {
+      console.error(error);
+      socket.emit('game:error', { message: 'Action failed' });
+    }
+  }
+};
+
+// The Reducer
+const applyAction = (state: GameState, action: any, userId: string): GameState => {
+  // Validate permissions (e.g. can only move own cards? Sandbox = anything goes mostly)
+  // For MVP assume valid if logged in.
+  
+  // Helper to log
+  const log = (msg: string) => {
+      const player = Object.values(state.players).find(p => p.userId === userId);
+      const name = player ? player.username : 'Desconocido';
+      state.chat.push({
+          id: randomUUID(),
+          timestamp: Date.now(),
+          text: `[${name}] ${msg}`
+      });
+  };
+
+  switch (action.type) {
+    case 'DRAW': {
+      const { seat, n } = action.payload; // seat to draw for
+      const library = state.zoneIndex[seat].LIBRARY;
+      const hand = state.zoneIndex[seat].HAND;
+      const count = Math.min(n || 1, library.length);
+      const drawn = library.splice(0, count);
+      hand.push(...drawn);
+      drawn.forEach(id => state.objects[id].zone = 'HAND');
+      log(`Agarró ${count} carta(s)`);
+      break;
+    }
+    case 'MOVE': {
+        const { objectId, fromZone, toZone, toOwner, position } = action.payload; // toOwner for "steal" logic, position for ordering
+        // Find object
+        const obj = state.objects[objectId];
+        if(!obj) break;
+
+        const cardName = obj.scryfall_id ? 'Carta' : 'Token'; // Ideally fetch name from cache or store in object
+        // We don't have card names in state objects currently (except note?), only scryfall_id.
+        // Client resolves it. Server just logs "Card".
+        
+        // Remove from old zone
+        const removeFromZone = (seat: number, zone: string, id: string) => {
+            const list = state.zoneIndex[seat]?.[zone];
+            if(list) {
+                const idx = list.indexOf(id);
+                if(idx > -1) list.splice(idx, 1);
+            }
+        };
+
+        removeFromZone(obj.controller_seat, obj.zone, objectId);
+
+        // Update object
+        const oldZone = obj.zone;
+        obj.zone = toZone;
+        if (toOwner) obj.controller_seat = toOwner; // Change controller
+        
+        // Add to new
+        const destSeat = obj.controller_seat;
+        if (!state.zoneIndex[destSeat][toZone]) state.zoneIndex[destSeat][toZone] = [];
+        
+        if (toZone === 'LIBRARY' && position === 'top') {
+            state.zoneIndex[destSeat][toZone].unshift(objectId);
+        } else {
+            state.zoneIndex[destSeat][toZone].push(objectId);
+        }
+        
+        log(`Movió ${cardName} de ${oldZone} a ${toZone}${position ? ` (${position})` : ''}`);
+        break;
+    }
+    case 'TAP': {
+        const { objectId, value } = action.payload; // value boolean or toggle
+        if (state.objects[objectId]) {
+            const old = state.objects[objectId].tapped;
+            state.objects[objectId].tapped = typeof value === 'boolean' ? value : !state.objects[objectId].tapped;
+            log(`${state.objects[objectId].tapped ? 'Tapó' : 'DesTapó'} la carta`);
+        }
+        break;
+    }
+    case 'SHUFFLE': {
+        const { seat } = action.payload;
+        const library = state.zoneIndex[seat].LIBRARY;
+        // Fisher-Yates
+        for (let i = library.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [library[i], library[j]] = [library[j], library[i]];
+        }
+        log(`Barajó su biblioteca`);
+        break;
+    }
+    case 'LIFE_SET': {
+        const { seat, value, delta } = action.payload;
+        if (state.players[seat]) {
+            if (typeof value === 'number') {
+                state.players[seat].life = value;
+                log(`Cambio su vida a ${value}`);
+            }
+            if (typeof delta === 'number') {
+                state.players[seat].life += delta;
+                log(`Vida ${delta > 0 ? '+' : ''}${delta}`);
+            }
+        }
+        break;
+    }
+    case 'CREATE_TOKEN': {
+        const { seat, zone, token } = action.payload; // token: { name, imageUrl, power, toughness }
+        const objId = randomUUID();
+        const obj: GameObject = {
+            id: objId,
+            scryfall_id: null,
+            owner_seat: seat,
+            controller_seat: seat,
+            zone: zone || 'BATTLEFIELD',
+            face_state: 'NORMAL',
+            tapped: false,
+            counters: {},
+            note: '',
+            image_url: token.imageUrl, // Custom URL or Scryfall token URL
+            power: token.power,
+            toughness: token.toughness
+        };
+        state.objects[objId] = obj;
+        if (!state.zoneIndex[seat][obj.zone]) state.zoneIndex[seat][obj.zone] = [];
+        state.zoneIndex[seat][obj.zone].push(objId);
+        log(`Creo un token en ${obj.zone}`);
+        break;
+    }
+    // ... Add more actions (COUNTERS, NOTE, etc)
+    case 'COUNTERS': {
+        const { objectId, type, delta } = action.payload;
+        const obj = state.objects[objectId];
+        if (obj) {
+            obj.counters[type] = (obj.counters[type] || 0) + delta;
+            if (obj.counters[type] <= 0) delete obj.counters[type];
+            log(`${delta > 0 ? 'Agregó' : 'Removió'} ${type} contador`);
+        }
+        break;
+    }
+    case 'UNTAP_ALL': {
+        const { seat } = action.payload;
+        // Untap all objects controlled by this seat in BATTLEFIELD
+        const battlefieldIds = state.zoneIndex[seat]?.['BATTLEFIELD'] || [];
+        let count = 0;
+        battlefieldIds.forEach(id => {
+            if (state.objects[id] && state.objects[id].tapped) {
+                state.objects[id].tapped = false;
+                count++;
+            }
+        });
+        log(`Destapeó todo (${count} permanentes) 🔄`);
+        break;
+    }
+    case 'PEEK_LIBRARY': {
+        log(`⚠️ Está viendo su biblioteca 👁️‼️`);
+        break;
+    }
+  }
+  return state;
+};
