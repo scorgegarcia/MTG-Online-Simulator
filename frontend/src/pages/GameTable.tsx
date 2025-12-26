@@ -25,12 +25,15 @@ import {
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
+import { useGameSound } from '../hooks/useGameSound';
+
 export default function GameTable() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { socket, isConnected } = useSocket(id!);
   const [gameState, setGameState] = useState<any>(null);
+  const { handleGameAction } = useGameSound();
   const [gameInfo, setGameInfo] = useState<any>(null);
   const [selectedDeck, setSelectedDeck] = useState('');
   const [myDecks, setMyDecks] = useState<any[]>([]);
@@ -160,6 +163,9 @@ export default function GameTable() {
     socket.on('game:updated', (data) => {
         console.log('[GameTable] game:updated', { version: data?.state?.version });
         setGameState(data.state);
+        if (data.lastAction) {
+            handleGameAction(data.lastAction, data.state);
+        }
     });
 
     socket.on('lobby:updated', () => {
@@ -480,7 +486,11 @@ export default function GameTable() {
                             key={zone}
                             onClick={() => {
                                 setActiveTab(zone);
-                                if(zone === 'LIBRARY') sendAction('PEEK_LIBRARY', {});
+                                if(zone === 'LIBRARY') {
+                                    sendAction('PEEK_LIBRARY', {});
+                                } else {
+                                    sendAction('PEEK_ZONE', { zone });
+                                }
                             }}
                             className={clsx(
                                 "w-full px-3 py-3 text-[11px] font-bold tracking-widest border-b border-slate-800 transition-all relative overflow-hidden group",

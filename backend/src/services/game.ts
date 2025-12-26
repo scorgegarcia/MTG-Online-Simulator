@@ -112,7 +112,7 @@ export const startGame = async (gameId: string) => {
       seat: p.seat,
       userId: p.user_id,
       username: p.user.username,
-      life: 20,
+      life: 40,
       counters: {}
     };
     initialState.zoneIndex[p.seat] = {
@@ -274,7 +274,11 @@ export const handleGameAction = async (io: Server, socket: Socket, gameId: strin
 
     // Emit update
     console.log('[handleGameAction] emit update', { version: (result as any)?.version });
-    io.to(getGameRoom(gameId)).emit('game:updated', { gameId, state: result });
+    io.to(getGameRoom(gameId)).emit('game:updated', { 
+        gameId, 
+        state: result,
+        lastAction: action // Send action to clients for SFX/Animation triggers
+    });
 
   } catch (error: any) {
     if (error.message === 'OUT_OF_SYNC') {
@@ -440,6 +444,19 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
     }
     case 'PEEK_LIBRARY': {
         log(`⚠️ Está viendo su biblioteca 👁️‼️`);
+        break;
+    }
+    case 'PEEK_ZONE': {
+        const { zone } = action.payload;
+        const zoneNames: Record<string, string> = {
+            'HAND': 'su Mano ✋',
+            'GRAVEYARD': 'su Cementerio 🪦',
+            'EXILE': 'su Exilio 🌀',
+            'COMMAND': 'su Command Zone 👑',
+            'SIDEBOARD': 'su Sideboard 🎒'
+        };
+        const name = zoneNames[zone] || zone;
+        log(`👀 Está viendo ${name}`);
         break;
     }
   }

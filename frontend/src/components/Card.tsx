@@ -22,7 +22,7 @@ export const Card = memo(({
     obj, 
     size = 'normal', 
     inBattlefield = false, 
-    inHand = false,
+    inHand: _inHand = false,
     fitHeight = false,
     mySeat,
     cardScale,
@@ -73,6 +73,36 @@ export const Card = memo(({
         setHoveredCard(null);
     };
 
+    const lastTapRef = React.useRef(0);
+    const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const ignoreClickRef = React.useRef(false);
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 320;
+        if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (clickTimeoutRef.current) {
+                clearTimeout(clickTimeoutRef.current);
+                clickTimeoutRef.current = null;
+            }
+            ignoreClickRef.current = true;
+            setTimeout(() => { ignoreClickRef.current = false; }, 450);
+
+            setHoveredCard(null);
+            if (obj.controller_seat === mySeat) {
+                if (inBattlefield) {
+                    sendAction('TAP', { objectId: obj.id });
+                } else {
+                    sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'BATTLEFIELD', toOwner: mySeat });
+                }
+            }
+        }
+        lastTapRef.current = now;
+    };
+
     return (
         <div 
           className={clsx(
@@ -86,6 +116,7 @@ export const Card = memo(({
           draggable={obj.controller_seat === mySeat}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          onTouchEnd={handleTouchEnd}
           onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -113,21 +144,37 @@ export const Card = memo(({
           }}
           onClick={(e) => {
               e.stopPropagation();
-              let x = e.clientX;
-              let y = e.clientY;
-              if (x + 200 > window.innerWidth) x = window.innerWidth - 220;
-              if (y + 400 > window.innerHeight) y = window.innerHeight - 420;
+              if (ignoreClickRef.current) return;
+
+              const x = e.clientX;
+              const y = e.clientY;
               
-              setMenuOpen({ id: obj.id, x, y });
-              setHoveredCard(null);
+              if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+               
+              clickTimeoutRef.current = setTimeout(() => {
+                  let finalX = x;
+                  let finalY = y;
+                  if (finalX + 200 > window.innerWidth) finalX = window.innerWidth - 220;
+                  if (finalY + 400 > window.innerHeight) finalY = window.innerHeight - 420;
+                  
+                  setMenuOpen({ id: obj.id, x: finalX, y: finalY });
+                  setHoveredCard(null);
+                  clickTimeoutRef.current = null;
+              }, 320);
           }}
           onDoubleClick={(e) => {
               e.stopPropagation();
+              if (clickTimeoutRef.current) {
+                  clearTimeout(clickTimeoutRef.current);
+                  clickTimeoutRef.current = null;
+              }
               setHoveredCard(null);
-              if(inBattlefield && obj.controller_seat === mySeat) {
-                  sendAction('TAP', { objectId: obj.id });
-              } else if(inHand && obj.controller_seat === mySeat) {
-                  sendAction('MOVE', { objectId: obj.id, fromZone: 'HAND', toZone: 'BATTLEFIELD', toOwner: mySeat });
+              if (obj.controller_seat === mySeat) {
+                  if (inBattlefield) {
+                      sendAction('TAP', { objectId: obj.id });
+                  } else {
+                      sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'BATTLEFIELD', toOwner: mySeat });
+                  }
               }
           }}
         >

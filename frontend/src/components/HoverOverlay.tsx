@@ -23,6 +23,9 @@ export const HoverOverlay = ({
 }: HoverOverlayProps) => {
     const [style, setStyle] = useState<any>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const lastTapRef = React.useRef(0);
+    const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const ignoreClickRef = React.useRef(false);
     
     // Use useLayoutEffect to calculate position BEFORE paint
     useLayoutEffect(() => {
@@ -92,6 +95,29 @@ export const HoverOverlay = ({
               ...style,
               transition: isExpanded ? 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none'
           }}
+          onTouchEnd={(e) => {
+              const now = Date.now();
+              const DOUBLE_TAP_DELAY = 320;
+              if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (clickTimeoutRef.current) {
+                      clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                  }
+                  ignoreClickRef.current = true;
+                  setTimeout(() => { ignoreClickRef.current = false; }, 450);
+                  setHoveredCard(null);
+                  if (obj.controller_seat === mySeat) {
+                      if (gameState.zoneIndex[mySeat]['BATTLEFIELD'].includes(obj.id)) {
+                          sendAction('TAP', { objectId: obj.id });
+                      } else {
+                          sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'BATTLEFIELD', toOwner: mySeat });
+                      }
+                  }
+              }
+              lastTapRef.current = now;
+          }}
           onMouseMove={(e) => {
               const elements = document.elementsFromPoint(e.clientX, e.clientY);
               
@@ -133,21 +159,32 @@ export const HoverOverlay = ({
           }}
           onClick={(e) => {
               e.stopPropagation();
-              let x = e.clientX;
-              let y = e.clientY;
-              if (x + 200 > window.innerWidth) x = window.innerWidth - 220;
-              if (y + 400 > window.innerHeight) y = window.innerHeight - 420;
-              setMenuOpen({ id: obj.id, x, y });
-              setHoveredCard(null);
+              if (ignoreClickRef.current) return;
+              const x = e.clientX;
+              const y = e.clientY;
+              if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+              clickTimeoutRef.current = setTimeout(() => {
+                  let finalX = x;
+                  let finalY = y;
+                  if (finalX + 200 > window.innerWidth) finalX = window.innerWidth - 220;
+                  if (finalY + 400 > window.innerHeight) finalY = window.innerHeight - 420;
+                  setMenuOpen({ id: obj.id, x: finalX, y: finalY });
+                  setHoveredCard(null);
+                  clickTimeoutRef.current = null;
+              }, 320);
           }}
           onDoubleClick={(e) => {
               e.stopPropagation();
+              if (clickTimeoutRef.current) {
+                  clearTimeout(clickTimeoutRef.current);
+                  clickTimeoutRef.current = null;
+              }
               setHoveredCard(null);
-              if(obj.controller_seat === mySeat) {
+              if (obj.controller_seat === mySeat) {
                   if (gameState.zoneIndex[mySeat]['BATTLEFIELD'].includes(obj.id)) {
                       sendAction('TAP', { objectId: obj.id });
-                  } else if (gameState.zoneIndex[mySeat]['HAND'].includes(obj.id)) {
-                      sendAction('MOVE', { objectId: obj.id, fromZone: 'HAND', toZone: 'BATTLEFIELD', toOwner: mySeat });
+                  } else {
+                      sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'BATTLEFIELD', toOwner: mySeat });
                   }
               }
           }}

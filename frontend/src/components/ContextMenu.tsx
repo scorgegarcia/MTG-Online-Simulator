@@ -244,14 +244,14 @@ export const ContextMenu = ({
                                       style={buttonStyle}
                                       onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
                                   >
-                                      Biblioteca (arriba)
+                                      📚⬆️Biblioteca (arriba)
                                   </button>
                                   <button
                                       className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                       style={buttonStyle}
                                       onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
                                   >
-                                      Biblioteca (abajo)
+                                      📚⬇️Biblioteca (abajo)
                                   </button>
 
                                   <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Contadores</div>
