@@ -32,3 +32,15 @@ export const getCardById = async (id: string) => {
     return null;
   }
 };
+
+export const getCardsCollection = async (identifiers: any[]) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/cards/collection`, {
+            identifiers
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching collection from Scryfall', error);
+        return { data: [], not_found: [] };
+    }
+};

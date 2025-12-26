@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDecks, createDeck, getDeck, updateDeck, deleteDeck, addCard, removeCard, searchScryfall, autocompleteScryfall } from '../controllers/deckController';
+import { getDecks, createDeck, getDeck, updateDeck, deleteDeck, addCard, removeCard, searchScryfall, autocompleteScryfall, importDeck } from '../controllers/deckController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -10,6 +10,7 @@ router.get('/scryfall/autocomplete', autocompleteScryfall);
 
 // Decks
 router.use(authenticateToken);
+router.post('/import', importDeck);
 router.get('/', getDecks);
 router.post('/', createDeck);
 router.get('/:id', getDeck);

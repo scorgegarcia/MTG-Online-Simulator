@@ -207,3 +207,84 @@ export const autocompleteScryfall = async (req: Request, res: Response) => {
     const result = await scryfallService.autocompleteCards(q);
     res.json(result);
 };
+
+export const importDeck = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, cards } = importDeckSchema.parse(req.body);
+    
+    // Create Deck
+    const deck = await prisma.deck.create({
+      data: {
+        user_id: req.userId!,
+        name,
+        format: 'commander', // Default to commander as per example
+      },
+    });
+
+    // Prepare identifiers for Scryfall
+    const uniqueNames = Array.from(new Set(cards.map(c => c.name)));
+    
+    // Scryfall collection API allows max 75 identifiers
+    const chunks = [];
+    for (let i = 0; i < uniqueNames.length; i += 75) {
+        chunks.push(uniqueNames.slice(i, i + 75));
+    }
+
+    const resolvedCardsMap = new Map();
+
+    for (const chunk of chunks) {
+        const identifiers = chunk.map(name => ({ name }));
+        const result = await scryfallService.getCardsCollection(identifiers);
+        
+        if (result.data) {
+            result.data.forEach((card: any) => {
+                resolvedCardsMap.set(card.name, card);
+            });
+        }
+    }
+
+    // Prepare DeckCards
+    const deckCardsData = [];
+    
+    for (const cardInput of cards) {
+        let cardData = resolvedCardsMap.get(cardInput.name);
+        
+        // Case insensitive fallback
+        if (!cardData) {
+            const key = Array.from(resolvedCardsMap.keys()).find(k => k.toLowerCase() === cardInput.name.toLowerCase());
+            if (key) cardData = resolvedCardsMap.get(key);
+        }
+
+        if (cardData) {
+            deckCardsData.push({
+                deck_id: deck.id,
+                scryfall_id: cardData.id,
+                qty: cardInput.qty,
+                board: cardInput.board,
+                name: cardData.name,
+                type_line: cardData.type_line,
+                mana_cost: cardData.mana_cost,
+                image_url_small: cardData.image_uris?.small || cardData.card_faces?.[0]?.image_uris?.small,
+                image_url_normal: cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal
+            });
+        }
+    }
+
+    if (deckCardsData.length > 0) {
+        await prisma.deckCard.createMany({
+            data: deckCardsData
+        });
+    }
+
+    const fullDeck = await prisma.deck.findUnique({
+        where: { id: deck.id },
+        include: { cards: true }
+    });
+
+    res.status(201).json(fullDeck);
+
+  } catch (error) {
+    console.error('Import error:', error);
+    res.status(400).json({ error: 'Invalid input or server error' });
+  }
+};
