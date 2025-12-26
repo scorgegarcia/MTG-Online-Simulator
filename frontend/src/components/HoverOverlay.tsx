@@ -87,7 +87,7 @@ export const HoverOverlay = ({
 
     return (
         <div 
-          className="rounded cursor-pointer select-none border border-yellow-500/50 bg-black"
+          className="rounded-xl cursor-pointer select-none border border-yellow-500/50 bg-black"
           style={{
               ...style,
               transition: isExpanded ? 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none'
@@ -175,7 +175,7 @@ export const HoverOverlay = ({
               e.dataTransfer.setData("text/plain", obj.id);
           }}
         >
-            {img ? <img src={img} className="w-full h-full object-cover rounded" draggable={false} /> : <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>}
+            {img ? <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} /> : <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>}
             {Object.keys(obj.counters).length > 0 && (
                 <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-2 py-1 transform scale-150 origin-top-right">
                     {Object.entries(obj.counters).map(([k,v]) => `${k}:${v}`).join(',')}

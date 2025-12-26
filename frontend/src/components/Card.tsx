@@ -7,6 +7,7 @@ interface CardProps {
     size?: 'small' | 'normal';
     inBattlefield?: boolean;
     inHand?: boolean;
+    fitHeight?: boolean;
     mySeat: number;
     cardScale: number;
     hoverBlockedRef: React.MutableRefObject<string | null>;
@@ -22,6 +23,7 @@ export const Card = memo(({
     size = 'normal', 
     inBattlefield = false, 
     inHand = false,
+    fitHeight = false,
     mySeat,
     cardScale,
     hoverBlockedRef,
@@ -41,6 +43,10 @@ export const Card = memo(({
         aspectRatio: '2.5/3.5',
         width: 'auto',
         transform: obj.tapped ? 'rotate(90deg) scale(0.8)' : 'none'
+    } : fitHeight ? {
+        height: '100%',
+        aspectRatio: '2.5/3.5',
+        width: 'auto'
     } : {
         width: `${baseWidth * cardScale}px`,
         height: `${baseHeight * cardScale}px`

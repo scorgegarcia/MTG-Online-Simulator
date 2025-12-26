@@ -381,7 +381,6 @@ export default function GameTable() {
           uiScale={uiScale}
           sendAction={sendAction}
       />
-      <GameLog gameState={gameState} />
       
       {/* Top Bar (HUD) */}
       <div className="bg-slate-900/90 border-b border-slate-800 p-2 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
@@ -471,23 +470,22 @@ export default function GameTable() {
       <div className="bg-slate-900 z-20 flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
           
           {/* Left Column: Zones */}
-          <div className="flex-1 flex flex-col min-w-0 bg-slate-900">
-            {/* Tabs */}
-            <div className="flex bg-slate-950 border-b border-slate-800">
+          <div className="flex-1 flex min-w-0 bg-slate-900">
+            <div className="flex flex-col bg-slate-950 border-r border-slate-800 w-28 shrink-0">
                 {['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE'].map(zone => {
                     const isActive = activeTab === zone;
                     const count = getZoneObjects(mySeat, zone).length;
                     return (
-                        <button 
+                        <button
                             key={zone}
                             onClick={() => {
                                 setActiveTab(zone);
                                 if(zone === 'LIBRARY') sendAction('PEEK_LIBRARY', {});
                             }}
                             className={clsx(
-                                "flex-1 py-2 text-xs font-bold tracking-widest border-r border-slate-800 transition-all relative overflow-hidden group",
+                                "w-full px-3 py-3 text-[11px] font-bold tracking-widest border-b border-slate-800 transition-all relative overflow-hidden group",
                                 isActive 
-                                    ? "bg-slate-900 text-amber-500 shadow-[inset_0_2px_0_0_#f59e0b]" 
+                                    ? "bg-slate-900 text-amber-500 shadow-[inset_3px_0_0_0_#f59e0b]" 
                                     : "bg-slate-950 text-slate-500 hover:bg-slate-900 hover:text-slate-300"
                             )}
                             onDrop={(e) => {
@@ -504,9 +502,9 @@ export default function GameTable() {
                                 setActiveTab(zone);
                             }}
                         >
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                                {ZONE_LABELS[zone]} 
-                                <span className={clsx("px-1.5 py-0.5 rounded text-[10px]", isActive ? "bg-amber-950/50 text-amber-400 border border-amber-900" : "bg-slate-800 text-slate-400")}>
+                            <span className="relative z-10 flex items-center justify-between gap-2">
+                                <span className="truncate">{ZONE_LABELS[zone]}</span>
+                                <span className={clsx("px-1.5 py-0.5 rounded text-[10px] shrink-0", isActive ? "bg-amber-950/50 text-amber-400 border border-amber-900" : "bg-slate-800 text-slate-400")}>
                                     {count}
                                 </span>
                             </span>
@@ -514,11 +512,10 @@ export default function GameTable() {
                     )
                 })}
             </div>
-            
-            {/* Zone Content */}
+
             <div 
                 className={clsx(
-                    "flex-1 p-4 flex gap-3 items-center bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-slate-900 shadow-inner relative transition-colors",
+                    "flex-1 min-w-0 px-4 py-2 flex gap-3 items-stretch bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-slate-900 shadow-inner relative transition-colors",
                     activeTab === 'LIBRARY' ? "overflow-hidden" : "overflow-x-auto custom-scrollbar"
                 )}
                 onDrop={(e) => {
@@ -535,17 +532,14 @@ export default function GameTable() {
                     e.dataTransfer.dropEffect = "move";
                 }}
             >
-                {/* Background Shadow Overlay for depth */}
                 <div className="absolute inset-0 bg-black/20 pointer-events-none z-0"></div>
 
-                {/* Hand Zone */}
                 {activeTab === 'HAND' && getZoneObjects(mySeat, 'HAND').map((obj: any) => (
-                    <div key={obj.id} className="relative z-10">
-                        <Card obj={obj} size="normal" inHand={true} {...commonProps} />
+                    <div key={obj.id} className="relative z-10 h-full flex items-stretch">
+                        <Card obj={obj} size="normal" inHand={true} fitHeight={true} {...commonProps} />
                     </div>
                 ))}
 
-                {/* Library Zone (Horizontal Scroll) */}
                 {activeTab === 'LIBRARY' && (
                     <div className="flex-1 min-w-0 w-full h-full relative group z-10">
                         <button 
@@ -555,10 +549,10 @@ export default function GameTable() {
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto pb-4 pt-2 scroll-smooth no-scrollbar px-12 w-full h-full items-center">
+                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto py-0 scroll-smooth no-scrollbar px-12 w-full h-full items-stretch">
                             {getZoneObjects(mySeat, 'LIBRARY').map((obj: any, i: number) => (
-                                <div key={obj.id} className="relative group min-w-max transform hover:-translate-y-2 transition-transform duration-200">
-                                    <Card obj={obj} size="small" {...commonProps} />
+                                <div key={obj.id} className="relative group min-w-max h-full flex items-stretch transform hover:-translate-y-2 transition-transform duration-200">
+                                    <Card obj={obj} size="small" fitHeight={true} {...commonProps} />
                                     <div className="absolute -top-2 -right-2 bg-slate-900 text-slate-400 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 shadow-sm z-20">{i+1}</div>
                                 </div>
                             ))}
@@ -578,10 +572,9 @@ export default function GameTable() {
                     </div>
                 )}
 
-                {/* Graveyard & Exile */}
                 {(activeTab === 'GRAVEYARD' || activeTab === 'EXILE') && getZoneObjects(mySeat, activeTab).map((obj: any) => (
-                    <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity">
-                        <Card obj={obj} size="small" {...commonProps} />
+                    <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity h-full flex items-stretch">
+                        <Card obj={obj} size="small" fitHeight={true} {...commonProps} />
                     </div>
                 ))}
             </div>
@@ -618,6 +611,7 @@ export default function GameTable() {
                 <div className="text-[10px] text-amber-500/60 font-bold mt-4 uppercase tracking-[0.2em] relative z-10">DRAW CARD</div>
           </div>
       </div>
+      <GameLog gameState={gameState} />
     </div>
   );
 }

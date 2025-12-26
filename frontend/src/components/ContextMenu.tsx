@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useCardData } from '../hooks/useCardData';
 import { ZONE_LABELS } from '../utils/gameUtils';
 
@@ -22,86 +23,262 @@ export const ContextMenu = ({
 }: ContextMenuProps) => {
     const obj = menuOpen ? gameState.objects[menuOpen.id] : null;
     const { img: imgUrl } = useCardData(obj?.scryfall_id ?? null);
+    const isMine = !!obj && obj.controller_seat === mySeat;
 
-    if (!menuOpen) return null;
-    if (!obj) return null;
-    
-    const isMine = obj.controller_seat === mySeat;
+    const rawPreviewHeight = 168 * previewScale;
+    const rawPreviewWidth = 120 * previewScale;
+    const maxPreviewHeight = Math.min(rawPreviewHeight, Math.max(160, window.innerHeight - 20 - Math.max(44, 44 * uiScale)));
+    const previewHeight = maxPreviewHeight;
+    const previewWidth = (rawPreviewWidth / rawPreviewHeight) * previewHeight;
 
-    const baseMenuWidth = Math.max(224, 140 * previewScale + 32); 
-    const menuWidth = baseMenuWidth * Math.max(1, uiScale * 0.8);
-    
-    const estimatedHeight = (300 + (imgUrl ? 168 * previewScale : 0)) * uiScale;
-    
-    const safeX = Math.min(menuOpen.x, window.innerWidth - menuWidth - 10);
-    const safeY = Math.min(menuOpen.y, window.innerHeight - estimatedHeight - 10);
-    
-    const finalY = Math.max(10, safeY);
-    const finalX = Math.max(10, safeX);
-    
+    const menuRef = useRef<HTMLDivElement | null>(null);
+    const [position, setPosition] = useState<{ x: number; y: number }>({ x: 10, y: 10 });
+    const [avgColor, setAvgColor] = useState<{ r: number; g: number; b: number } | null>(null);
+
+    const estimatedSize = useMemo(() => {
+        const rightColWidth = Math.max(200, 220 * uiScale);
+        const padding = 12;
+        const gap = 12;
+        const headerHeight = Math.max(24, 24 * uiScale);
+        const estimatedHeight = headerHeight + padding * 2 + Math.max(previewHeight, isMine ? 320 * uiScale : 44 * uiScale);
+        const estimatedWidth = padding * 2 + previewWidth + gap + rightColWidth;
+        return { width: estimatedWidth, height: estimatedHeight };
+    }, [isMine, previewHeight, previewWidth, uiScale]);
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const clampToViewport = (x: number, y: number, w: number, h: number) => {
+            const padding = 10;
+            const maxX = Math.max(padding, window.innerWidth - w - padding);
+            const maxY = Math.max(padding, window.innerHeight - h - padding);
+            return {
+                x: Math.min(Math.max(padding, x), maxX),
+                y: Math.min(Math.max(padding, y), maxY),
+            };
+        };
+
+        const next = clampToViewport(menuOpen.x, menuOpen.y, estimatedSize.width, estimatedSize.height);
+        setPosition(next);
+    }, [menuOpen, estimatedSize.height, estimatedSize.width]);
+
+    useLayoutEffect(() => {
+        if (!menuOpen) return;
+        const el = menuRef.current;
+        if (!el) return;
+
+        const rect = el.getBoundingClientRect();
+        const padding = 10;
+        const maxX = Math.max(padding, window.innerWidth - rect.width - padding);
+        const maxY = Math.max(padding, window.innerHeight - rect.height - padding);
+        const nextX = Math.min(Math.max(padding, position.x), maxX);
+        const nextY = Math.min(Math.max(padding, position.y), maxY);
+
+        if (nextX !== position.x || nextY !== position.y) {
+            setPosition({ x: nextX, y: nextY });
+        }
+    }, [imgUrl, isMine, position.x, position.y, previewHeight, previewWidth, uiScale]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const el = menuRef.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const padding = 10;
+            const maxX = Math.max(padding, window.innerWidth - rect.width - padding);
+            const maxY = Math.max(padding, window.innerHeight - rect.height - padding);
+            setPosition((prev) => ({
+                x: Math.min(Math.max(padding, prev.x), maxX),
+                y: Math.min(Math.max(padding, prev.y), maxY),
+            }));
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (!imgUrl) {
+            setAvgColor(null);
+            return;
+        }
+
+        let cancelled = false;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.decoding = 'async';
+        img.src = imgUrl;
+        img.onload = () => {
+            if (cancelled) return;
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                const w = 24;
+                const h = 24;
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+                const data = ctx.getImageData(0, 0, w, h).data;
+                let r = 0;
+                let g = 0;
+                let b = 0;
+                let count = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    const a = data[i + 3];
+                    if (a < 16) continue;
+                    r += data[i];
+                    g += data[i + 1];
+                    b += data[i + 2];
+                    count += 1;
+                }
+                if (!count) return;
+                const avg = { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
+                setAvgColor(avg);
+            } catch {
+                setAvgColor(null);
+            }
+        };
+        img.onerror = () => {
+            if (cancelled) return;
+            setAvgColor(null);
+        };
+
+        return () => {
+            cancelled = true;
+        };
+    }, [imgUrl]);
+
+    const palette = useMemo(() => {
+        const fallback = { r: 30, g: 41, b: 59 };
+        const c = avgColor ?? fallback;
+        const background = `rgba(${c.r}, ${c.g}, ${c.b}, 0.55)`;
+        const background2 = `rgba(${c.r}, ${c.g}, ${c.b}, 0.25)`;
+        const border = `rgba(${c.r}, ${c.g}, ${c.b}, 0.8)`;
+        const halo = `rgba(${Math.min(255, c.r + 30)}, ${Math.min(255, c.g + 30)}, ${Math.min(255, c.b + 30)}, 0.55)`;
+        return { c, background, background2, border, halo };
+    }, [avgColor]);
+
     const fontSizeStyle = { fontSize: `${0.875 * uiScale}rem` };
-    const buttonPadding = { padding: `${0.5 * uiScale}rem ${1 * uiScale}rem` };
+    const metaFontSizeStyle = { fontSize: `${0.75 * uiScale}rem` };
+    const buttonStyle = { padding: `${0.55 * uiScale}rem ${0.85 * uiScale}rem`, fontSize: `${0.85 * uiScale}rem` };
+
+    if (!menuOpen || !obj) return null;
 
     return (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
           <div 
-              className="fixed z-50 bg-gray-800 border border-gray-600 rounded shadow-xl py-2 flex flex-col items-center"
-              style={{ top: finalY, left: finalX, width: menuWidth }}
+              ref={menuRef}
+              className="fixed z-50 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              style={{
+                  top: position.y,
+                  left: position.x,
+                  maxWidth: 'calc(100vw - 20px)',
+                  maxHeight: 'calc(100vh - 20px)',
+                  background: `radial-gradient(120% 140% at 20% 0%, ${palette.background} 0%, rgba(0,0,0,0.78) 55%, ${palette.background2} 100%)`,
+                  border: `1px solid ${palette.border}`,
+                  backdropFilter: 'blur(8px)',
+              }}
           >
-              <div className="px-3 py-1 border-b border-gray-700 text-xs text-gray-400 font-mono w-full text-center mb-1" style={{ fontSize: `${0.75 * uiScale}rem` }}>{obj.id.slice(0,8)}</div>
-              
-              {imgUrl && (
-                  <div className="my-2 transition-all" style={{ width: `${120 * previewScale}px`, height: `${168 * previewScale}px` }}>
-                      <img src={imgUrl} className="w-full h-full object-contain rounded" />
-                  </div>
-              )}
-              
-              {isMine ? (
-                  <>
-                      <button 
-                          className="w-[90%] text-left hover:bg-gray-700 border-gray-5 bg-gray-900 rounded-lg m-2" 
-                          style={{ ...fontSizeStyle, ...buttonPadding }}
-                          onClick={() => sendAction('TAP', { objectId: obj.id })}
-                      >
-                          {obj.tapped ? 'Untap' : 'Tap'}
-                      </button>
-                      
-                      <div className="px-4 py-2 text-gray-400 text-sm border-t border-gray-700 mt-2" style={fontSizeStyle}>Mover a...</div>
-                      <div className="grid grid-cols-2 gap-1 px-2 w-full">
-                          {['HAND', 'BATTLEFIELD', 'GRAVEYARD', 'EXILE'].map(zone => (
-                              <button key={zone} className="bg-gray-700 hover:bg-gray-600 rounded flex items-center justify-center gap-1 font-bold" 
-                                  style={{ ...fontSizeStyle, padding: `${0.5 * uiScale}rem` }}
-                                  onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: zone, toOwner: mySeat })} 
-                              >
-                                  {ZONE_LABELS[zone].split(' ')[0]} {ZONE_LABELS[zone].split(' ').slice(1).join(' ').substr(0,4)}
-                              </button>
-                          ))}
-                          <button className="bg-gray-700 hover:bg-gray-600 rounded flex items-center justify-center gap-1 font-bold"
-                              style={{ ...fontSizeStyle, padding: `${0.5 * uiScale}rem` }}
-                              onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
-                          >
-                              📚 Bibloteca (Top)
-                          </button>
-                          <button className="bg-gray-700 hover:bg-gray-600 rounded flex items-center justify-center gap-1 font-bold"
-                              style={{ ...fontSizeStyle, padding: `${0.5 * uiScale}rem` }}
-                              onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
-                          >
-                              📚 Biblioteca (Bot)
-                          </button>
-                      </div>
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                  <div className="text-white/60 font-mono" style={metaFontSizeStyle}>{obj.id.slice(0,8)}</div>
+                  <button
+                      className="text-white/70 hover:text-white transition-colors px-2 py-1 rounded-md hover:bg-white/10"
+                      style={metaFontSizeStyle}
+                      onClick={() => setMenuOpen(null)}
+                  >
+                      ✕
+                  </button>
+              </div>
 
-                      <div className="px-4 py-2 text-gray-400 text-sm border-t border-gray-700 mt-2" style={fontSizeStyle}>Contadores</div>
-                      <div className="flex justify-around px-2 w-full mb-1">
-                          <button className="bg-gray-700 rounded hover:bg-gray-600" style={{ ...fontSizeStyle, padding: `${0.25 * uiScale}rem ${0.75 * uiScale}rem` }} onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 })}>+1/+1</button>
-                          <button className="bg-gray-700 rounded hover:bg-gray-600" style={{ ...fontSizeStyle, padding: `${0.25 * uiScale}rem ${0.75 * uiScale}rem` }} onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 })}>-1/-1</button>
-                      </div>
-                  </>
-              ) : (
-                  <div className="px-4 py-2 text-yellow-500 text-center border-t border-gray-700 mt-2" style={{ fontSize: `${0.75 * uiScale}rem` }}>
-                      Solo lectura (Enemigo)
+              <div className="flex-1 min-h-0 overflow-auto">
+                <div className="flex items-stretch gap-3 p-3">
+                  <div className="shrink-0" style={{ width: `${previewWidth}px`, height: `${previewHeight}px` }}>
+                      {imgUrl ? (
+                          <div
+                              className="w-full h-full rounded-lg overflow-hidden border border-white/15"
+                              style={{
+                                  boxShadow: `0 0 ${28 * uiScale}px ${palette.halo}, 0 0 ${70 * uiScale}px rgba(0,0,0,0.5)`,
+                              }}
+                          >
+                              <img src={imgUrl} className="w-full h-full object-cover" draggable={false} />
+                          </div>
+                      ) : (
+                          <div className="w-full h-full rounded-lg border border-white/15 bg-black/40 flex items-center justify-center text-white/60" style={fontSizeStyle}>
+                              Sin imagen
+                          </div>
+                      )}
                   </div>
-              )}
+
+                  <div
+                      className="flex flex-col gap-2 min-w-[220px]"
+                      style={{
+                          width: `${Math.max(220, 240 * uiScale)}px`,
+                          maxHeight: `${previewHeight}px`,
+                      }}
+                  >
+                      <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-2">
+                          {isMine ? (
+                              <>
+                                  <button
+                                      className="w-full text-left rounded-lg bg-black/35 hover:bg-black/45 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                      style={buttonStyle}
+                                      onClick={() => sendAction('TAP', { objectId: obj.id })}
+                                  >
+                                      {obj.tapped ? 'Untap' : 'Tap'}
+                                  </button>
+
+                                  <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Mover a</div>
+                                  {['HAND', 'BATTLEFIELD', 'GRAVEYARD', 'EXILE'].map(zone => (
+                                      <button
+                                          key={zone}
+                                          className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: zone, toOwner: mySeat })}
+                                      >
+                                          {ZONE_LABELS[zone]}
+                                      </button>
+                                  ))}
+                                  <button
+                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                      style={buttonStyle}
+                                      onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
+                                  >
+                                      Biblioteca (arriba)
+                                  </button>
+                                  <button
+                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                      style={buttonStyle}
+                                      onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
+                                  >
+                                      Biblioteca (abajo)
+                                  </button>
+
+                                  <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Contadores</div>
+                                  <button
+                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                      style={buttonStyle}
+                                      onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 })}
+                                  >
+                                      +1/+1
+                                  </button>
+                                  <button
+                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                      style={buttonStyle}
+                                      onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 })}
+                                  >
+                                      -1/-1
+                                  </button>
+                              </>
+                          ) : (
+                              <div className="text-amber-300 text-center border border-white/10 bg-black/30 rounded-lg px-3 py-2" style={fontSizeStyle}>
+                                  Solo lectura (enemigo)
+                              </div>
+                          )}
+                      </div>
+                  </div>
+                </div>
+              </div>
           </div>
         </>
     );

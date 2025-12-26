@@ -18,7 +18,7 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
     return (
         <div 
           className={clsx(
-              "fixed bottom-0 left-0 right-0 bg-black/80 text-white text-xs z-30 transition-all duration-300 border-t border-gray-700",
+              "w-full bg-black/80 text-white text-xs transition-all duration-300 border-t border-gray-700 shrink-0",
               expanded ? "h-64" : "h-12 cursor-pointer hover:bg-black/90"
           )}
           onClick={() => !expanded && setExpanded(true)}
