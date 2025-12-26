@@ -13,7 +13,7 @@ const createDeckSchema = z.object({
 const addCardSchema = z.object({
   scryfall_id: z.string(),
   qty: z.number().min(1),
-  board: z.enum(['main', 'side']).default('main'),
+  board: z.enum(['main', 'side', 'commander']).default('main'),
 });
 
 const importDeckSchema = z.object({
@@ -21,7 +21,7 @@ const importDeckSchema = z.object({
   cards: z.array(z.object({
     name: z.string(),
     qty: z.number(),
-    board: z.enum(['main', 'side']).default('main')
+    board: z.enum(['main', 'side', 'commander']).default('main')
   }))
 });
 

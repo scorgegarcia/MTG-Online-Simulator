@@ -14,7 +14,8 @@ import {
   Sparkles,
   Scroll as ScrollIcon,
   Sword,
-  Shield
+  Shield,
+  Crown
 } from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
@@ -107,7 +108,7 @@ export default function DeckBuilder() {
       setDeck(res.data);
   };
 
-  const removeCard = async (scryfall_id: string, board?: 'main' | 'side') => {
+  const removeCard = async (scryfall_id: string, board?: 'main' | 'side' | 'commander') => {
       const qs = board ? `?board=${board}` : '';
       await axios.delete(`${API_BASE_URL}/decks/${id}/cards/${scryfall_id}${qs}`);
       const res = await axios.get(`${API_BASE_URL}/decks/${id}`);
@@ -116,6 +117,7 @@ export default function DeckBuilder() {
 
   const mainboard = deck.cards?.filter((c: any) => c.board === 'main') || [];
   const sideboard = deck.cards?.filter((c: any) => c.board === 'side') || [];
+  const commander = deck.cards?.filter((c: any) => c.board === 'commander') || [];
 
   // Helper component for card buttons (purely visual wrapper)
   const ActionButton = ({ onClick, color, label }: any) => (
@@ -124,7 +126,9 @@ export default function DeckBuilder() {
       className={`px-2 py-1 text-[10px] font-bold rounded border uppercase tracking-wider transition-all
         ${color === 'green' 
           ? 'bg-emerald-950 border-emerald-700 text-emerald-400 hover:bg-emerald-900 hover:border-emerald-500' 
-          : 'bg-indigo-950 border-indigo-700 text-indigo-400 hover:bg-indigo-900 hover:border-indigo-500'}`}
+          : color === 'purple'
+          ? 'bg-indigo-950 border-indigo-700 text-indigo-400 hover:bg-indigo-900 hover:border-indigo-500'
+          : 'bg-amber-950 border-amber-700 text-amber-400 hover:bg-amber-900 hover:border-amber-500'}`}
     >
       {label}
     </button>
@@ -198,6 +202,7 @@ export default function DeckBuilder() {
                   <div className="flex items-center gap-2 mt-2">
                      <ActionButton onClick={() => addCard(card, 'main')} color="green" label="+ Main" />
                      <ActionButton onClick={() => addCard(card, 'purple')} color="purple" label="+ Side" />
+                     <ActionButton onClick={() => addCard(card, 'amber')} color="amber" label="+ Cmd" />
                   </div>
                 </div>
               </div>
@@ -224,6 +229,7 @@ export default function DeckBuilder() {
                         <div className="flex gap-1">
                            <button onClick={() => addCard(v, 'main')} className="px-1.5 py-0.5 bg-emerald-950/50 hover:bg-emerald-900 text-emerald-500 text-[10px] rounded border border-emerald-900/50 hover:border-emerald-500 transition-colors">+M</button>
                            <button onClick={() => addCard(v, 'side')} className="px-1.5 py-0.5 bg-indigo-950/50 hover:bg-indigo-900 text-indigo-500 text-[10px] rounded border border-indigo-900/50 hover:border-indigo-500 transition-colors">+S</button>
+                           <button onClick={() => addCard(v, 'commander')} className="px-1.5 py-0.5 bg-amber-950/50 hover:bg-amber-900 text-amber-500 text-[10px] rounded border border-amber-900/50 hover:border-amber-500 transition-colors">+C</button>
                         </div>
                       </div>
                     </div>
@@ -264,6 +270,39 @@ export default function DeckBuilder() {
 
         {/* Deck Lists Area */}
         <div className="flex-1 overflow-y-auto p-6 pt-0 custom-scrollbar pb-64">
+          
+          {/* Commander Section */}
+          <div className="mb-6 bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+             <div className="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
+                <h3 className="flex items-center gap-2 font-serif font-bold text-slate-200 text-lg">
+                  <Crown size={16} className="text-amber-500" /> Command Zone
+                </h3>
+                <span className="bg-amber-950 text-amber-400 text-xs px-2 py-1 rounded-full border border-amber-900 font-mono">
+                  {commander.reduce((a:number,c:any)=>a+c.qty,0)} cards
+                </span>
+             </div>
+             <div className="space-y-1">
+                {commander.map((c: any) => (
+                  <div 
+                    key={c.id} 
+                    className="group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border border-transparent hover:border-amber-500/20 cursor-pointer transition-all"
+                    onMouseEnter={() => setHoveredCard(c)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span className="font-mono text-amber-500 font-bold text-sm w-6 text-right">{c.qty}</span>
+                      <span className="truncate text-slate-300 font-medium group-hover:text-amber-100 transition-colors">{c.name}</span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={(e) => {e.stopPropagation(); addCard({id: c.scryfall_id}, 'commander')}} className="p-1 hover:bg-amber-900/50 rounded text-amber-400"><Plus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); removeCard(c.scryfall_id, 'commander')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                    </div>
+                  </div>
+                ))}
+                {commander.length === 0 && <p className="text-slate-600 text-sm italic text-center py-4">Choose your Commander</p>}
+             </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Mainboard Column */}

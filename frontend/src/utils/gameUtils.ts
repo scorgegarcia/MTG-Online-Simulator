@@ -23,5 +23,7 @@ export const ZONE_LABELS: Record<string, string> = {
     LIBRARY: '📚Biblioteca',
     GRAVEYARD: '⚰️Cementerio',
     EXILE: '🌀Exilio',
-    BATTLEFIELD: '⚔️Campo'
+    BATTLEFIELD: '⚔️Campo',
+    COMMAND: '👑Command Zone',
+    SIDEBOARD: '🛡️SideBoard'
 };

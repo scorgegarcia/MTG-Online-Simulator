@@ -472,7 +472,7 @@ export default function GameTable() {
           {/* Left Column: Zones */}
           <div className="flex-1 flex min-w-0 bg-slate-900">
             <div className="flex flex-col bg-slate-950 border-r border-slate-800 w-28 shrink-0">
-                {['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE'].map(zone => {
+                {['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE', 'COMMAND', 'SIDEBOARD'].map(zone => {
                     const isActive = activeTab === zone;
                     const count = getZoneObjects(mySeat, zone).length;
                     return (
@@ -572,7 +572,7 @@ export default function GameTable() {
                     </div>
                 )}
 
-                {(activeTab === 'GRAVEYARD' || activeTab === 'EXILE') && getZoneObjects(mySeat, activeTab).map((obj: any) => (
+                {(activeTab === 'GRAVEYARD' || activeTab === 'EXILE' || activeTab === 'COMMAND' || activeTab === 'SIDEBOARD') && getZoneObjects(mySeat, activeTab).map((obj: any) => (
                     <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity h-full flex items-stretch">
                         <Card obj={obj} size="small" fitHeight={true} {...commonProps} />
                     </div>

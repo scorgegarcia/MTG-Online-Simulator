@@ -121,15 +121,19 @@ export const startGame = async (gameId: string) => {
       BATTLEFIELD: [],
       GRAVEYARD: [],
       EXILE: [],
-      COMMAND: []
+      COMMAND: [],
+      SIDEBOARD: []
     };
     initialState.battlefieldLayout[p.seat] = [];
 
     // Load Deck
     if (p.deck) {
       const mainboard = p.deck.cards.filter(c => c.board === 'main');
+      const commander = p.deck.cards.filter(c => c.board === 'commander');
+      const sideboard = p.deck.cards.filter(c => c.board === 'side');
       const libraryIds: string[] = [];
       
+      // Load Mainboard to Library
       for (const card of mainboard) {
         for (let i = 0; i < card.qty; i++) {
           const objId = randomUUID();
@@ -143,14 +147,53 @@ export const startGame = async (gameId: string) => {
             tapped: false,
             counters: {},
             note: '',
-            // Cache some info if needed, but client can fetch from scryfall_id
           };
           initialState.objects[objId] = obj;
           libraryIds.push(objId);
         }
       }
 
-      // Shuffle
+      // Load Commander(s)
+      for (const card of commander) {
+          for (let i = 0; i < card.qty; i++) {
+            const objId = randomUUID();
+            const obj: GameObject = {
+              id: objId,
+              scryfall_id: card.scryfall_id,
+              owner_seat: p.seat,
+              controller_seat: p.seat,
+              zone: 'COMMAND',
+              face_state: 'NORMAL',
+              tapped: false,
+              counters: {},
+              note: '',
+            };
+            initialState.objects[objId] = obj;
+            initialState.zoneIndex[p.seat].COMMAND.push(objId);
+          }
+      }
+
+      // Load Sideboard
+      for (const card of sideboard) {
+          for (let i = 0; i < card.qty; i++) {
+            const objId = randomUUID();
+            const obj: GameObject = {
+              id: objId,
+              scryfall_id: card.scryfall_id,
+              owner_seat: p.seat,
+              controller_seat: p.seat,
+              zone: 'SIDEBOARD',
+              face_state: 'NORMAL',
+              tapped: false,
+              counters: {},
+              note: '',
+            };
+            initialState.objects[objId] = obj;
+            initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);
+          }
+      }
+
+      // Shuffle Library
       for (let i = libraryIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [libraryIds[i], libraryIds[j]] = [libraryIds[j], libraryIds[i]];
