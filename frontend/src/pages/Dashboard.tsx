@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { 
+  Swords, 
+  Scroll, 
+  Skull, 
+  PlusCircle, 
+  Trash2, 
+  LogOut, 
+  BookOpen, 
+  Dice5,
+  Crown
+} from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -36,49 +47,148 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Welcome, {user?.username}</h1>
-          <button onClick={logout} className="bg-red-600 px-4 py-2 rounded">Logout</button>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 relative overflow-hidden">
+      
+      {/* --- Fondo Ambiental --- */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black opacity-90"></div>
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></div>
+      </div>
+
+      <div className="max-w-6xl mx-auto p-6 relative z-10">
+        
+        {/* --- Header: El Santuario del Jugador --- */}
+        <header className="flex flex-col md:flex-row justify-between items-end border-b border-amber-500/20 pb-6 mb-10 gap-4">
+          <div>
+            <div className="flex items-center gap-3 text-amber-500 mb-1">
+              <Crown size={20} />
+              <span className="text-xs font-bold tracking-[0.2em] uppercase">Planeswalker Sanctum</span>
+            </div>
+            <h1 className="text-4xl font-serif font-bold text-slate-100 drop-shadow-md">
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600">{user?.username}</span>
+            </h1>
+          </div>
+          
+          <button 
+            onClick={logout} 
+            className="flex items-center gap-2 px-4 py-2 bg-red-950/30 border border-red-900/50 hover:border-red-500 text-red-400 hover:text-red-200 rounded transition-all duration-300 group"
+          >
+            <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="font-serif tracking-wider text-sm">Seal Gate (Logout)</span>
+          </button>
+        </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Game Section */}
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">Play</h2>
-            <button onClick={createGame} className="w-full bg-blue-600 py-3 rounded mb-4 font-bold text-lg">
-              Host New Game
-            </button>
-            <div className="flex gap-2">
-              <input 
-                value={gameCode}
-                onChange={e => setGameCode(e.target.value.toUpperCase())}
-                placeholder="GAME CODE"
-                className="flex-1 bg-gray-700 p-2 rounded uppercase text-center font-mono"
-              />
-              <button onClick={joinGame} className="bg-green-600 px-6 rounded font-bold">Join</button>
+          
+          {/* --- Section 1: The Arena (Play) --- */}
+          <div className="group relative bg-slate-900/50 border border-slate-700 hover:border-amber-500/50 rounded-xl p-1 transition-all duration-500">
+            {/* Efecto de brillo en hover */}
+            <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none"></div>
+            
+            <div className="bg-slate-900 rounded-lg p-6 h-full relative overflow-hidden">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-indigo-950 rounded-lg border border-indigo-500/30">
+                  <Swords className="text-indigo-400" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-slate-100">The Arena</h2>
+                  <p className="text-xs text-slate-500 uppercase tracking-widest">Battlegrounds</p>
+                </div>
+              </div>
+
+              {/* Host Game Button */}
+              <button 
+                onClick={createGame} 
+                className="w-full relative overflow-hidden bg-gradient-to-r from-indigo-900 to-blue-900 hover:from-indigo-800 hover:to-blue-800 border border-indigo-700 py-4 rounded-lg mb-6 group/btn transition-all shadow-lg shadow-indigo-900/20"
+              >
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                <div className="flex items-center justify-center gap-3 relative z-10 text-indigo-100 font-serif font-bold text-lg tracking-wide">
+                  <Dice5 size={20} />
+                  <span>Manifest New Battlefield</span>
+                </div>
+              </button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-700"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-slate-900 px-2 text-slate-500 font-serif">Or Join Existing Realm</span>
+                </div>
+              </div>
+
+              {/* Join Game Inputs */}
+              <div className="flex gap-2 mt-6">
+                <input 
+                  value={gameCode}
+                  onChange={e => setGameCode(e.target.value.toUpperCase())}
+                  placeholder="RUNE CODE"
+                  className="flex-1 bg-slate-950 border border-slate-700 text-slate-100 p-3 rounded font-mono text-center uppercase tracking-[0.2em] focus:outline-none focus:border-amber-500 transition-colors placeholder-slate-700 shadow-inner"
+                />
+                <button 
+                  onClick={joinGame} 
+                  className="bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/50 hover:border-emerald-500 text-emerald-100 px-6 rounded font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                >
+                  JOIN
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Decks Section */}
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">My Decks</h2>
-              <Link to="/decks/new" className="bg-purple-600 px-3 py-1 rounded text-sm">+ New Deck</Link>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {decks.map(deck => (
-                <div key={deck.id} className="flex justify-between items-center bg-gray-700 p-2 rounded">
-                  <Link to={`/decks/${deck.id}`} className="hover:text-blue-300 font-medium truncate flex-1">
-                    {deck.name}
-                  </Link>
-                  <button onClick={() => deleteDeck(deck.id)} className="text-red-400 hover:text-red-300 ml-2">x</button>
+          {/* --- Section 2: The Library (Decks) --- */}
+          <div className="group relative bg-slate-900/50 border border-slate-700 hover:border-amber-500/50 rounded-xl p-1 transition-all duration-500">
+            <div className="bg-slate-900 rounded-lg p-6 h-full flex flex-col">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-amber-950/30 rounded-lg border border-amber-500/30">
+                    <BookOpen className="text-amber-500" size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-slate-100">Grimoires</h2>
+                    <p className="text-xs text-slate-500 uppercase tracking-widest">Your Decks</p>
+                  </div>
                 </div>
-              ))}
-              {decks.length === 0 && <p className="text-gray-500">No decks yet.</p>}
+                <Link 
+                  to="/decks/new" 
+                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/20 hover:border-amber-500/50 px-3 py-2 rounded text-sm transition-all"
+                >
+                  <PlusCircle size={16} />
+                  <span className="font-serif">Inscribe New</span>
+                </Link>
+              </div>
+
+              {/* Deck List */}
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                {decks.map(deck => (
+                  <div key={deck.id} className="group/item flex justify-between items-center bg-slate-950 border border-slate-800 hover:border-amber-500/30 p-3 rounded transition-colors relative overflow-hidden">
+                    {/* Hover Glow Effect */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-600 opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
+                    
+                    <Link to={`/decks/${deck.id}`} className="flex items-center gap-3 hover:text-amber-400 font-medium truncate flex-1 transition-colors pl-2">
+                      <Scroll size={16} className="text-slate-600 group-hover/item:text-amber-500 transition-colors" />
+                      <span className="font-serif tracking-wide text-slate-300 group-hover/item:text-amber-100">{deck.name}</span>
+                    </Link>
+                    
+                    <button 
+                      onClick={() => deleteDeck(deck.id)} 
+                      className="text-slate-600 hover:text-red-400 p-2 rounded hover:bg-red-950/30 transition-all opacity-0 group-hover/item:opacity-100"
+                      title="Burn Grimoire"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                
+                {decks.length === 0 && (
+                  <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-lg">
+                    <Skull className="mx-auto text-slate-700 mb-2" size={32} />
+                    <p className="text-slate-500 font-serif italic">The library is empty.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

@@ -11,6 +11,17 @@ import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
 import { ZONE_LABELS } from '../utils/gameUtils';
+import { 
+  Settings, 
+  Heart, 
+  Layers, 
+  LogOut, 
+  ChevronLeft, 
+  ChevronRight,
+  Crown,
+  User,
+  Swords,
+} from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -242,53 +253,100 @@ export default function GameTable() {
       navigate('/');
   };
 
-  if (!gameInfo) return <div className="p-4 text-white">Loading game info...</div>;
+  if (!gameInfo) return (
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse">
+        <Layers className="mr-2 animate-spin" /> Summoning Battlefield...
+    </div>
+  );
 
   // LOBBY VIEW
   if (!gameState && gameInfo.status === 'LOBBY') {
       return (
-          <div className="min-h-screen bg-gray-900 text-white p-4 flex flex-col items-center">
-              <h1 className="text-3xl font-bold mb-4">Lobby: {gameInfo.code}</h1>
-              <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-                  <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl">Players</h2>
-                      <button onClick={leaveLobby} className="text-red-400 text-sm hover:underline">Leave Lobby</button>
-                  </div>
-                  {gameInfo.players.map((p: any) => (
-                      <div key={p.id} className="flex justify-between py-2 border-b border-gray-700">
-                          <span>{p.seat}. {p.user.username}</span>
-                          <span className={p.deck ? "text-green-400" : "text-yellow-400"}>
-                              {p.deck ? "Ready" : "Selecting Deck..."}
-                          </span>
+          <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex flex-col items-center justify-center relative overflow-hidden font-sans">
+              {/* Background Ambience */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black z-0"></div>
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-20 z-0"></div>
+              
+              <div className="relative z-10 w-full max-w-2xl">
+                  <div className="text-center mb-8">
+                      <div className="flex items-center justify-center gap-2 text-amber-500 mb-2">
+                          <Crown size={32} />
                       </div>
-                  ))}
-                  
-                  <div className="mt-6">
-                      <label className="block mb-2">Select your deck:</label>
-                      <select 
-                        className="w-full p-2 bg-gray-700 rounded mb-2"
-                        value={selectedDeck}
-                        onChange={e => setSelectedDeck(e.target.value)}
-                      >
-                          <option value="">-- Choose Deck --</option>
-                          {myDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                      </select>
-                      <button onClick={selectDeck} disabled={!selectedDeck} className="w-full bg-blue-600 py-2 rounded disabled:opacity-50">
-                          Confirm Deck
-                      </button>
+                      <h1 className="text-4xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 tracking-wide">
+                          LOBBY: {gameInfo.code}
+                      </h1>
+                      <p className="text-slate-500 font-serif italic">Gather your allies</p>
                   </div>
 
-                  {gameInfo.host_id === user?.id && (
-                      <button onClick={startGame} className="w-full mt-4 bg-green-600 py-3 rounded font-bold text-lg">
-                          START GAME
-                      </button>
-                  )}
+                  <div className="bg-slate-900/80 border border-slate-700 backdrop-blur-md p-8 rounded-xl shadow-2xl relative">
+                      {/* Decorative border glow */}
+                      <div className="absolute inset-0 rounded-xl border border-amber-500/10 pointer-events-none"></div>
+
+                      <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                          <h2 className="text-xl font-serif font-bold text-slate-200 flex items-center gap-2">
+                              <User className="text-indigo-400" /> Players
+                          </h2>
+                          <button onClick={leaveLobby} className="flex items-center gap-2 text-red-400 text-sm hover:text-red-300 transition-colors group">
+                              <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" /> Leave Hall
+                          </button>
+                      </div>
+                      
+                      <div className="space-y-3 mb-8">
+                          {gameInfo.players.map((p: any) => (
+                              <div key={p.id} className="flex justify-between items-center p-3 bg-slate-950/50 rounded border border-slate-800 hover:border-slate-600 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-amber-500 font-bold border border-slate-700">
+                                          {p.seat}
+                                      </span>
+                                      <span className="font-medium text-slate-200">{p.user.username}</span>
+                                  </div>
+                                  <span className={clsx("px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider", p.deck ? "bg-emerald-950/50 text-emerald-400 border border-emerald-900" : "bg-amber-950/50 text-amber-500 border border-amber-900 animate-pulse")}>
+                                      {p.deck ? "Ready for Battle" : "Selecting Grimoire..."}
+                                  </span>
+                              </div>
+                          ))}
+                      </div>
+                      
+                      <div className="bg-slate-950/30 p-4 rounded-lg border border-slate-800/50">
+                          <label className="block mb-2 text-xs uppercase tracking-widest text-slate-500 font-bold">Select your deck</label>
+                          <div className="flex gap-2">
+                              <select 
+                                className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-serif"
+                                value={selectedDeck}
+                                onChange={e => setSelectedDeck(e.target.value)}
+                              >
+                                  <option value="">-- Choose a Grimoire --</option>
+                                  {myDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                              </select>
+                              <button 
+                                onClick={selectDeck} 
+                                disabled={!selectedDeck} 
+                                className="px-6 bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                              >
+                                  Confirm
+                              </button>
+                          </div>
+                      </div>
+
+                      {gameInfo.host_id === user?.id && (
+                          <button 
+                            onClick={startGame} 
+                            className="w-full mt-6 bg-gradient-to-r from-emerald-900 to-teal-900 hover:from-emerald-800 hover:to-teal-800 border border-emerald-700 py-4 rounded-lg font-bold text-lg text-emerald-100 shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
+                          >
+                              <Swords size={24} /> BEGIN THE DUEL
+                          </button>
+                      )}
+                  </div>
               </div>
           </div>
       );
   }
 
-  if (!gameState) return <div className="text-white p-4">Connecting to game...</div>;
+  if (!gameState) return (
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse">
+        <Layers className="mr-2 animate-spin" /> Connecting to Plane...
+    </div>
+  );
 
   const getZoneObjects = (seat: number, zone: string) => {
       const ids = gameState.zoneIndex[seat]?.[zone] || [];
@@ -296,7 +354,7 @@ export default function GameTable() {
   };
   
   return (
-    <div className="h-screen bg-gray-900 text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30">
       <SettingsModal 
           settingsOpen={settingsOpen} setSettingsOpen={setSettingsOpen}
           cardScale={cardScale} setCardScale={setCardScale}
@@ -325,39 +383,66 @@ export default function GameTable() {
       />
       <GameLog gameState={gameState} />
       
-      {/* Top Bar */}
-      <div className="bg-gray-800 p-2 flex justify-between items-center shadow-md z-10">
-          <div className="flex gap-4">
+      {/* Top Bar (HUD) */}
+      <div className="bg-slate-900/90 border-b border-slate-800 p-2 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
+          <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {Object.values(gameState.players).map((p: any) => (
-                  <div key={p.seat} className={clsx("flex flex-col items-center px-3 py-1 rounded", p.seat === mySeat ? "bg-blue-900" : "bg-gray-700")}>
-                      <span className="font-bold text-sm">{p.username}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-400 font-bold">♥ {p.life}</span>
+                  <div 
+                    key={p.seat} 
+                    className={clsx(
+                        "flex flex-col items-center px-4 py-1.5 rounded-lg border transition-all min-w-[120px]", 
+                        p.seat === mySeat 
+                            ? "bg-indigo-950/50 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]" 
+                            : "bg-slate-800/50 border-slate-700"
+                    )}
+                  >
+                      <span className={clsx("font-serif font-bold text-sm tracking-wide truncate max-w-[100px]", p.seat === mySeat ? "text-indigo-200" : "text-slate-400")}>
+                        {p.username}
+                      </span>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="flex items-center gap-1.5 text-red-500 drop-shadow-sm">
+                            <Heart size={14} fill="currentColor" /> 
+                            <span className="font-bold text-lg font-mono leading-none">{p.life}</span>
+                        </div>
                         {p.seat === mySeat && (
-                            <div className="flex gap-1">
-                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: 1 })} className="text-xs bg-gray-600 px-1">+</button>
-                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: -1 })} className="text-xs bg-gray-600 px-1">-</button>
+                            <div className="flex gap-0.5 ml-1">
+                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: 1 })} className="text-[10px] bg-slate-700 hover:bg-emerald-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">+</button>
+                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: -1 })} className="text-[10px] bg-slate-700 hover:bg-red-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">-</button>
                             </div>
                         )}
                       </div>
                   </div>
               ))}
           </div>
-          <div className="text-xs text-gray-400 flex items-center gap-4">
-              <button onClick={() => setSettingsOpen(true)} className="hover:text-white transition-colors text-4xl">
-                  ⚙️
+          <div className="text-xs text-slate-500 flex items-center gap-4 px-2">
+              <span className="font-mono tracking-widest border border-slate-800 px-2 py-1 rounded bg-slate-950/50">
+                  ID: {gameInfo.code}
+              </span>
+              <button 
+                onClick={() => setSettingsOpen(true)} 
+                className="text-slate-400 hover:text-amber-400 transition-colors p-1 hover:bg-slate-800 rounded-full"
+                title="Settings"
+              >
+                  <Settings size={20} />
               </button>
-              <span>Game: {gameInfo.code}</span>
           </div>
       </div>
 
       {/* Main Area: Battlefields */}
-      <div className="flex-1 overflow-hidden relative bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] flex flex-col">
+      <div className="flex-1 overflow-hidden relative flex flex-col">
+          {/* Background Texture */}
+          <div className="absolute inset-0 z-0 bg-slate-950">
+             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
+          </div>
+
           {/* Opponents Battlefields (Top 50%) */}
-          <div className="h-1/2 overflow-hidden p-1 border-b border-gray-700 bg-black/20 flex flex-col">
-             <div className="flex flex-wrap gap-1 justify-center w-full h-full items-stretch">
+          <div className="h-1/2 overflow-hidden p-2 border-b border-slate-800/50 bg-black/30 flex flex-col relative z-10">
+             <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
+                <Swords size={100} />
+             </div>
+             <div className="flex flex-wrap gap-2 justify-center w-full h-full items-stretch">
                 {Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
-                    <div key={p.seat} className="flex-1 min-w-[300px] h-full">
+                    <div key={p.seat} className="flex-1 min-w-[300px] h-full rounded-lg border border-red-900/10 bg-gradient-to-b from-red-950/5 to-transparent">
                         <OpponentBattlefield player={p} gameState={gameState} {...commonProps} />
                     </div>
                 ))}
@@ -365,54 +450,76 @@ export default function GameTable() {
           </div>
 
           {/* My Battlefield (Bottom 50%) */}
-          <div className="h-1/2 overflow-auto p-1 bg-blue-900/5">
-              <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
+          <div className="h-1/2 overflow-auto p-2 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
+              <div className="h-full rounded-lg border border-indigo-900/10">
+                  <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
+              </div>
           </div>
       </div>
 
-      {/* Bottom Area: My Zones Tabs & Deck Button */}
+      {/* Resizer Handle */}
       <div 
-        className="h-1 bg-gray-700 hover:bg-blue-500 cursor-row-resize transition-colors z-20"
+        className="h-1.5 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 hover:h-2 cursor-row-resize transition-all z-20 shadow-[0_-1px_5px_rgba(0,0,0,0.5)] border-y border-slate-950"
         onMouseDown={(e) => {
             e.preventDefault(); 
             isResizingPanel.current = true;
             document.body.style.cursor = 'row-resize';
         }}
       />
-      <div className="bg-gray-800 z-20 flex" style={{ height: panelHeight }}>
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex">
-                {['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE'].map(zone => (
-                    <button 
-                        key={zone}
-                        onClick={() => {
-                            setActiveTab(zone);
-                            if(zone === 'LIBRARY') sendAction('PEEK_LIBRARY', {});
-                        }}
-                        className={clsx("flex-1 py-2 text-sm font-bold", activeTab === zone ? "bg-gray-700 text-white border-t-2 border-blue-500" : "text-gray-400 hover:bg-gray-700")}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            const cardId = e.dataTransfer.getData("text/plain");
-                            if (!cardId) return;
-                            const obj = gameState.objects[cardId];
-                            if (obj && obj.controller_seat === mySeat && obj.zone !== zone) {
-                                sendAction('MOVE', { objectId: cardId, fromZone: obj.zone, toZone: zone, toOwner: mySeat });
-                            }
-                        }}
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            setActiveTab(zone);
-                        }}
-                    >
-                        {ZONE_LABELS[zone]} ({getZoneObjects(mySeat, zone).length})
-                    </button>
-                ))}
+
+      {/* Bottom Area: My Zones Tabs & Deck Button */}
+      <div className="bg-slate-900 z-20 flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
+          
+          {/* Left Column: Zones */}
+          <div className="flex-1 flex flex-col min-w-0 bg-slate-900">
+            {/* Tabs */}
+            <div className="flex bg-slate-950 border-b border-slate-800">
+                {['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE'].map(zone => {
+                    const isActive = activeTab === zone;
+                    const count = getZoneObjects(mySeat, zone).length;
+                    return (
+                        <button 
+                            key={zone}
+                            onClick={() => {
+                                setActiveTab(zone);
+                                if(zone === 'LIBRARY') sendAction('PEEK_LIBRARY', {});
+                            }}
+                            className={clsx(
+                                "flex-1 py-2 text-xs font-bold tracking-widest border-r border-slate-800 transition-all relative overflow-hidden group",
+                                isActive 
+                                    ? "bg-slate-900 text-amber-500 shadow-[inset_0_2px_0_0_#f59e0b]" 
+                                    : "bg-slate-950 text-slate-500 hover:bg-slate-900 hover:text-slate-300"
+                            )}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const cardId = e.dataTransfer.getData("text/plain");
+                                if (!cardId) return;
+                                const obj = gameState.objects[cardId];
+                                if (obj && obj.controller_seat === mySeat && obj.zone !== zone) {
+                                    sendAction('MOVE', { objectId: cardId, fromZone: obj.zone, toZone: zone, toOwner: mySeat });
+                                }
+                            }}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                setActiveTab(zone);
+                            }}
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                {ZONE_LABELS[zone]} 
+                                <span className={clsx("px-1.5 py-0.5 rounded text-[10px]", isActive ? "bg-amber-950/50 text-amber-400 border border-amber-900" : "bg-slate-800 text-slate-400")}>
+                                    {count}
+                                </span>
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
             
+            {/* Zone Content */}
             <div 
                 className={clsx(
-                    "flex-1 p-4 flex gap-2 items-center bg-gray-900 transition-colors",
-                    activeTab === 'LIBRARY' ? "overflow-hidden" : "overflow-x-auto"
+                    "flex-1 p-4 flex gap-3 items-center bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-slate-900 shadow-inner relative transition-colors",
+                    activeTab === 'LIBRARY' ? "overflow-hidden" : "overflow-x-auto custom-scrollbar"
                 )}
                 onDrop={(e) => {
                     e.preventDefault();
@@ -428,64 +535,87 @@ export default function GameTable() {
                     e.dataTransfer.dropEffect = "move";
                 }}
             >
+                {/* Background Shadow Overlay for depth */}
+                <div className="absolute inset-0 bg-black/20 pointer-events-none z-0"></div>
+
+                {/* Hand Zone */}
                 {activeTab === 'HAND' && getZoneObjects(mySeat, 'HAND').map((obj: any) => (
-                    <Card key={obj.id} obj={obj} size="normal" inHand={true} {...commonProps} />
+                    <div key={obj.id} className="relative z-10">
+                        <Card obj={obj} size="normal" inHand={true} {...commonProps} />
+                    </div>
                 ))}
+
+                {/* Library Zone (Horizontal Scroll) */}
                 {activeTab === 'LIBRARY' && (
-                    <div className="flex-1 min-w-0 w-full h-full relative group">
+                    <div className="flex-1 min-w-0 w-full h-full relative group z-10">
                         <button 
                             data-scroll-button="true"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white p-2 rounded-r transition-colors"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onClick={(e) => { e.stopPropagation(); scrollLibrary('left'); }}
                         >
-                            ◀
+                            <ChevronLeft size={20} />
                         </button>
-                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar px-8 w-full h-full items-center">
+                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto pb-4 pt-2 scroll-smooth no-scrollbar px-12 w-full h-full items-center">
                             {getZoneObjects(mySeat, 'LIBRARY').map((obj: any, i: number) => (
-                                <div key={obj.id} className="relative group min-w-max">
+                                <div key={obj.id} className="relative group min-w-max transform hover:-translate-y-2 transition-transform duration-200">
                                     <Card obj={obj} size="small" {...commonProps} />
-                                    <div className="absolute top-0 left-0 bg-black/50 text-white text-xs px-1 rounded-br">{i+1}</div>
+                                    <div className="absolute -top-2 -right-2 bg-slate-900 text-slate-400 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 shadow-sm z-20">{i+1}</div>
                                 </div>
                             ))}
-                            {getZoneObjects(mySeat, 'LIBRARY').length === 0 && <div className="text-gray-500 italic p-4">Biblioteca vacía</div>}
+                            {getZoneObjects(mySeat, 'LIBRARY').length === 0 && (
+                                <div className="text-slate-500 italic p-4 w-full text-center border-2 border-dashed border-slate-800 rounded-lg">
+                                    Grimoire is empty
+                                </div>
+                            )}
                         </div>
                         <button 
                             data-scroll-button="true"
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 text-white p-2 rounded-l transition-colors"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onClick={(e) => { e.stopPropagation(); scrollLibrary('right'); }}
                         >
-                            ▶
+                            <ChevronRight size={20} />
                         </button>
                     </div>
                 )}
-                {activeTab === 'GRAVEYARD' && getZoneObjects(mySeat, 'GRAVEYARD').map((obj: any) => (
-                    <Card key={obj.id} obj={obj} size="small" {...commonProps} />
-                ))}
-                {activeTab === 'EXILE' && getZoneObjects(mySeat, 'EXILE').map((obj: any) => (
-                    <Card key={obj.id} obj={obj} size="small" {...commonProps} />
+
+                {/* Graveyard & Exile */}
+                {(activeTab === 'GRAVEYARD' || activeTab === 'EXILE') && getZoneObjects(mySeat, activeTab).map((obj: any) => (
+                    <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity">
+                        <Card obj={obj} size="small" {...commonProps} />
+                    </div>
                 ))}
             </div>
           </div>
 
-          <div className="w-30 bg-gray-900 border-l border-gray-700 flex flex-col items-center justify-center p-2">
+          {/* Right Column: Deck Draw */}
+          <div className="w-36 bg-slate-950 border-l border-amber-500/20 flex flex-col items-center justify-center p-3 relative shadow-[inset_10px_0_20px_rgba(0,0,0,0.5)]">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20"></div>
                 <div 
-                     className="w-20 h-28 rounded cursor-pointer hover:scale-105 transition-transform shadow-lg relative bg-gray-800 border border-gray-700"
+                     className="w-24 h-36 rounded-lg cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-2xl relative bg-slate-900 border-2 border-slate-700 group ring-4 ring-transparent hover:ring-amber-500/20 z-10"
                      onClick={() => sendAction('DRAW', { seat: mySeat, n: 1 })}
-                 >
+                >
                      {(gameState.zoneIndex[mySeat]?.['LIBRARY']?.length || 0) > 0 ? (
-                         <img 
-                             src="https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg" 
-                             className="w-full h-full object-cover rounded"
-                             alt="Library"
-                         />
+                         <>
+                             <img 
+                                 src="https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg" 
+                                 className="w-full h-full object-cover rounded-md opacity-90 group-hover:opacity-100 transition-opacity"
+                                 alt="Library"
+                             />
+                             {/* Deck Thickness effect */}
+                             <div className="absolute top-0.5 left-0.5 w-full h-full border-r-2 border-b-2 border-black/50 rounded-md pointer-events-none"></div>
+                         </>
                      ) : (
-                         <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">Empty</div>
+                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 gap-1 border-2 border-dashed border-slate-800 rounded-md">
+                             <Layers size={24} />
+                             <span className="text-[10px] font-bold uppercase">Empty</span>
+                         </div>
                      )}
-                     <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs border border-white">
+                     
+                     <div className="absolute -bottom-3 -right-3 bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold border-2 border-slate-900 shadow-lg z-20 group-hover:scale-110 transition-transform">
                          {gameState.zoneIndex[mySeat]?.['LIBRARY']?.length || 0}
                      </div>
-                 </div>
-                 <div className="text-xs text-gray-400 font-bold mt-1">DECK</div>
+                </div>
+                <div className="text-[10px] text-amber-500/60 font-bold mt-4 uppercase tracking-[0.2em] relative z-10">DRAW CARD</div>
           </div>
       </div>
     </div>
