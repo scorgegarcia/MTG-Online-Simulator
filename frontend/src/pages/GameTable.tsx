@@ -685,7 +685,7 @@ export default function GameTable() {
                          {gameState.zoneIndex[mySeat]?.['LIBRARY']?.length || 0}
                      </div>
                 </div>
-                <div className="text-[10px] text-amber-500/60 font-bold mt-4 uppercase tracking-[0.2em] relative z-10">DRAW CARD</div>
+                <div className="text-[10px] text-amber-500/60 font-bold mt-0 uppercase tracking-[0.2em] relative z-10">DRAW CARD</div>
           </div>
       </div>
       <GameLog gameState={gameState} />

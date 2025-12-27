@@ -19,7 +19,7 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
         <div 
           className={clsx(
               "w-full bg-black/80 text-white text-xs transition-all duration-300 border-t border-gray-700 shrink-0",
-              expanded ? "h-64" : "h-12 cursor-pointer hover:bg-black/90"
+              expanded ? "h-64" : "h-10 cursor-pointer hover:bg-black/90"
           )}
           onClick={() => !expanded && setExpanded(true)}
         >
@@ -35,7 +35,7 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
                 
                 <div 
                   ref={logContainerRef}
-                  className={clsx("p-2 overflow-y-auto h-full flex flex-col gap-1", !expanded && "justify-end")}
+                  className={clsx("p-1 overflow-y-auto h-full flex flex-col gap-0", !expanded && "justify-end")}
                 >
                     {messagesToShow.map((msg: any) => (
                         <div key={msg.id} className="opacity-80 hover:opacity-100">
