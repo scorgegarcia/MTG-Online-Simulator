@@ -8,6 +8,7 @@ import { Card } from '../components/Card';
 import { HoverOverlay } from '../components/HoverOverlay';
 import { MyBattlefield, OpponentBattlefield } from '../components/Battlefield';
 import { TradeTray } from '../components/TradeTray';
+import { RevealTray } from '../components/RevealTray';
 import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
@@ -22,6 +23,7 @@ import {
   Crown,
   User,
   Swords,
+  Eye,
 } from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
@@ -40,6 +42,7 @@ export default function GameTable() {
   const [myDecks, setMyDecks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
+  const [showRevealModal, setShowRevealModal] = useState(false);
   
   // Load settings from localStorage or default
   const [cardScale, setCardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
@@ -283,6 +286,13 @@ export default function GameTable() {
   const activeTrade = gameState?.trade;
   const amITrading = activeTrade && (activeTrade.initiatorSeat === mySeat || activeTrade.targetSeat === mySeat);
 
+  const activeReveal = gameState?.reveal;
+  const amIRevealing = activeReveal && (
+      activeReveal.sourceSeat === mySeat || 
+      activeReveal.targetSeat === mySeat || 
+      activeReveal.targetSeat === 'ALL'
+  );
+
   const commonProps = useMemo(() => ({
       mySeat,
       cardScale,
@@ -444,6 +454,48 @@ export default function GameTable() {
           sendAction={sendAction}
       />
       
+      {showRevealModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowRevealModal(false)}>
+              <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-2xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
+                  <h3 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
+                      <Eye className="text-amber-500" /> Reveal Hand To...
+                  </h3>
+                  <div className="grid gap-2">
+                      <button 
+                          onClick={() => {
+                              sendAction('REVEAL_START', { seat: mySeat, target: 'ALL' });
+                              setShowRevealModal(false);
+                          }}
+                          className="p-3 bg-slate-800 hover:bg-amber-900/40 border border-slate-700 hover:border-amber-500/50 rounded flex items-center justify-between group transition-all"
+                      >
+                          <span className="font-bold text-slate-300 group-hover:text-amber-400">Everyone</span>
+                          <span className="text-xs bg-slate-950 px-2 py-1 rounded text-slate-500">All Players</span>
+                      </button>
+                      
+                      {Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
+                          <button 
+                              key={p.seat}
+                              onClick={() => {
+                                  sendAction('REVEAL_START', { seat: mySeat, target: p.seat });
+                                  setShowRevealModal(false);
+                              }}
+                              className="p-3 bg-slate-800 hover:bg-indigo-900/40 border border-slate-700 hover:border-indigo-500/50 rounded flex items-center justify-between group transition-all"
+                          >
+                              <span className="font-bold text-slate-300 group-hover:text-indigo-400">{p.username}</span>
+                              <span className="text-xs bg-slate-950 px-2 py-1 rounded text-slate-500">Seat {p.seat}</span>
+                          </button>
+                      ))}
+                  </div>
+                  <button 
+                      onClick={() => setShowRevealModal(false)}
+                      className="mt-6 w-full py-2 text-slate-500 hover:text-slate-300 text-sm font-bold uppercase tracking-wider"
+                  >
+                      Cancel
+                  </button>
+              </div>
+          </div>
+      )}
+
       {/* Top Bar (HUD) */}
       <div className="bg-slate-900/90 border-b border-slate-800 p-1 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
           <div className="flex gap-4 overflow-x-auto no-scrollbar">
@@ -505,7 +557,11 @@ export default function GameTable() {
                 <Swords size={100} />
              </div>
              <div className="flex flex-wrap gap-2 justify-center w-full h-full items-stretch">
-                {amITrading ? (
+                {amIRevealing ? (
+                    <div className="w-full h-full p-1">
+                        <RevealTray gameState={gameState} {...commonProps} />
+                    </div>
+                ) : amITrading ? (
                     <div className="w-full h-full p-1">
                         <TradeTray gameState={gameState} {...commonProps} />
                     </div>

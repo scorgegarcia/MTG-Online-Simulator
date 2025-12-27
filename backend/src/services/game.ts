@@ -11,6 +11,13 @@ interface GameState {
   battlefieldLayout: Record<number, any[]>; // seat -> layout info
   chat: any[];
   trade?: TradeSession;
+  reveal?: RevealSession;
+}
+
+interface RevealSession {
+    sourceSeat: number;
+    targetSeat: number | 'ALL';
+    highlightedCards: string[];
 }
 
 interface TradeSession {
@@ -43,6 +50,7 @@ interface GameObject {
   image_url?: string; // for tokens
   power?: string;
   toughness?: string;
+  trade_origin_zone?: string; // Where this card came from before joining a trade offer
 }
 
 // Helpers
@@ -318,6 +326,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
           text: `[${name}] ${msg}`
       });
   };
+  const actorSeat = Object.values(state.players).find(p => p.userId === userId)?.seat;
 
   switch (action.type) {
     case 'DRAW': {
@@ -364,6 +373,14 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const oldZone = obj.zone;
         obj.zone = toZone;
         if (toOwner) obj.controller_seat = toOwner; // Change controller
+
+        // Track trade origin if entering trade
+        if (toZone === 'TRADE_OFFER') {
+            obj.trade_origin_zone = fromZone;
+        } else if (fromZone === 'TRADE_OFFER' && toZone !== 'TRADE_OFFER') {
+            // If leaving trade manually, clear origin
+            delete obj.trade_origin_zone;
+        }
         
         // Add to new
         const destSeat = obj.controller_seat;
@@ -497,16 +514,22 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
     }
     case 'TRADE_CANCEL': {
         if (!state.trade) break;
-        // Return all cards in TRADE_OFFER to HAND
+        // Return all cards in TRADE_OFFER to their original zone (or HAND fallback)
         [state.trade.initiatorSeat, state.trade.targetSeat].forEach(seat => {
             const offer = state.zoneIndex[seat]?.['TRADE_OFFER'] || [];
-            const hand = state.zoneIndex[seat]?.['HAND'];
-            if (offer.length > 0 && hand) {
+            if (offer.length > 0) {
                 offer.forEach(id => {
                     const obj = state.objects[id];
-                    if (obj) obj.zone = 'HAND';
+                    if (obj) {
+                        const targetZone = obj.trade_origin_zone || 'HAND';
+                        obj.zone = targetZone;
+                        delete obj.trade_origin_zone;
+                        
+                        // Add back to target zone array
+                        if (!state.zoneIndex[seat][targetZone]) state.zoneIndex[seat][targetZone] = [];
+                        state.zoneIndex[seat][targetZone].push(id);
+                    }
                 });
-                hand.push(...offer);
                 state.zoneIndex[seat]['TRADE_OFFER'] = [];
             }
         });
@@ -548,6 +571,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
                 if (obj) {
                     obj.zone = 'HAND';
                     obj.controller_seat = p2;
+                    delete obj.trade_origin_zone; // Clear origin on successful trade
                     // obj.owner_seat = p2; // Optional: Change ownership too? Let's do it for "Trade"
                 }
             });
@@ -560,6 +584,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
                 if (obj) {
                     obj.zone = 'HAND';
                     obj.controller_seat = p1;
+                    delete obj.trade_origin_zone; // Clear origin on successful trade
                     // obj.owner_seat = p1;
                 }
             });
@@ -568,6 +593,42 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
 
             delete state.trade;
             log(`Intercambio completado exitosamente ✅`);
+        }
+        break;
+    }
+    case 'REVEAL_START': {
+        const { seat, target } = action.payload;
+        if (state.reveal) break;
+        if (actorSeat === undefined || seat !== actorSeat) break;
+        if (target !== 'ALL' && typeof target !== 'number') break;
+        state.reveal = {
+            sourceSeat: seat,
+            targetSeat: target,
+            highlightedCards: []
+        };
+        const targetName = target === 'ALL' ? 'Todos' : `Jugador ${target}`;
+        log(`Mostró su mano a ${targetName}`);
+        break;
+    }
+    case 'REVEAL_CLOSE': {
+        if (!state.reveal) break;
+        if (actorSeat === undefined || actorSeat !== state.reveal.sourceSeat) break;
+        delete state.reveal;
+        log(`Ocultó su mano`);
+        break;
+    }
+    case 'REVEAL_TOGGLE_CARD': {
+        const { cardId } = action.payload;
+        if (!state.reveal) break;
+        if (actorSeat === undefined) break;
+        if (state.reveal.targetSeat !== 'ALL' && actorSeat !== state.reveal.sourceSeat && actorSeat !== state.reveal.targetSeat) break;
+        if (!state.zoneIndex[state.reveal.sourceSeat]?.HAND?.includes(cardId)) break;
+        
+        const idx = state.reveal.highlightedCards.indexOf(cardId);
+        if (idx > -1) {
+            state.reveal.highlightedCards.splice(idx, 1);
+        } else {
+            state.reveal.highlightedCards.push(cardId);
         }
         break;
     }

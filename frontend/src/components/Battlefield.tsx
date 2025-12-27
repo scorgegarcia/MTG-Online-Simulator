@@ -32,6 +32,7 @@ export const MyBattlefield = memo(({
     
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
     const [tradeModalOpen, setTradeModalOpen] = React.useState(false);
+    const [revealModalOpen, setRevealModalOpen] = React.useState(false);
     const opponents = Object.values(gameState.players).filter((p: any) => p.seat !== mySeat);
 
     const handleDrop = (e: React.DragEvent) => {
@@ -124,6 +125,15 @@ export const MyBattlefield = memo(({
                   <span className="text-xl">⚖️</span>
                   <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Trade</span>
               </button>
+
+              <button 
+                  className="w-full h-fit py-1 rounded bg-indigo-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                  title="Show Hand"
+                  onClick={() => setRevealModalOpen(true)}
+              >
+                  <span className="text-xl">👁️</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Show Hand</span>
+              </button>
           </div>
           
           {tradeModalOpen && (
@@ -147,6 +157,46 @@ export const MyBattlefield = memo(({
                         ))}
                         <button 
                             onClick={() => setTradeModalOpen(false)} 
+                            className="mt-4 py-2 text-slate-500 hover:text-white border-t border-slate-800 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+          )}
+
+          {revealModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setRevealModalOpen(false)}>
+                <div className="bg-slate-900 border border-indigo-500 rounded-lg p-6 shadow-2xl min-w-[320px]" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-indigo-300 font-serif font-bold text-xl mb-6 text-center">Reveal Hand To...</h3>
+                    <div className="flex flex-col gap-3">
+                        <button 
+                            className="p-3 bg-slate-800 hover:bg-indigo-900/50 hover:border-indigo-400 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                            onClick={() => {
+                                sendAction('REVEAL_START', { seat: mySeat, target: 'ALL' });
+                                setRevealModalOpen(false);
+                            }}
+                        >
+                            <span>Everyone</span>
+                            <span className="text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                        </button>
+                        {opponents.length === 0 && <div className="text-slate-500 text-center italic">No opponents available</div>}
+                        {opponents.map((p: any) => (
+                            <button 
+                                key={p.seat}
+                                className="p-3 bg-slate-800 hover:bg-indigo-900/50 hover:border-indigo-400 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                                onClick={() => {
+                                    sendAction('REVEAL_START', { seat: mySeat, target: p.seat });
+                                    setRevealModalOpen(false);
+                                }}
+                            >
+                                <span>{p.username}</span>
+                                <span className="text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                            </button>
+                        ))}
+                        <button 
+                            onClick={() => setRevealModalOpen(false)} 
                             className="mt-4 py-2 text-slate-500 hover:text-white border-t border-slate-800 transition-colors"
                         >
                             Cancel
