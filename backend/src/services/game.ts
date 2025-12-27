@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 // Types
 interface GameState {
   version: number;
+  initialLife?: number;
   players: Record<number, PlayerState>; // seat -> player
   objects: Record<string, GameObject>; // objectId -> object
   zoneIndex: Record<number, Record<string, string[]>>; // seat -> zone -> [objectIds] (ordered)
@@ -104,7 +105,7 @@ export const handleJoinGame = async (io: Server, socket: Socket, gameId: string,
 
 export const handleRejoinGame = handleJoinGame;
 
-export const startGame = async (gameId: string) => {
+export const startGame = async (gameId: string, initialLife: number = 40) => {
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     include: { 
@@ -117,6 +118,7 @@ export const startGame = async (gameId: string) => {
 
   const initialState: GameState = {
     version: 1,
+    initialLife,
     players: {},
     objects: {},
     zoneIndex: {},
@@ -130,7 +132,7 @@ export const startGame = async (gameId: string) => {
       seat: p.seat,
       userId: p.user_id,
       username: p.user.username,
-      life: 40,
+      life: initialLife,
       counters: {}
     };
     initialState.zoneIndex[p.seat] = {
@@ -260,8 +262,10 @@ export const restartGame = async (gameId: string) => {
   if (game.players.length < 1) throw new Error('Not enough players');
 
   const oldVersion = (game.gameState?.snapshot as any)?.version || 0;
+  const initialLife = (game.gameState?.snapshot as any)?.initialLife || 40;
   const initialState: GameState = {
     version: oldVersion + 1,
+    initialLife,
     players: {},
     objects: {},
     zoneIndex: {},
@@ -279,7 +283,7 @@ export const restartGame = async (gameId: string) => {
       seat: p.seat,
       userId: p.user_id,
       username: p.user.username,
-      life: 40,
+      life: initialLife,
       counters: {}
     };
     initialState.zoneIndex[p.seat] = {

@@ -49,6 +49,7 @@ export default function GameTable() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
+  const [initialLife, setInitialLife] = useState(40);
 
   const handleRestart = async () => {
       try {
@@ -334,7 +335,7 @@ export default function GameTable() {
 
   const startGame = async () => {
       try {
-          await axios.post(`${API_BASE_URL}/games/${id}/start`);
+          await axios.post(`${API_BASE_URL}/games/${id}/start`, { initialLife });
           const res = await axios.get(`${API_BASE_URL}/games/${id}`);
           setGameInfo(res.data);
       } catch (e: any) {
@@ -421,6 +422,23 @@ export default function GameTable() {
                               </button>
                           </div>
                       </div>
+
+                      {gameInfo.host_id === user?.id && (
+                          <div className="bg-slate-950/30 p-4 rounded-lg border border-slate-800/50 mt-4">
+                              <label className="block mb-2 text-xs uppercase tracking-widest text-slate-500 font-bold">Game Options</label>
+                              <div className="flex items-center gap-4">
+                                  <div className="flex-1">
+                                      <label className="block text-sm text-slate-400 mb-1">Initial Life</label>
+                                      <input 
+                                          type="number" 
+                                          value={initialLife}
+                                          onChange={e => setInitialLife(parseInt(e.target.value) || 0)}
+                                          className="w-full p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-mono"
+                                      />
+                                  </div>
+                              </div>
+                          </div>
+                      )}
 
                       {gameInfo.host_id === user?.id && (
                           <button 
