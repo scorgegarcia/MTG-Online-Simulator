@@ -344,7 +344,28 @@ export const OpponentBattlefield = memo(({
                 </div>
             )}
             <div className="flex justify-between items-center text-xs text-red-300 mb-1 flex-shrink-0">
-                <span className="font-bold">{player.username}'s Battlefield</span>
+                <div className="flex items-center gap-1 font-bold">
+                    <span>{player.username}'s Battlefield</span>
+                    <span title="Commander Damage Dealt to You" className="cursor-help ml-1">
+                        - 🛡️({gameState.players[mySeat]?.commanderDamageReceived?.[player.seat] || 0})
+                    </span>
+                    {[
+                        { key: 'commanderTax', label: 'Tax', icon: '💸' },
+                        { key: 'poison', label: 'Poison', icon: '☠️' },
+                        { key: 'energy', label: 'Energy', icon: '⚡' },
+                        { key: 'experience', label: 'Exp', icon: '🎓' },
+                        { key: 'storm', label: 'Storm', icon: '⛈️' },
+                        { key: 'charge', label: 'Charge', icon: '🔋' },
+                    ].map(({ key, label, icon }) => {
+                        const count = player.counters?.[key] || 0;
+                        if (count <= 0) return null;
+                        return (
+                            <span key={key} title={label} className="cursor-help ml-2 mb-10">
+                                - {icon}({count})
+                            </span>
+                        );
+                    })}
+                </div>
                 <div className="flex gap-3 mr-1">
                     <span title="Hand" className="flex items-center gap-1">✋ {handCount}</span>
                     <span title="Library" className="flex items-center gap-1">📚 {libraryCount}</span>
