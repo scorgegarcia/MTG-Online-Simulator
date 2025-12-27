@@ -43,6 +43,7 @@ export default function GameTable() {
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
   const [showRevealModal, setShowRevealModal] = useState(false);
+  const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   
   // Load settings from localStorage or default
   const [cardScale, setCardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
@@ -221,6 +222,13 @@ export default function GameTable() {
         setGameState(data.state);
         if (data.lastAction) {
             handleGameAction(data.lastAction, data.state);
+            if (data.lastAction.type === 'THINKING') {
+                const seat = data.lastAction.payload.seat;
+                setThinkingSeats(prev => [...prev, seat]);
+                setTimeout(() => {
+                    setThinkingSeats(prev => prev.filter(s => s !== seat));
+                }, 1000);
+            }
         }
     });
 
@@ -301,8 +309,9 @@ export default function GameTable() {
       setHoveredCard,
       menuOpen,
       setMenuOpen,
-      sendAction
-  }), [mySeat, cardScale, menuOpen, sendAction]);
+      sendAction,
+      thinkingSeats
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });

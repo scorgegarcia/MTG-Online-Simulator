@@ -12,6 +12,7 @@ interface BattlefieldSharedProps {
     menuOpen: any;
     setMenuOpen: any;
     sendAction: any;
+    thinkingSeats?: number[];
 }
 
 export const MyBattlefield = memo(({
@@ -24,7 +25,8 @@ export const MyBattlefield = memo(({
     setHoveredCard,
     menuOpen,
     setMenuOpen,
-    sendAction
+    sendAction,
+    thinkingSeats
 }: BattlefieldSharedProps & { seat: number }) => {
     const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -33,6 +35,16 @@ export const MyBattlefield = memo(({
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
     const [tradeModalOpen, setTradeModalOpen] = React.useState(false);
     const [revealModalOpen, setRevealModalOpen] = React.useState(false);
+    const [isThinkingCooldown, setIsThinkingCooldown] = React.useState(false);
+
+    // Cooldown timer
+    React.useEffect(() => {
+        if (isThinkingCooldown) {
+            const timer = setTimeout(() => setIsThinkingCooldown(false), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [isThinkingCooldown]);
+
     const opponents = Object.values(gameState.players).filter((p: any) => p.seat !== mySeat);
 
     const handleDrop = (e: React.DragEvent) => {
@@ -63,7 +75,24 @@ export const MyBattlefield = memo(({
     const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true };
 
     return (
-        <div className="flex h-full w-full gap-1">
+        <div className="flex h-full w-full gap-1 relative">
+          <style>{`
+            @keyframes fadeOut {
+              0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+              100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+            }
+          `}</style>
+          {thinkingSeats?.includes(mySeat) && (
+              <div 
+                className="absolute top-1/2 left-1/2 z-50 pointer-events-none"
+                style={{ animation: 'fadeOut 1s ease-out forwards' }}
+              >
+                  <div className="bg-white/90 text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)] border-2 border-slate-900 font-bold text-2xl flex items-center gap-3 backdrop-blur-sm">
+                      <span className="text-3xl">💬</span> Thinking...
+                  </div>
+              </div>
+          )}
+
           <div 
               className={`flex flex-col gap-0 p-0 bg-blue-900/10 rounded border ${isDraggingOver ? 'border-yellow-400 bg-blue-900/30' : 'border-blue-500/30'} h-full flex-1 transition-colors`}
               onDrop={handleDrop}
@@ -99,6 +128,19 @@ export const MyBattlefield = memo(({
 
           {/* Side Toolbar */}
           <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700">
+              <button 
+                  className={`w-full h-fit py-1 rounded flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors ${isThinkingCooldown ? 'bg-slate-800 text-gray-600 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600 text-gray-300'}`}
+                  title="Notify Thinking"
+                  disabled={isThinkingCooldown}
+                  onClick={() => {
+                      setIsThinkingCooldown(true);
+                      sendAction('THINKING', { seat: mySeat });
+                  }}
+              >
+                  <span className="text-xl">💬</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Thinking...</span>
+              </button>
+
               <button 
                   className="w-full h-fit py-1 rounded bg-blue-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
                   title="Untap All Permanents"
@@ -219,7 +261,8 @@ export const OpponentBattlefield = memo(({
     setHoveredCard,
     menuOpen,
     setMenuOpen,
-    sendAction
+    sendAction,
+    thinkingSeats
 }: { player: any } & BattlefieldSharedProps) => {
     const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -233,7 +276,23 @@ export const OpponentBattlefield = memo(({
     const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const };
 
     return (
-        <div className="p-1 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden">
+        <div className="p-1 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden relative">
+            <style>{`
+                @keyframes fadeOut {
+                0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+                }
+            `}</style>
+            {thinkingSeats?.includes(player.seat) && (
+                <div 
+                    className="absolute top-1/2 left-1/2 z-50 pointer-events-none"
+                    style={{ animation: 'fadeOut 1s ease-out forwards' }}
+                >
+                    <div className="bg-white/90 text-black px-5 py-2 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)] border-2 border-red-900 font-bold text-xl flex items-center gap-2 backdrop-blur-sm">
+                        <span className="text-2xl">💬</span> Thinking...
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-center text-xs text-red-300 mb-1 flex-shrink-0">
                 <span className="font-bold">{player.username}'s Battlefield</span>
                 <div className="flex gap-3 mr-1">

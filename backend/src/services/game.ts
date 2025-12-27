@@ -632,6 +632,11 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         }
         break;
     }
+    case 'THINKING': {
+        const { seat } = action.payload;
+        log(`está pensando... 💬`);
+        break;
+    }
   }
   return state;
 };

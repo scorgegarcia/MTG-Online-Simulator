@@ -9,6 +9,7 @@ import castCreatureSfx from '../assets/sfx/cast_creature_card.mp3';
 import castNonCreatureSfx from '../assets/sfx/cast_non_creature_card.mp3';
 import toggleTapSfx from '../assets/sfx/toggle_tap_untap.mp3';
 import selectCardSfx from '../assets/sfx/select_card.mp3';
+import popSfx from '../assets/sfx/pop.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -30,6 +31,7 @@ export const useGameSound = () => {
         loadAudio('NON_CREATURE', castNonCreatureSfx);
         loadAudio('TAP', toggleTapSfx);
         loadAudio('SELECT', selectCardSfx);
+        loadAudio('THINKING', popSfx);
     }, []);
 
     const playSound = (key: string) => {
@@ -58,6 +60,9 @@ export const useGameSound = () => {
                 break;
             case 'REVEAL_TOGGLE_CARD':
                 playSound('SELECT');
+                break;
+            case 'THINKING':
+                playSound('THINKING');
                 break;
             case 'MOVE': {
                 const { objectId, fromZone, toZone } = action.payload;
