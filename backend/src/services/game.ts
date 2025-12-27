@@ -36,6 +36,7 @@ interface PlayerState {
   username: string;
   life: number;
   counters: Record<string, number>;
+  commanderDamageReceived: Record<number, number>; // sourceSeat -> damage
 }
 
 interface GameObject {
@@ -136,7 +137,8 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       userId: p.user_id,
       username: p.user.username,
       life: initialLife,
-      counters: {}
+      counters: {},
+      commanderDamageReceived: {}
     };
     initialState.zoneIndex[p.seat] = {
       LIBRARY: [],
@@ -287,7 +289,8 @@ export const restartGame = async (gameId: string) => {
       userId: p.user_id,
       username: p.user.username,
       life: initialLife,
-      counters: {}
+      counters: {},
+      commanderDamageReceived: {}
     };
     initialState.zoneIndex[p.seat] = {
       LIBRARY: [],
@@ -616,6 +619,38 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         break;
     }
     // ... Add more actions (COUNTERS, NOTE, etc)
+    case 'PLAYER_COUNTER': {
+        const { seat, type, delta } = action.payload;
+        if (state.players[seat]) {
+            state.players[seat].counters[type] = (state.players[seat].counters[type] || 0) + delta;
+            if (state.players[seat].counters[type] <= 0 && type !== 'commanderTax') {
+                 // Commander Tax usually stays even if 0 (though technically starts at 0 and goes up). 
+                 // Poison, etc should probably stay at 0 if decremented? 
+                 // Magic rules: you can have 0 poison counters. But usually we just don't show it if 0.
+                 // Let's delete if <= 0 to keep clean, unless it's a specific persistent one?
+                 // User wants to "manage" them. Let's delete if 0 for UI cleanliness, 
+                 // but for Commander Tax it might be useful to show 0? 
+                 // Actually, let's just delete if <= 0 for now, except maybe Commander Tax?
+                 // Simpler: Just delete if <= 0.
+                 delete state.players[seat].counters[type];
+            }
+            log(`${delta > 0 ? 'Agregó' : 'Removió'} ${type} (${Math.abs(delta)})`);
+        }
+        break;
+    }
+    case 'COMMANDER_DAMAGE': {
+        const { seat, sourceSeat, delta } = action.payload;
+        if (state.players[seat]) {
+             if (!state.players[seat].commanderDamageReceived) {
+                 state.players[seat].commanderDamageReceived = {};
+             }
+             const current = state.players[seat].commanderDamageReceived[sourceSeat] || 0;
+             const newVal = Math.max(0, current + delta);
+             state.players[seat].commanderDamageReceived[sourceSeat] = newVal;
+             log(`Recibió ${Math.abs(delta)} daño de comandante de Jugador ${sourceSeat} (Total: ${newVal})`);
+        }
+        break;
+    }
     case 'COUNTERS': {
         const { objectId, type, delta } = action.payload;
         const obj = state.objects[objectId];

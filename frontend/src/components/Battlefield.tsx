@@ -1,5 +1,6 @@
 import { Card } from './Card';
 import { categorizeObjects } from '../utils/gameUtils';
+import { CommanderDamageModal } from './CommanderDamageModal';
 import React, { memo } from 'react';
 
 interface BattlefieldSharedProps {
@@ -35,6 +36,7 @@ export const MyBattlefield = memo(({
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
     const [tradeModalOpen, setTradeModalOpen] = React.useState(false);
     const [revealModalOpen, setRevealModalOpen] = React.useState(false);
+    const [commanderModalOpen, setCommanderModalOpen] = React.useState(false);
     const [isThinkingCooldown, setIsThinkingCooldown] = React.useState(false);
 
     // Cooldown timer
@@ -93,6 +95,45 @@ export const MyBattlefield = memo(({
               </div>
           )}
 
+          {/* Left Side Toolbar */}
+          <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700 overflow-y-auto no-scrollbar">
+              <button 
+                  className="w-full h-fit py-1 rounded bg-red-900/80 hover:bg-red-800 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors shrink-0 mt-1"
+                  title="Commander Damage"
+                  onClick={() => setCommanderModalOpen(true)}
+              >
+                  <span className="text-xl">🛡️</span>
+                  <span className="text-[10px] uppercase text-center leading-3">Cmdr<br/>Dmg</span>
+              </button>
+
+              {[
+                  { key: 'commanderTax', label: 'Tax', icon: '💸' },
+                  { key: 'poison', label: 'Poison', icon: '☠️' },
+                  { key: 'energy', label: 'Energy', icon: '⚡' },
+                  { key: 'experience', label: 'Exp', icon: '🎓' },
+                  { key: 'storm', label: 'Storm', icon: '⛈️' },
+                  { key: 'charge', label: 'Charge', icon: '🔋' },
+              ].map(({ key, label }) => {
+                 const count = gameState.players[mySeat]?.counters?.[key] || 0;
+                 return (
+                     <div key={key} className="w-full flex flex-col items-center gap-1 bg-slate-800/50 rounded p-1 shrink-0 border border-slate-700/50">
+                         <div className="text-[10px] text-gray-400 uppercase tracking-tighter font-bold">{label}</div>
+                         <div className="flex items-center justify-between w-full gap-1">
+                            <button 
+                                className="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded text-xs text-white font-bold"
+                                onClick={() => sendAction('PLAYER_COUNTER', { seat: mySeat, type: key, delta: -1 })}
+                            >-</button>
+                            <span className={`font-bold text-sm ${count > 0 ? 'text-white' : 'text-gray-500'}`}>{count}</span>
+                            <button 
+                                className="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded text-xs text-white font-bold"
+                                onClick={() => sendAction('PLAYER_COUNTER', { seat: mySeat, type: key, delta: 1 })}
+                            >+</button>
+                         </div>
+                     </div>
+                 );
+              })}
+          </div>
+
           <div 
               className={`flex flex-col gap-0 p-0 bg-blue-900/10 rounded border ${isDraggingOver ? 'border-yellow-400 bg-blue-900/30' : 'border-blue-500/30'} h-full flex-1 transition-colors`}
               onDrop={handleDrop}
@@ -126,7 +167,7 @@ export const MyBattlefield = memo(({
             </div>
           </div>
 
-          {/* Side Toolbar */}
+          {/* Right Side Toolbar */}
           <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700">
               <button 
                   className={`w-full h-fit py-1 rounded flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors ${isThinkingCooldown ? 'bg-slate-800 text-gray-600 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600 text-gray-300'}`}
@@ -246,6 +287,15 @@ export const MyBattlefield = memo(({
                     </div>
                 </div>
             </div>
+          )}
+
+          {commanderModalOpen && (
+              <CommanderDamageModal 
+                  gameState={gameState}
+                  mySeat={mySeat}
+                  onClose={() => setCommanderModalOpen(false)}
+                  sendAction={sendAction}
+              />
           )}
         </div>
     );
