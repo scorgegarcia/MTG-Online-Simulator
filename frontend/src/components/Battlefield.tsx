@@ -2,6 +2,7 @@ import { Card } from './Card';
 import { categorizeObjects } from '../utils/gameUtils';
 import { CommanderDamageModal } from './CommanderDamageModal';
 import { ReadOnlyZoneModal } from './ReadOnlyZoneModal';
+import { CreateTokenModal } from './CreateTokenModal';
 import React, { memo } from 'react';
 
 interface BattlefieldSharedProps {
@@ -37,6 +38,7 @@ export const MyBattlefield = memo(({
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
     const [tradeModalOpen, setTradeModalOpen] = React.useState(false);
     const [revealModalOpen, setRevealModalOpen] = React.useState(false);
+    const [createTokenModalOpen, setCreateTokenModalOpen] = React.useState(false);
     const [commanderModalOpen, setCommanderModalOpen] = React.useState(false);
     const [isThinkingCooldown, setIsThinkingCooldown] = React.useState(false);
 
@@ -218,6 +220,15 @@ export const MyBattlefield = memo(({
                   <span className="text-xl">👁️</span>
                   <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Show Hand</span>
               </button>
+
+              <button 
+                  className="w-full h-fit py-1 rounded bg-green-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                  title="Create Token"
+                  onClick={() => setCreateTokenModalOpen(true)}
+              >
+                  <span className="text-xl">🪙</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Token</span>
+              </button>
           </div>
           
           {tradeModalOpen && (
@@ -298,6 +309,12 @@ export const MyBattlefield = memo(({
                   sendAction={sendAction}
               />
           )}
+
+          <CreateTokenModal 
+              isOpen={createTokenModalOpen}
+              onClose={() => setCreateTokenModalOpen(false)}
+              onCreate={(token) => sendAction('CREATE_TOKEN', { seat: mySeat, zone: 'BATTLEFIELD', token })}
+          />
         </div>
     );
 });

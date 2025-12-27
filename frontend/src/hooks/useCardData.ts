@@ -4,7 +4,10 @@ export const useCardData = (scryfallId: string | null) => {
     const [data, setData] = useState<{img: string, type: string, power?: string, toughness?: string}>({ img: '', type: '' });
     
     useEffect(() => {
-        if(!scryfallId) return;
+        if(!scryfallId) {
+            setData({ img: '', type: '' });
+            return;
+        }
         
         const cacheKey = `card_data_v2_${scryfallId}`;
         const cached = localStorage.getItem(cacheKey);

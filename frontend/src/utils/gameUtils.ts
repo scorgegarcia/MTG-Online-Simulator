@@ -4,11 +4,14 @@ export const categorizeObjects = (objects: any[]) => {
     const others: any[] = [];
 
     objects.forEach((obj: any) => {
-        const cacheKey = `card_data_v2_${obj.scryfall_id}`;
-        const cached = localStorage.getItem(cacheKey);
-        let type = '';
-        if (cached) {
-            try { type = JSON.parse(cached).type; } catch(e){}
+        let type = obj.type_line || '';
+        
+        if (!type && obj.scryfall_id) {
+            const cacheKey = `card_data_v2_${obj.scryfall_id}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                try { type = JSON.parse(cached).type; } catch(e){}
+            }
         }
         
         if (type.toLowerCase().includes('land')) lands.push(obj);

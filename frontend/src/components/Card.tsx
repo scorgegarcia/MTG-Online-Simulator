@@ -33,7 +33,11 @@ export const Card = memo(({
     setMenuOpen,
     sendAction
 }: CardProps) => {
-    const { img: imgUrl, power, toughness } = useCardData(obj.scryfall_id);
+    const { img: imgUrlFromHook, power: powerFromHook, toughness: toughnessFromHook } = useCardData(obj.scryfall_id);
+    
+    const imgUrl = obj.scryfall_id ? imgUrlFromHook : (obj.image_url || '');
+    const power = obj.scryfall_id ? powerFromHook : obj.power;
+    const toughness = obj.scryfall_id ? toughnessFromHook : obj.toughness;
     
     const isFacedown = obj.face_state === 'FACEDOWN';
     

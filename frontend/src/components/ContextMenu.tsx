@@ -22,7 +22,9 @@ export const ContextMenu = ({
     sendAction
 }: ContextMenuProps) => {
     const obj = menuOpen ? gameState.objects[menuOpen.id] : null;
-    const { img: imgUrl } = useCardData(obj?.scryfall_id ?? null);
+    const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
+    const imgUrl = obj?.scryfall_id ? imgUrlFromHook : (obj?.image_url || '');
+    
     const isMine = !!obj && obj.controller_seat === mySeat;
 
     const isFacedown = obj?.face_state === 'FACEDOWN';

@@ -52,6 +52,7 @@ interface GameObject {
   image_url?: string; // for tokens
   power?: string;
   toughness?: string;
+  type_line?: string; // for tokens or manual override
   trade_origin_zone?: string; // Where this card came from before joining a trade offer
 }
 
@@ -606,7 +607,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         break;
     }
     case 'CREATE_TOKEN': {
-        const { seat, zone, token } = action.payload; // token: { name, imageUrl, power, toughness }
+        const { seat, zone, token } = action.payload; // token: { name, imageUrl, power, toughness, type }
         const objId = randomUUID();
         const obj: GameObject = {
             id: objId,
@@ -617,15 +618,16 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
             face_state: 'NORMAL',
             tapped: false,
             counters: {},
-            note: '',
+            note: token.name || '',
             image_url: token.imageUrl, // Custom URL or Scryfall token URL
             power: token.power,
-            toughness: token.toughness
+            toughness: token.toughness,
+            type_line: token.type
         };
         state.objects[objId] = obj;
         if (!state.zoneIndex[seat][obj.zone]) state.zoneIndex[seat][obj.zone] = [];
         state.zoneIndex[seat][obj.zone].push(objId);
-        log(`Creo un token en ${obj.zone}`);
+        log(`Creo un token (${token.name || 'Token'}) en ${obj.zone}`);
         break;
     }
     // ... Add more actions (COUNTERS, NOTE, etc)
