@@ -25,6 +25,10 @@ const importDeckSchema = z.object({
   }))
 });
 
+const updateDeckCardSchema = z.object({
+  back_image_url: z.string().trim().max(500).nullable(),
+});
+
 // Controllers
 export const getDecks = async (req: AuthRequest, res: Response) => {
   const decks = await prisma.deck.findMany({
@@ -194,6 +198,29 @@ export const removeCard = async (req: AuthRequest, res: Response) => {
         });
         res.json({ message: 'Card removed' });
     }
+};
+
+export const updateDeckCard = async (req: AuthRequest, res: Response) => {
+    const deckId = req.params.id;
+    const deckCardId = req.params.deckCardId;
+
+    const { back_image_url } = updateDeckCardSchema.parse(req.body);
+
+    const existing = await prisma.deckCard.findUnique({
+        where: { id: deckCardId },
+        include: { deck: true }
+    });
+
+    if (!existing || existing.deck_id !== deckId || existing.deck.user_id !== req.userId) {
+        return res.status(404).json({ error: 'Card not found in deck' });
+    }
+
+    const updated = await prisma.deckCard.update({
+        where: { id: deckCardId },
+        data: { back_image_url }
+    });
+
+    res.json(updated);
 };
 
 export const searchScryfall = async (req: Request, res: Response) => {

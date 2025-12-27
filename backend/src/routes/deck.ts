@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDecks, createDeck, getDeck, updateDeck, deleteDeck, addCard, removeCard, searchScryfall, autocompleteScryfall, importDeck } from '../controllers/deckController';
+import { getDecks, createDeck, getDeck, updateDeck, deleteDeck, addCard, removeCard, updateDeckCard, searchScryfall, autocompleteScryfall, importDeck } from '../controllers/deckController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -17,6 +17,7 @@ router.get('/:id', getDeck);
 router.put('/:id', updateDeck);
 router.delete('/:id', deleteDeck);
 router.post('/:id/cards', addCard);
+router.patch('/:id/cards/:deckCardId', updateDeckCard);
 router.delete('/:id/cards/:cardId', removeCard);
 
 export default router;

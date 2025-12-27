@@ -49,6 +49,7 @@ interface GameObject {
   tapped: boolean;
   counters: Record<string, number>;
   note: string;
+  back_image_url?: string;
   image_url?: string; // for tokens
   power?: string;
   toughness?: string;
@@ -173,6 +174,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
             tapped: false,
             counters: {},
             note: '',
+            back_image_url: card.back_image_url || undefined,
           };
           initialState.objects[objId] = obj;
           libraryIds.push(objId);
@@ -193,6 +195,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
               tapped: false,
               counters: {},
               note: '',
+              back_image_url: card.back_image_url || undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].COMMAND.push(objId);
@@ -213,6 +216,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
               tapped: false,
               counters: {},
               note: '',
+              back_image_url: card.back_image_url || undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);
@@ -325,6 +329,7 @@ export const restartGame = async (gameId: string) => {
             tapped: false,
             counters: {},
             note: '',
+            back_image_url: card.back_image_url || undefined,
           };
           initialState.objects[objId] = obj;
           libraryIds.push(objId);
@@ -345,6 +350,7 @@ export const restartGame = async (gameId: string) => {
               tapped: false,
               counters: {},
               note: '',
+              back_image_url: card.back_image_url || undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].COMMAND.push(objId);
@@ -365,6 +371,7 @@ export const restartGame = async (gameId: string) => {
               tapped: false,
               counters: {},
               note: '',
+              back_image_url: card.back_image_url || undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);

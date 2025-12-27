@@ -28,8 +28,8 @@ export const ContextMenu = ({
     const isMine = !!obj && obj.controller_seat === mySeat;
 
     const isFacedown = obj?.face_state === 'FACEDOWN';
-    const finalImgUrl = (isFacedown && !isMine)
-        ? 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg'
+    const finalImgUrl = isFacedown
+        ? (obj?.back_image_url || 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg')
         : imgUrl;
 
     const rawPreviewHeight = 168 * previewScale;

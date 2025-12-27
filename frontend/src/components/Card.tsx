@@ -43,7 +43,7 @@ export const Card = memo(({
     
     // Always show card back if it's face down, even for me
     const finalImgUrl = isFacedown
-        ? 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg' 
+        ? (obj.back_image_url || 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg')
         : imgUrl;
 
     const baseWidth = size === 'small' ? 64 : 128; // w-16 : w-32

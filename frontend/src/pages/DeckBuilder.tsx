@@ -36,7 +36,8 @@ export default function DeckBuilder() {
   const [loading, setLoading] = useState(false);
   const [versions, setVersions] = useState<any[]>([]); // Store versions of a card
   const [viewingVersionsFor, setViewingVersionsFor] = useState<string | null>(null);
-  const [hoveredCard, setHoveredCard] = useState<any>(null);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   // Import State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -126,9 +127,24 @@ export default function DeckBuilder() {
       setDeck(res.data);
   };
 
+  const updateBackImageUrl = async (deckCardId: string, backImageUrl: string) => {
+      if (isNew) return;
+      const normalized = backImageUrl.trim();
+      const res = await axios.patch(`${API_BASE_URL}/decks/${id}/cards/${deckCardId}`, {
+          back_image_url: normalized.length > 0 ? normalized : null
+      });
+      setDeck((prev: any) => {
+          const nextCards = (prev.cards || []).map((c: any) => (c.id === deckCardId ? res.data : c));
+          return { ...prev, cards: nextCards };
+      });
+  };
+
   const mainboard = deck.cards?.filter((c: any) => c.board === 'main') || [];
   const sideboard = deck.cards?.filter((c: any) => c.board === 'side') || [];
   const commander = deck.cards?.filter((c: any) => c.board === 'commander') || [];
+  const hoveredCard = hoveredCardId ? deck.cards?.find((c: any) => c.id === hoveredCardId) : null;
+  const selectedCard = selectedCardId ? deck.cards?.find((c: any) => c.id === selectedCardId) : null;
+  const activeCard = hoveredCard || selectedCard;
 
   const parseImportText = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
@@ -432,9 +448,10 @@ export default function DeckBuilder() {
                 {commander.map((c: any) => (
                   <div 
                     key={c.id} 
-                    className="group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border border-transparent hover:border-amber-500/20 cursor-pointer transition-all"
-                    onMouseEnter={() => setHoveredCard(c)}
-                    onMouseLeave={() => setHoveredCard(null)}
+                    className={`group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border cursor-pointer transition-all ${selectedCardId === c.id ? 'border-amber-500/60 bg-slate-800/60' : 'border-transparent hover:border-amber-500/20'}`}
+                    onMouseEnter={() => setHoveredCardId(c.id)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                    onClick={() => setSelectedCardId(c.id)}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <span className="font-mono text-amber-500 font-bold text-sm w-6 text-right">{c.qty}</span>
@@ -467,9 +484,10 @@ export default function DeckBuilder() {
                 {mainboard.map((c: any) => (
                   <div 
                     key={c.id} 
-                    className="group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border border-transparent hover:border-emerald-500/20 cursor-pointer transition-all"
-                    onMouseEnter={() => setHoveredCard(c)}
-                    onMouseLeave={() => setHoveredCard(null)}
+                    className={`group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border cursor-pointer transition-all ${selectedCardId === c.id ? 'border-emerald-500/60 bg-slate-800/60' : 'border-transparent hover:border-emerald-500/20'}`}
+                    onMouseEnter={() => setHoveredCardId(c.id)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                    onClick={() => setSelectedCardId(c.id)}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <span className="font-mono text-emerald-500 font-bold text-sm w-6 text-right">{c.qty}</span>
@@ -500,9 +518,10 @@ export default function DeckBuilder() {
                 {sideboard.map((c: any) => (
                   <div 
                     key={c.id} 
-                    className="group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border border-transparent hover:border-indigo-500/20 cursor-pointer transition-all"
-                    onMouseEnter={() => setHoveredCard(c)}
-                    onMouseLeave={() => setHoveredCard(null)}
+                    className={`group flex justify-between items-center py-2 px-3 rounded hover:bg-slate-800/80 border cursor-pointer transition-all ${selectedCardId === c.id ? 'border-indigo-500/60 bg-slate-800/60' : 'border-transparent hover:border-indigo-500/20'}`}
+                    onMouseEnter={() => setHoveredCardId(c.id)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                    onClick={() => setSelectedCardId(c.id)}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
                       <span className="font-mono text-indigo-500 font-bold text-sm w-6 text-right">{c.qty}</span>
@@ -526,17 +545,17 @@ export default function DeckBuilder() {
            {/* Decorative Background Glow */}
            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
            
-           {hoveredCard ? (
+           {activeCard ? (
                 <div className="flex gap-8 items-center h-full max-w-4xl w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="relative h-full py-2 shrink-0">
                       {/* Magical Glow behind card */}
                       <div className="absolute inset-2 bg-indigo-500/20 blur-xl rounded-full animate-pulse"></div>
                       
-                      {typeof hoveredCard.image_url_small === 'string' ? (
+                      {typeof activeCard.image_url_small === 'string' ? (
                           <img 
-                              src={hoveredCard.image_url_small.replace('small', 'normal')} 
+                              src={activeCard.image_url_small.replace('small', 'normal')} 
                               className="relative h-full rounded-xl border border-slate-700 shadow-2xl object-contain z-10 transform hover:scale-105 transition-transform duration-300" 
-                              alt={hoveredCard.name} 
+                              alt={activeCard.name} 
                           />
                       ) : (
                           <div className="relative h-full w-[170px] bg-slate-900 border border-slate-700 flex flex-col items-center justify-center rounded-xl z-10">
@@ -548,22 +567,41 @@ export default function DeckBuilder() {
 
                     <div className="flex flex-col justify-center h-full py-4 overflow-y-auto">
                         <div className="mb-2">
-                           <h2 className="text-2xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-amber-500">{hoveredCard.name}</h2>
+                           <h2 className="text-2xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-amber-500">{activeCard.name}</h2>
                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-sm text-indigo-300 font-medium">{hoveredCard.type_line}</span>
-                              {hoveredCard.mana_cost && (
-                                <span className="bg-slate-900 px-2 py-0.5 rounded text-xs font-mono text-slate-300 border border-slate-700">{hoveredCard.mana_cost}</span>
+                              <span className="text-sm text-indigo-300 font-medium">{activeCard.type_line}</span>
+                              {activeCard.mana_cost && (
+                                <span className="bg-slate-900 px-2 py-0.5 rounded text-xs font-mono text-slate-300 border border-slate-700">{activeCard.mana_cost}</span>
                               )}
                            </div>
                         </div>
                         
-                        <div className="bg-slate-900/50 p-3 rounded border border-slate-800 text-sm text-slate-300 leading-relaxed font-serif italic mb-2">
-                           {/* Placeholder for Oracle text if it were in the data, using type line as proxy for style */}
-                           <p>The essence of the card resonates...</p>
+                        <div className="bg-slate-900/50 p-3 rounded border border-slate-800 text-sm text-slate-300 leading-relaxed font-serif mb-2">
+                           <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">
+                             Imagen de reverso (opcional)
+                           </div>
+                           <input
+                             className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-amber-500/60"
+                             placeholder="Pega aquí una URL de imagen..."
+                             value={selectedCard?.id === activeCard.id ? (selectedCard.back_image_url || '') : (activeCard.back_image_url || '')}
+                             onChange={(e) => {
+                               if (!selectedCard || selectedCard.id !== activeCard.id) return;
+                               const nextUrl = e.target.value;
+                               setDeck((prev: any) => {
+                                   const nextCards = (prev.cards || []).map((c: any) => (c.id === selectedCard.id ? { ...c, back_image_url: nextUrl } : c));
+                                   return { ...prev, cards: nextCards };
+                               });
+                             }}
+                             onBlur={() => {
+                               if (!selectedCard || selectedCard.id !== activeCard.id) return;
+                               updateBackImageUrl(selectedCard.id, selectedCard.back_image_url || '');
+                             }}
+                             disabled={!selectedCard || selectedCard.id !== activeCard.id}
+                           />
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-slate-500 mt-auto">
-                           <span className="flex items-center gap-1"><Layers size={12}/> Set: <span className="text-slate-300">{hoveredCard.set_name?.toUpperCase()}</span></span>
+                           <span className="flex items-center gap-1"><Layers size={12}/> Set: <span className="text-slate-300">{activeCard.set_name?.toUpperCase()}</span></span>
                            <span className="flex items-center gap-1">Artist: <span className="text-slate-300">Unknown</span></span>
                         </div>
                     </div>

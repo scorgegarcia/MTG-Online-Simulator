@@ -63,6 +63,7 @@ model DeckCard {
   mana_cost       String?
   image_url_small String?
   image_url_normal String?
+  back_image_url  String?
 
   deck            Deck    @relation(fields: [deck_id], references: [id], onDelete: Cascade)
 
