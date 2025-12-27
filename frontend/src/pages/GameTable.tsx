@@ -52,6 +52,16 @@ export default function GameTable() {
   const [panelHeight, setPanelHeight] = useState(() => parseFloat(localStorage.getItem('setting_panelHeight') || '280'));
   const isResizingPanel = useRef(false);
 
+  const battlefieldsContainerRef = useRef<HTMLDivElement>(null);
+  const [opponentsBattlefieldHeight, setOpponentsBattlefieldHeight] = useState(() => {
+    const stored = parseFloat(localStorage.getItem('setting_opponentsBattlefieldHeight') || '');
+    if (Number.isFinite(stored) && stored > 0) return stored;
+    return Math.floor(window.innerHeight * 0.35);
+  });
+  const isResizingBattlefields = useRef(false);
+  const battlefieldsResizeStartY = useRef(0);
+  const battlefieldsResizeStartHeight = useRef(0);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isResizingPanel.current) {
@@ -82,6 +92,48 @@ export default function GameTable() {
         localStorage.setItem('setting_panelHeight', panelHeight.toString());
       }
   }, [panelHeight]);
+
+  useEffect(() => {
+    const containerHeight = battlefieldsContainerRef.current?.clientHeight || 0;
+    if (containerHeight <= 0) return;
+    const minSectionHeight = 140;
+    const dividerHeight = 8;
+    const maxHeight = Math.max(minSectionHeight, containerHeight - minSectionHeight - dividerHeight);
+    const next = Math.max(minSectionHeight, Math.min(maxHeight, opponentsBattlefieldHeight));
+    if (next !== opponentsBattlefieldHeight) setOpponentsBattlefieldHeight(next);
+  }, [opponentsBattlefieldHeight]);
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isResizingBattlefields.current) return;
+      const containerHeight = battlefieldsContainerRef.current?.clientHeight || window.innerHeight;
+      const minSectionHeight = 140;
+      const dividerHeight = 8;
+      const maxHeight = Math.max(minSectionHeight, containerHeight - minSectionHeight - dividerHeight);
+      const next = battlefieldsResizeStartHeight.current + (e.clientY - battlefieldsResizeStartY.current);
+      setOpponentsBattlefieldHeight(Math.max(minSectionHeight, Math.min(maxHeight, next)));
+    };
+
+    const handlePointerUp = () => {
+      if (!isResizingBattlefields.current) return;
+      isResizingBattlefields.current = false;
+      document.body.style.cursor = 'default';
+      localStorage.setItem('setting_opponentsBattlefieldHeight', opponentsBattlefieldHeight.toString());
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [opponentsBattlefieldHeight]);
+
+  useEffect(() => {
+    if (!isResizingBattlefields.current && opponentsBattlefieldHeight > 0) {
+      localStorage.setItem('setting_opponentsBattlefieldHeight', opponentsBattlefieldHeight.toString());
+    }
+  }, [opponentsBattlefieldHeight]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<{obj: any, rect: DOMRect, img: string} | null>(null);
@@ -389,13 +441,13 @@ export default function GameTable() {
       />
       
       {/* Top Bar (HUD) */}
-      <div className="bg-slate-900/90 border-b border-slate-800 p-2 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
+      <div className="bg-slate-900/90 border-b border-slate-800 p-1 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
           <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {Object.values(gameState.players).map((p: any) => (
                   <div 
                     key={p.seat} 
                     className={clsx(
-                        "flex flex-col items-center px-4 py-1.5 rounded-lg border transition-all min-w-[120px]", 
+                        "flex flex-col items-center px-1 py-1 rounded-lg border transition-all min-w-[120px]", 
                         p.seat === mySeat 
                             ? "bg-indigo-950/50 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]" 
                             : "bg-slate-800/50 border-slate-700"
@@ -434,14 +486,17 @@ export default function GameTable() {
       </div>
 
       {/* Main Area: Battlefields */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
+      <div ref={battlefieldsContainerRef} className="flex-1 overflow-hidden relative flex flex-col">
           {/* Background Texture */}
           <div className="absolute inset-0 z-0 bg-slate-950">
              <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
           </div>
 
           {/* Opponents Battlefields (Top 50%) */}
-          <div className="h-1/2 overflow-hidden p-2 border-b border-slate-800/50 bg-black/30 flex flex-col relative z-10">
+          <div
+            className="overflow-hidden p-0 bg-black/30 flex flex-col relative z-10"
+            style={{ height: opponentsBattlefieldHeight > 0 ? `${opponentsBattlefieldHeight}px` : undefined }}
+          >
              <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
                 <Swords size={100} />
              </div>
@@ -454,8 +509,20 @@ export default function GameTable() {
              </div>
           </div>
 
+          <div
+            className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-20 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              isResizingBattlefields.current = true;
+              battlefieldsResizeStartY.current = e.clientY;
+              const fallback = battlefieldsContainerRef.current ? Math.floor(battlefieldsContainerRef.current.clientHeight / 2) : 0;
+              battlefieldsResizeStartHeight.current = opponentsBattlefieldHeight > 0 ? opponentsBattlefieldHeight : fallback;
+              document.body.style.cursor = 'row-resize';
+            }}
+          />
+
           {/* My Battlefield (Bottom 50%) */}
-          <div className="h-1/2 overflow-auto p-2 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
+          <div className="flex-1 overflow-auto p-0 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
               <div className="h-full rounded-lg border border-indigo-900/10">
                   <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
               </div>
@@ -493,7 +560,7 @@ export default function GameTable() {
                                 }
                             }}
                             className={clsx(
-                                "w-full px-3 py-3 text-[11px] font-bold tracking-widest border-b border-slate-800 transition-all relative overflow-hidden group",
+                                "w-full px-1 py-1 text-[11px] font-bold tracking-widest border-b border-slate-800 transition-all relative overflow-hidden group",
                                 isActive 
                                     ? "bg-slate-900 text-amber-500 shadow-[inset_3px_0_0_0_#f59e0b]" 
                                     : "bg-slate-950 text-slate-500 hover:bg-slate-900 hover:text-slate-300"
@@ -525,7 +592,7 @@ export default function GameTable() {
 
             <div 
                 className={clsx(
-                    "flex-1 min-w-0 px-4 py-2 flex gap-3 items-stretch bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-slate-900 shadow-inner relative transition-colors",
+                    "flex-1 min-w-0 px-1 py-1 flex gap-1 items-stretch bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-slate-900 shadow-inner relative transition-colors",
                     activeTab === 'LIBRARY' ? "overflow-hidden" : "overflow-x-auto custom-scrollbar"
                 )}
                 onDrop={(e) => {

@@ -70,25 +70,25 @@ export const MyBattlefield = memo(({
             <div className="text-xs text-blue-300 mb-0 flex-shrink-0">My Battlefield</div>
             
             {/* Row 1: Creatures (40%) */}
-            <div className="flex gap-2 h-[40%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+            <div className="flex gap-0 h-[33.3%] p-0 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
                 <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Creatures</div>
-                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                <div className="flex gap-0 h-full items-center pt-0 px-2 min-w-full w-max justify-center">
                     {creatures.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
                 </div>
             </div>
 
             {/* Row 2: Others (40%) */}
-            <div className="flex gap-2 h-[40%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+            <div className="flex gap-0 h-[33.3%] p-0 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
                 <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Non-Creatures</div>
-                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                <div className="flex gap-0 h-full items-center pt-0 px-2 min-w-full w-max justify-center">
                     {others.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
                 </div>
             </div>
 
             {/* Row 3: Lands (20%) */}
-            <div className="flex gap-2 h-[20%] p-1 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
+            <div className="flex gap-0 h-[33.3%] p-0 bg-gray-800/50 rounded items-center overflow-x-auto overflow-y-hidden relative no-scrollbar">
                 <div className="text-xs text-gray-500 w-full absolute top-1 left-2 pointer-events-none z-10">Lands</div>
-                <div className="flex gap-2 h-full items-center pt-4 px-2 min-w-full w-max justify-center">
+                <div className="flex gap-0 h-full items-center pt-0 px-2 min-w-full w-max justify-center">
                     {lands.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
                 </div>
             </div>
@@ -111,7 +111,7 @@ export const MyBattlefield = memo(({
                   onClick={() => sendAction('SHUFFLE', { seat: mySeat })}
               >
                   <span className="text-xl">🔀</span>
-                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Shuffle</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Shuffle Lib</span>
               </button>
           </div>
         </div>
