@@ -10,6 +10,16 @@ interface GameState {
   zoneIndex: Record<number, Record<string, string[]>>; // seat -> zone -> [objectIds] (ordered)
   battlefieldLayout: Record<number, any[]>; // seat -> layout info
   chat: any[];
+  trade?: TradeSession;
+}
+
+interface TradeSession {
+    initiatorSeat: number;
+    targetSeat: number;
+    initiatorLocked: boolean;
+    targetLocked: boolean;
+    initiatorConfirmed: boolean;
+    targetConfirmed: boolean;
 }
 
 interface PlayerState {
@@ -327,6 +337,14 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const obj = state.objects[objectId];
         if(!obj) break;
 
+        // Trade Logic: If moving to/from TRADE_OFFER, unlock trade
+        if (state.trade && (fromZone === 'TRADE_OFFER' || toZone === 'TRADE_OFFER')) {
+            state.trade.initiatorLocked = false;
+            state.trade.targetLocked = false;
+            state.trade.initiatorConfirmed = false;
+            state.trade.targetConfirmed = false;
+        }
+
         const cardName = obj.scryfall_id ? 'Carta' : 'Token'; // Ideally fetch name from cache or store in object
         // We don't have card names in state objects currently (except note?), only scryfall_id.
         // Client resolves it. Server just logs "Card".
@@ -457,6 +475,100 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         };
         const name = zoneNames[zone] || zone;
         log(`👀 Está viendo ${name}`);
+        break;
+    }
+    case 'TRADE_INIT': {
+        const { initiatorSeat, targetSeat } = action.payload;
+        if (state.trade) break; // Already trading
+        state.trade = {
+            initiatorSeat,
+            targetSeat,
+            initiatorLocked: false,
+            targetLocked: false,
+            initiatorConfirmed: false,
+            targetConfirmed: false
+        };
+        // Initialize TRADE_OFFER zones if not exist
+        if (!state.zoneIndex[initiatorSeat]['TRADE_OFFER']) state.zoneIndex[initiatorSeat]['TRADE_OFFER'] = [];
+        if (!state.zoneIndex[targetSeat]['TRADE_OFFER']) state.zoneIndex[targetSeat]['TRADE_OFFER'] = [];
+        
+        log(`Inició un intercambio con Jugador ${targetSeat}`);
+        break;
+    }
+    case 'TRADE_CANCEL': {
+        if (!state.trade) break;
+        // Return all cards in TRADE_OFFER to HAND
+        [state.trade.initiatorSeat, state.trade.targetSeat].forEach(seat => {
+            const offer = state.zoneIndex[seat]?.['TRADE_OFFER'] || [];
+            const hand = state.zoneIndex[seat]?.['HAND'];
+            if (offer.length > 0 && hand) {
+                offer.forEach(id => {
+                    const obj = state.objects[id];
+                    if (obj) obj.zone = 'HAND';
+                });
+                hand.push(...offer);
+                state.zoneIndex[seat]['TRADE_OFFER'] = [];
+            }
+        });
+        delete state.trade;
+        log(`Canceló el intercambio`);
+        break;
+    }
+    case 'TRADE_LOCK': {
+        const { seat } = action.payload;
+        if (!state.trade) break;
+        if (seat === state.trade.initiatorSeat) state.trade.initiatorLocked = true;
+        if (seat === state.trade.targetSeat) state.trade.targetLocked = true;
+        log(`Bloqueó su oferta`);
+        break;
+    }
+    case 'TRADE_CONFIRM': {
+        const { seat } = action.payload;
+        if (!state.trade) break;
+        
+        // Can only confirm if both locked
+        if (!state.trade.initiatorLocked || !state.trade.targetLocked) break;
+
+        if (seat === state.trade.initiatorSeat) state.trade.initiatorConfirmed = true;
+        if (seat === state.trade.targetSeat) state.trade.targetConfirmed = true;
+        
+        log(`Confirmó el intercambio`);
+
+        // Check completion
+        if (state.trade.initiatorConfirmed && state.trade.targetConfirmed) {
+            // EXECUTE TRADE
+            const p1 = state.trade.initiatorSeat;
+            const p2 = state.trade.targetSeat;
+            const offer1 = state.zoneIndex[p1]['TRADE_OFFER'] || [];
+            const offer2 = state.zoneIndex[p2]['TRADE_OFFER'] || [];
+
+            // Move offer1 to p2's HAND
+            offer1.forEach(id => {
+                const obj = state.objects[id];
+                if (obj) {
+                    obj.zone = 'HAND';
+                    obj.controller_seat = p2;
+                    // obj.owner_seat = p2; // Optional: Change ownership too? Let's do it for "Trade"
+                }
+            });
+            state.zoneIndex[p2]['HAND'].push(...offer1);
+            state.zoneIndex[p1]['TRADE_OFFER'] = [];
+
+            // Move offer2 to p1's HAND
+            offer2.forEach(id => {
+                const obj = state.objects[id];
+                if (obj) {
+                    obj.zone = 'HAND';
+                    obj.controller_seat = p1;
+                    // obj.owner_seat = p1;
+                }
+            });
+            state.zoneIndex[p1]['HAND'].push(...offer2);
+            state.zoneIndex[p2]['TRADE_OFFER'] = [];
+
+            delete state.trade;
+            log(`Intercambio completado exitosamente ✅`);
+        }
         break;
     }
   }

@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { Card } from '../components/Card';
 import { HoverOverlay } from '../components/HoverOverlay';
 import { MyBattlefield, OpponentBattlefield } from '../components/Battlefield';
+import { TradeTray } from '../components/TradeTray';
 import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
@@ -279,6 +280,9 @@ export default function GameTable() {
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
   const mySeat = (myPlayer as any)?.seat;
 
+  const activeTrade = gameState?.trade;
+  const amITrading = activeTrade && (activeTrade.initiatorSeat === mySeat || activeTrade.targetSeat === mySeat);
+
   const commonProps = useMemo(() => ({
       mySeat,
       cardScale,
@@ -501,16 +505,22 @@ export default function GameTable() {
                 <Swords size={100} />
              </div>
              <div className="flex flex-wrap gap-2 justify-center w-full h-full items-stretch">
-                {Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
-                    <div key={p.seat} className="flex-1 min-w-[300px] h-full rounded-lg border border-red-900/10 bg-gradient-to-b from-red-950/5 to-transparent">
-                        <OpponentBattlefield player={p} gameState={gameState} {...commonProps} />
+                {amITrading ? (
+                    <div className="w-full h-full p-1">
+                        <TradeTray gameState={gameState} {...commonProps} />
                     </div>
-                ))}
+                ) : (
+                    Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
+                        <div key={p.seat} className="flex-1 min-w-[300px] h-full rounded-lg border border-red-900/10 bg-gradient-to-b from-red-950/5 to-transparent">
+                            <OpponentBattlefield player={p} gameState={gameState} {...commonProps} />
+                        </div>
+                    ))
+                )}
              </div>
           </div>
 
           <div
-            className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-20 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
+            className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-0 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
             onPointerDown={(e) => {
               e.preventDefault();
               isResizingBattlefields.current = true;

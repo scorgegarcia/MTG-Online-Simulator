@@ -31,6 +31,8 @@ export const MyBattlefield = memo(({
     const { lands, creatures, others } = categorizeObjects(battlefield);
     
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+    const [tradeModalOpen, setTradeModalOpen] = React.useState(false);
+    const opponents = Object.values(gameState.players).filter((p: any) => p.seat !== mySeat);
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -113,7 +115,46 @@ export const MyBattlefield = memo(({
                   <span className="text-xl">🔀</span>
                   <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Shuffle Lib</span>
               </button>
+
+              <button 
+                  className="w-full h-fit py-1 rounded bg-amber-700 hover:bg-amber-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                  title="Trade Cards"
+                  onClick={() => setTradeModalOpen(true)}
+              >
+                  <span className="text-xl">⚖️</span>
+                  <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Trade</span>
+              </button>
           </div>
+          
+          {tradeModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setTradeModalOpen(false)}>
+                <div className="bg-slate-900 border border-amber-500 rounded-lg p-6 shadow-2xl min-w-[300px]" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-amber-500 font-serif font-bold text-xl mb-6 text-center">Select Trading Partner</h3>
+                    <div className="flex flex-col gap-3">
+                        {opponents.length === 0 && <div className="text-slate-500 text-center italic">No opponents available</div>}
+                        {opponents.map((p: any) => (
+                            <button 
+                                key={p.seat}
+                                className="p-3 bg-slate-800 hover:bg-amber-900/50 hover:border-amber-500 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                                onClick={() => {
+                                    sendAction('TRADE_INIT', { initiatorSeat: mySeat, targetSeat: p.seat });
+                                    setTradeModalOpen(false);
+                                }}
+                            >
+                                <span>{p.username}</span>
+                                <span className="text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                            </button>
+                        ))}
+                        <button 
+                            onClick={() => setTradeModalOpen(false)} 
+                            className="mt-4 py-2 text-slate-500 hover:text-white border-t border-slate-800 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+          )}
         </div>
     );
 });
