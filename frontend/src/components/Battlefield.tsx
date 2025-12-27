@@ -1,6 +1,7 @@
 import { Card } from './Card';
 import { categorizeObjects } from '../utils/gameUtils';
 import { CommanderDamageModal } from './CommanderDamageModal';
+import { ReadOnlyZoneModal } from './ReadOnlyZoneModal';
 import React, { memo } from 'react';
 
 interface BattlefieldSharedProps {
@@ -323,6 +324,8 @@ export const OpponentBattlefield = memo(({
     const graveyardCount = gameState.zoneIndex[player.seat]?.['GRAVEYARD']?.length || 0;
     const exileCount = gameState.zoneIndex[player.seat]?.['EXILE']?.length || 0;
 
+    const [viewZone, setViewZone] = React.useState<{zone: 'GRAVEYARD' | 'EXILE', seat: number} | null>(null);
+
     const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const };
 
     return (
@@ -369,8 +372,20 @@ export const OpponentBattlefield = memo(({
                 <div className="flex gap-3 mr-1">
                     <span title="Hand" className="flex items-center gap-1">✋ {handCount}</span>
                     <span title="Library" className="flex items-center gap-1">📚 {libraryCount}</span>
-                    <span title="Graveyard" className="flex items-center gap-1">🪦 {graveyardCount}</span>
-                    <span title="Exile" className="flex items-center gap-1">🌀 {exileCount}</span>
+                    <button 
+                        title="View Graveyard" 
+                        className="flex items-center gap-1 hover:text-white hover:bg-red-800/50 rounded px-1 transition-colors"
+                        onClick={() => setViewZone({ zone: 'GRAVEYARD', seat: player.seat })}
+                    >
+                        🪦 {graveyardCount}
+                    </button>
+                    <button 
+                        title="View Exile" 
+                        className="flex items-center gap-1 hover:text-white hover:bg-red-800/50 rounded px-1 transition-colors"
+                        onClick={() => setViewZone({ zone: 'EXILE', seat: player.seat })}
+                    >
+                        🌀 {exileCount}
+                    </button>
                 </div>
             </div>
             
@@ -394,6 +409,20 @@ export const OpponentBattlefield = memo(({
                      {creatures.map(obj => <Card key={obj.id} obj={obj} {...cardProps} />)}
                  </div>
              </div>
+
+            {viewZone && (
+                <div className="absolute inset-0 z-50">
+                    <ReadOnlyZoneModal 
+                        gameState={gameState}
+                        seat={viewZone.seat}
+                        zone={viewZone.zone}
+                        onClose={() => setViewZone(null)}
+                        mySeat={mySeat}
+                        hoverBlockedRef={hoverBlockedRef}
+                        setHoveredCard={setHoveredCard}
+                    />
+                </div>
+            )}
         </div>
     );
 });
