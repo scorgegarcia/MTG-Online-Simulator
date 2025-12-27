@@ -126,8 +126,8 @@ export const startGameEndpoint = async (req: AuthRequest, res: Response) => {
     if (!game || game.host_id !== req.userId) return res.status(403).json({ error: 'Only host can start' });
     
     try {
-        const { initialLife } = req.body;
-        const state = await startGame(game.id, typeof initialLife === 'number' ? initialLife : undefined);
+        const initialLife = Number(req.body.initialLife);
+        const state = await startGame(game.id, !isNaN(initialLife) ? initialLife : undefined);
         
         // Notify start
         (req as any).io?.to(`game:${game.id}`).emit('game:started');

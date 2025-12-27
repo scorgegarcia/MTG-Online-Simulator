@@ -105,7 +105,7 @@ export const handleJoinGame = async (io: Server, socket: Socket, gameId: string,
 
 export const handleRejoinGame = handleJoinGame;
 
-export const startGame = async (gameId: string, initialLife: number = 40) => {
+export const startGame = async (gameId: string, initialLifeParam?: number) => {
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     include: { 
@@ -115,6 +115,9 @@ export const startGame = async (gameId: string, initialLife: number = 40) => {
 
   if (!game || game.status !== 'LOBBY') throw new Error('Cannot start game');
   if (game.players.length < 1) throw new Error('Not enough players'); // Allow 1 for testing
+
+  const initialLife = initialLifeParam ?? 40;
+  console.log('[startGame]', { gameId, initialLife });
 
   const initialState: GameState = {
     version: 1,
@@ -499,7 +502,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       break;
     }
     case 'MOVE': {
-        const { objectId, fromZone, toZone, toOwner, position } = action.payload; // toOwner for "steal" logic, position for ordering
+        const { objectId, fromZone, toZone, toOwner, position, index } = action.payload; // toOwner for "steal" logic, position for ordering
         // Find object
         const obj = state.objects[objectId];
         if(!obj) break;
@@ -544,7 +547,9 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const destSeat = obj.controller_seat;
         if (!state.zoneIndex[destSeat][toZone]) state.zoneIndex[destSeat][toZone] = [];
         
-        if (toZone === 'LIBRARY' && position === 'top') {
+        if (typeof index === 'number' && index >= 0 && index <= state.zoneIndex[destSeat][toZone].length) {
+             state.zoneIndex[destSeat][toZone].splice(index, 0, objectId);
+        } else if (toZone === 'LIBRARY' && position === 'top') {
             state.zoneIndex[destSeat][toZone].unshift(objectId);
         } else {
             state.zoneIndex[destSeat][toZone].push(objectId);

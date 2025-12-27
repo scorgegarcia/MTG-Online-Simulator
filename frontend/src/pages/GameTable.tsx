@@ -741,7 +741,13 @@ export default function GameTable() {
                                 if (!cardId) return;
                                 const obj = gameState.objects[cardId];
                                 if (obj && obj.controller_seat === mySeat && obj.zone !== zone) {
-                                    sendAction('MOVE', { objectId: cardId, fromZone: obj.zone, toZone: zone, toOwner: mySeat });
+                                    sendAction('MOVE', { 
+                                        objectId: cardId, 
+                                        fromZone: obj.zone, 
+                                        toZone: zone, 
+                                        toOwner: mySeat,
+                                        position: zone === 'LIBRARY' ? 'top' : undefined
+                                    });
                                 }
                             }}
                             onDragOver={(e) => {
@@ -770,8 +776,16 @@ export default function GameTable() {
                     const cardId = e.dataTransfer.getData("text/plain");
                     if (!cardId) return;
                     const obj = gameState.objects[cardId];
-                    if (obj && obj.controller_seat === mySeat && obj.zone !== activeTab) {
-                        sendAction('MOVE', { objectId: cardId, fromZone: obj.zone, toZone: activeTab, toOwner: mySeat });
+                    if (obj && obj.controller_seat === mySeat) {
+                         if (obj.zone !== activeTab || activeTab === 'HAND' || activeTab === 'LIBRARY') {
+                            sendAction('MOVE', { 
+                                objectId: cardId, 
+                                fromZone: obj.zone, 
+                                toZone: activeTab, 
+                                toOwner: mySeat,
+                                position: activeTab === 'LIBRARY' ? 'top' : undefined
+                            });
+                         }
                     }
                 }}
                 onDragOver={(e) => {
@@ -781,8 +795,31 @@ export default function GameTable() {
             >
                 <div className="absolute inset-0 bg-black/20 pointer-events-none z-0"></div>
 
-                {activeTab === 'HAND' && getZoneObjects(mySeat, 'HAND').map((obj: any) => (
-                    <div key={obj.id} className="relative z-10 h-full flex items-stretch">
+                {activeTab === 'HAND' && getZoneObjects(mySeat, 'HAND').map((obj: any, index: number) => (
+                    <div 
+                        key={obj.id} 
+                        className="relative z-10 h-full flex items-stretch"
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const cardId = e.dataTransfer.getData("text/plain");
+                            if (!cardId) return;
+                            const draggedObj = gameState.objects[cardId];
+                            if (draggedObj && draggedObj.controller_seat === mySeat) {
+                                sendAction('MOVE', { 
+                                    objectId: cardId, 
+                                    fromZone: draggedObj.zone, 
+                                    toZone: 'HAND', 
+                                    toOwner: mySeat, 
+                                    index: index 
+                                });
+                            }
+                        }}
+                    >
                         <Card obj={obj} size="normal" inHand={true} fitHeight={true} {...commonProps} />
                     </div>
                 ))}
