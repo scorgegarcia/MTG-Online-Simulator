@@ -247,6 +247,160 @@ export const startGame = async (gameId: string) => {
   return initialState;
 };
 
+export const restartGame = async (gameId: string) => {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: { 
+        players: { include: { user: true, deck: { include: { cards: true } } } },
+        gameState: true
+    }
+  });
+
+  if (!game) throw new Error('Game not found');
+  if (game.players.length < 1) throw new Error('Not enough players');
+
+  const oldVersion = (game.gameState?.snapshot as any)?.version || 0;
+  const initialState: GameState = {
+    version: oldVersion + 1,
+    players: {},
+    objects: {},
+    zoneIndex: {},
+    battlefieldLayout: {},
+    chat: [{
+        id: randomUUID(),
+        timestamp: Date.now(),
+        text: `🔄 La partida ha sido reiniciada por el Host.`
+    }]
+  };
+
+  // Initialize players
+  for (const p of game.players) {
+    initialState.players[p.seat] = {
+      seat: p.seat,
+      userId: p.user_id,
+      username: p.user.username,
+      life: 40,
+      counters: {}
+    };
+    initialState.zoneIndex[p.seat] = {
+      LIBRARY: [],
+      HAND: [],
+      BATTLEFIELD: [],
+      GRAVEYARD: [],
+      EXILE: [],
+      COMMAND: [],
+      SIDEBOARD: []
+    };
+    initialState.battlefieldLayout[p.seat] = [];
+
+    // Load Deck
+    if (p.deck) {
+      const mainboard = p.deck.cards.filter(c => c.board === 'main');
+      const commander = p.deck.cards.filter(c => c.board === 'commander');
+      const sideboard = p.deck.cards.filter(c => c.board === 'side');
+      const libraryIds: string[] = [];
+      
+      // Load Mainboard to Library
+      for (const card of mainboard) {
+        for (let i = 0; i < card.qty; i++) {
+          const objId = randomUUID();
+          const obj: GameObject = {
+            id: objId,
+            scryfall_id: card.scryfall_id,
+            owner_seat: p.seat,
+            controller_seat: p.seat,
+            zone: 'LIBRARY',
+            face_state: 'NORMAL',
+            tapped: false,
+            counters: {},
+            note: '',
+          };
+          initialState.objects[objId] = obj;
+          libraryIds.push(objId);
+        }
+      }
+
+      // Load Commander(s)
+      for (const card of commander) {
+          for (let i = 0; i < card.qty; i++) {
+            const objId = randomUUID();
+            const obj: GameObject = {
+              id: objId,
+              scryfall_id: card.scryfall_id,
+              owner_seat: p.seat,
+              controller_seat: p.seat,
+              zone: 'COMMAND',
+              face_state: 'NORMAL',
+              tapped: false,
+              counters: {},
+              note: '',
+            };
+            initialState.objects[objId] = obj;
+            initialState.zoneIndex[p.seat].COMMAND.push(objId);
+          }
+      }
+
+      // Load Sideboard
+      for (const card of sideboard) {
+          for (let i = 0; i < card.qty; i++) {
+            const objId = randomUUID();
+            const obj: GameObject = {
+              id: objId,
+              scryfall_id: card.scryfall_id,
+              owner_seat: p.seat,
+              controller_seat: p.seat,
+              zone: 'SIDEBOARD',
+              face_state: 'NORMAL',
+              tapped: false,
+              counters: {},
+              note: '',
+            };
+            initialState.objects[objId] = obj;
+            initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);
+          }
+      }
+
+      // Shuffle Library
+      for (let i = libraryIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [libraryIds[i], libraryIds[j]] = [libraryIds[j], libraryIds[i]];
+      }
+      
+      initialState.zoneIndex[p.seat].LIBRARY = libraryIds;
+
+      // Draw 7
+      const drawCount = Math.min(7, libraryIds.length);
+      const drawn = libraryIds.splice(0, drawCount);
+      initialState.zoneIndex[p.seat].HAND = drawn;
+      drawn.forEach(id => {
+          initialState.objects[id].zone = 'HAND';
+      });
+    }
+  }
+
+  // Save State
+  await prisma.$transaction([
+    prisma.game.update({
+      where: { id: gameId },
+      data: { status: 'ACTIVE', started_at: new Date() }
+    }),
+    prisma.gameState.upsert({
+      where: { game_id: gameId },
+      create: {
+        game_id: gameId,
+        state_version: initialState.version,
+        snapshot: initialState as any
+      },
+      update: {
+        state_version: initialState.version,
+        snapshot: initialState as any
+      }
+    })
+  ]);
+
+  return initialState;
+};
+
 export const handleGameAction = async (io: Server, socket: Socket, gameId: string, userId: string, action: any, expectedVersion: number) => {
   console.log('[handleGameAction] start', { gameId, userId, type: action?.type, expectedVersion });
   // Concurrency check and Apply

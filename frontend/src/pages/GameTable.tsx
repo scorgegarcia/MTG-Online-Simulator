@@ -13,6 +13,7 @@ import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
 import { ZONE_LABELS } from '../utils/gameUtils';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { 
   Settings, 
   Heart, 
@@ -24,6 +25,8 @@ import {
   User,
   Swords,
   Eye,
+  Copy,
+  RotateCcw,
 } from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
@@ -43,7 +46,17 @@ export default function GameTable() {
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
   const [showRevealModal, setShowRevealModal] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showRestartModal, setShowRestartModal] = useState(false);
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
+
+  const handleRestart = async () => {
+      try {
+          await axios.post(`${API_BASE_URL}/games/${id}/restart`);
+      } catch (e: any) {
+          alert(e?.response?.data?.error || 'Failed to restart');
+      }
+  };
   
   // Load settings from localStorage or default
   const [cardScale, setCardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
@@ -505,6 +518,51 @@ export default function GameTable() {
           </div>
       )}
 
+      <ConfirmationModal
+        isOpen={showExitModal}
+        onClose={() => setShowExitModal(false)}
+        onConfirm={() => navigate('/')}
+        title="Abandonar Partida"
+        confirmText="Salir"
+        isDanger={true}
+      >
+          <div className="flex flex-col gap-4">
+              <p>¿Estás seguro de que quieres salir de la partida?</p>
+              <div className="bg-slate-950 p-4 rounded border border-slate-700 flex flex-col gap-2">
+                  <span className="text-xs text-slate-500 uppercase font-bold tracking-widest">Game ID (Para regresar)</span>
+                  <div className="flex items-center gap-2">
+                      <code className="flex-1 bg-slate-900 p-2 rounded text-amber-500 font-mono text-sm border border-slate-800 select-all">
+                          {id}
+                      </code>
+                      <button 
+                        onClick={() => {
+                            navigator.clipboard.writeText(id!);
+                            // Optional: Add visual feedback
+                        }}
+                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition-colors"
+                        title="Copiar ID"
+                      >
+                          <Copy size={16} />
+                      </button>
+                  </div>
+              </div>
+          </div>
+      </ConfirmationModal>
+
+      <ConfirmationModal
+        isOpen={showRestartModal}
+        onClose={() => setShowRestartModal(false)}
+        onConfirm={handleRestart}
+        title="Reiniciar Partida"
+        confirmText="Reiniciar"
+        isDanger={true}
+      >
+          <p>¿Estás seguro de que quieres reiniciar la partida?</p>
+          <p className="text-sm text-slate-400 mt-2">
+              Esto barajará las bibliotecas, reiniciará las vidas y repartirá nuevas manos para todos los jugadores. Esta acción no se puede deshacer.
+          </p>
+      </ConfirmationModal>
+
       {/* Top Bar (HUD) */}
       <div className="bg-slate-900/90 border-b border-slate-800 p-1 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">
           <div className="flex gap-4 overflow-x-auto no-scrollbar">
@@ -536,16 +594,35 @@ export default function GameTable() {
                   </div>
               ))}
           </div>
-          <div className="text-xs text-slate-500 flex items-center gap-4 px-2">
-              <span className="font-mono tracking-widest border border-slate-800 px-2 py-1 rounded bg-slate-950/50">
+          <div className="text-xs text-slate-500 flex items-center gap-2 px-2">
+              <span className="font-mono tracking-widest border border-slate-800 px-2 py-1 rounded bg-slate-950/50 mr-2 hidden sm:block">
                   ID: {gameInfo.code}
               </span>
+              
+              {gameInfo.host_id === user?.id && (
+                  <button 
+                    onClick={() => setShowRestartModal(true)} 
+                    className="text-slate-400 hover:text-amber-400 transition-colors p-1.5 hover:bg-slate-800 rounded-full"
+                    title="Reiniciar Partida"
+                  >
+                      <RotateCcw size={18} />
+                  </button>
+              )}
+
               <button 
                 onClick={() => setSettingsOpen(true)} 
-                className="text-slate-400 hover:text-amber-400 transition-colors p-1 hover:bg-slate-800 rounded-full"
-                title="Settings"
+                className="text-slate-400 hover:text-indigo-400 transition-colors p-1.5 hover:bg-slate-800 rounded-full"
+                title="Configuración"
               >
-                  <Settings size={20} />
+                  <Settings size={18} />
+              </button>
+
+              <button 
+                onClick={() => setShowExitModal(true)} 
+                className="text-slate-400 hover:text-red-400 transition-colors p-1.5 hover:bg-slate-800 rounded-full"
+                title="Salir de la Partida"
+              >
+                  <LogOut size={18} />
               </button>
           </div>
       </div>

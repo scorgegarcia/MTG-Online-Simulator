@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../utils/prisma';
 import { z } from 'zod';
-import { startGame } from '../services/game';
+import { startGame, restartGame } from '../services/game';
 
 // Schemas
 const createGameSchema = z.object({}); // No params needed? Or format?
@@ -132,6 +132,25 @@ export const startGameEndpoint = async (req: AuthRequest, res: Response) => {
         (req as any).io?.to(`game:${game.id}`).emit('game:started');
         
         res.json({ message: 'Started' });
+    } catch (e: any) {
+        res.status(400).json({ error: e.message });
+    }
+};
+
+export const restartGameEndpoint = async (req: AuthRequest, res: Response) => {
+    const game = await prisma.game.findUnique({ where: { id: req.params.id } });
+    if (!game || game.host_id !== req.userId) return res.status(403).json({ error: 'Only host can restart' });
+    
+    try {
+        const state = await restartGame(game.id);
+        
+        (req as any).io?.to(`game:${game.id}`).emit('game:updated', { 
+            gameId: game.id, 
+            state,
+            lastAction: { type: 'RESTART', payload: {} } 
+        });
+        
+        res.json({ message: 'Restarted' });
     } catch (e: any) {
         res.status(400).json({ error: e.message });
     }
