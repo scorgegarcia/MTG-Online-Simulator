@@ -50,6 +50,16 @@ export default function GameTable() {
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   const [initialLife, setInitialLife] = useState(40);
+  const [showDamageVignette, setShowDamageVignette] = useState(false);
+  
+  // Derived state (moved up to allow safe hook usage)
+  const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
+  const mySeat = (myPlayer as any)?.seat;
+  const mySeatRef = useRef(mySeat);
+
+  useEffect(() => {
+      mySeatRef.current = mySeat;
+  }, [mySeat]);
 
   const handleRestart = async () => {
       try {
@@ -234,8 +244,21 @@ export default function GameTable() {
     socket.on('game:updated', (data) => {
         console.log('[GameTable] game:updated', { version: data?.state?.version });
         setGameState(data.state);
+        
+        const currentSeat = mySeatRef.current;
         if (data.lastAction) {
-            handleGameAction(data.lastAction, data.state);
+            handleGameAction(data.lastAction, data.state, currentSeat);
+            
+            // Visual Damage Effect
+            const { type, payload } = data.lastAction;
+            if (currentSeat !== undefined) {
+                 if ((type === 'LIFE_SET' && payload.seat === currentSeat && payload.delta < 0) ||
+                     (type === 'COMMANDER_DAMAGE' && payload.seat === currentSeat && payload.delta > 0)) {
+                     setShowDamageVignette(true);
+                     setTimeout(() => setShowDamageVignette(false), 500);
+                 }
+            }
+
             if (data.lastAction.type === 'THINKING') {
                 const seat = data.lastAction.payload.seat;
                 setThinkingSeats(prev => [...prev, seat]);
@@ -300,10 +323,6 @@ export default function GameTable() {
       });
       setMenuOpen(null);
   }, [gameState, id, socket]);
-
-  // Derived state (moved up to allow safe hook usage)
-  const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
-  const mySeat = (myPlayer as any)?.seat;
 
   const activeTrade = gameState?.trade;
   const amITrading = activeTrade && (activeTrade.initiatorSeat === mySeat || activeTrade.targetSeat === mySeat);
@@ -473,6 +492,16 @@ export default function GameTable() {
           previewScale={previewScale} setPreviewScale={setPreviewScale}
           hoverScale={hoverScale} setHoverScale={setHoverScale}
           uiScale={uiScale} setUiScale={setUiScale}
+      />
+      {/* Damage Vignette */}
+      <div 
+          className={clsx(
+              "fixed inset-0 pointer-events-none z-[100] transition-opacity ease-out",
+              showDamageVignette ? "opacity-100 duration-0" : "opacity-0 duration-500"
+          )}
+          style={{
+              boxShadow: "inset 0 0 150px rgba(220, 38, 38, 0.6)"
+          }}
       />
       <HoverOverlay 
           hoveredCard={hoveredCard}

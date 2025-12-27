@@ -10,6 +10,8 @@ import castNonCreatureSfx from '../assets/sfx/cast_non_creature_card.mp3';
 import toggleTapSfx from '../assets/sfx/toggle_tap_untap.mp3';
 import selectCardSfx from '../assets/sfx/select_card.mp3';
 import popSfx from '../assets/sfx/pop.mp3';
+import damageSfx from '../assets/sfx/damage.mp3';
+import damageCommanderSfx from '../assets/sfx/damage_commander.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -32,6 +34,8 @@ export const useGameSound = () => {
         loadAudio('TAP', toggleTapSfx);
         loadAudio('SELECT', selectCardSfx);
         loadAudio('THINKING', popSfx);
+        loadAudio('DAMAGE', damageSfx);
+        loadAudio('DAMAGE_COMMANDER', damageCommanderSfx);
     }, []);
 
     const playSound = (key: string) => {
@@ -42,7 +46,7 @@ export const useGameSound = () => {
         }
     };
 
-    const handleGameAction = useCallback((action: any, gameState: any) => {
+    const handleGameAction = useCallback((action: any, gameState: any, mySeat?: any) => {
         if (!action) return;
 
         switch (action.type) {
@@ -63,6 +67,16 @@ export const useGameSound = () => {
                 break;
             case 'THINKING':
                 playSound('THINKING');
+                break;
+            case 'LIFE_SET':
+                if (mySeat !== undefined && action.payload.seat === mySeat && action.payload.delta < 0) {
+                    playSound('DAMAGE');
+                }
+                break;
+            case 'COMMANDER_DAMAGE':
+                if (mySeat !== undefined && action.payload.seat === mySeat && action.payload.delta > 0) {
+                    playSound('DAMAGE_COMMANDER');
+                }
                 break;
             case 'MOVE': {
                 const { objectId, fromZone, toZone } = action.payload;
