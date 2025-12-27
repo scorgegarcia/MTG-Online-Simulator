@@ -781,7 +781,6 @@ export default function GameTable() {
                             }}
                             onDragOver={(e) => {
                                 e.preventDefault();
-                                setActiveTab(zone);
                             }}
                         >
                             <span className="relative z-10 flex items-center justify-between gap-2">
