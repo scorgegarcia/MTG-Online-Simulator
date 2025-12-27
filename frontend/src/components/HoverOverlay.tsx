@@ -127,15 +127,22 @@ export const HoverOverlay = ({
                   return;
               }
 
-              const cardEl = elements.find(el => el.hasAttribute('data-card-id') && el.getAttribute('data-card-id') !== obj.id);
-              
-              if (cardEl) {
-                  const newId = cardEl.getAttribute('data-card-id');
-                  const newImg = cardEl.getAttribute('data-img-url');
-                  if (newId && gameState.objects[newId]) {
+              const topCardEl = elements.find(el => el.hasAttribute('data-card-id'));
+
+              // If not hovering over any card (original or new), close overlay
+              if (!topCardEl) {
+                  setHoveredCard(null);
+                  return;
+              }
+
+              // If hovering over a DIFFERENT card, switch to it
+              const newId = topCardEl.getAttribute('data-card-id');
+              if (newId && newId !== obj.id) {
+                  const newImg = topCardEl.getAttribute('data-img-url');
+                  if (gameState.objects[newId]) {
                        setHoveredCard({
                            obj: gameState.objects[newId],
-                           rect: cardEl.getBoundingClientRect(),
+                           rect: topCardEl.getBoundingClientRect(),
                            img: newImg || ''
                        });
                   }
