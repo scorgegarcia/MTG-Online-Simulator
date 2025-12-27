@@ -25,6 +25,11 @@ export const ContextMenu = ({
     const { img: imgUrl } = useCardData(obj?.scryfall_id ?? null);
     const isMine = !!obj && obj.controller_seat === mySeat;
 
+    const isFacedown = obj?.face_state === 'FACEDOWN';
+    const finalImgUrl = (isFacedown && !isMine)
+        ? 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg'
+        : imgUrl;
+
     const rawPreviewHeight = 168 * previewScale;
     const rawPreviewWidth = 120 * previewScale;
     const maxPreviewHeight = Math.min(rawPreviewHeight, Math.max(160, window.innerHeight - 20 - Math.max(44, 44 * uiScale)));
@@ -76,7 +81,7 @@ export const ContextMenu = ({
         if (nextX !== position.x || nextY !== position.y) {
             setPosition({ x: nextX, y: nextY });
         }
-    }, [imgUrl, isMine, position.x, position.y, previewHeight, previewWidth, uiScale]);
+    }, [finalImgUrl, isMine, position.x, position.y, previewHeight, previewWidth, uiScale]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -97,7 +102,7 @@ export const ContextMenu = ({
     }, []);
 
     useEffect(() => {
-        if (!imgUrl) {
+        if (!finalImgUrl) {
             setAvgColor(null);
             return;
         }
@@ -106,7 +111,14 @@ export const ContextMenu = ({
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.decoding = 'async';
-        img.src = imgUrl;
+        
+        // Use a proxy or ensure CORS headers are set on the image source
+        // Since we can't easily change the server, we might be hitting CORS issues with direct canvas access
+        // For the card back (static.wikia...), it might not have CORS headers
+        // For scryfall images, they usually do.
+        
+        img.src = finalImgUrl;
+        
         img.onload = () => {
             if (cancelled) return;
             try {
@@ -134,7 +146,8 @@ export const ContextMenu = ({
                 if (!count) return;
                 const avg = { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
                 setAvgColor(avg);
-            } catch {
+            } catch (e) {
+                console.warn("Failed to get average color (likely CORS)", e);
                 setAvgColor(null);
             }
         };
@@ -146,7 +159,7 @@ export const ContextMenu = ({
         return () => {
             cancelled = true;
         };
-    }, [imgUrl]);
+    }, [finalImgUrl]);
 
     const palette = useMemo(() => {
         const fallback = { r: 30, g: 41, b: 59 };
@@ -194,18 +207,18 @@ export const ContextMenu = ({
               <div className="flex-1 min-h-0 overflow-auto">
                 <div className="flex items-stretch gap-3 p-3">
                   <div className="shrink-0" style={{ width: `${previewWidth}px`, height: `${previewHeight}px` }}>
-                      {imgUrl ? (
+                      {finalImgUrl ? (
                           <div
                               className="w-full h-full rounded-lg overflow-hidden border border-white/15"
                               style={{
                                   boxShadow: `0 0 ${28 * uiScale}px ${palette.halo}, 0 0 ${70 * uiScale}px rgba(0,0,0,0.5)`,
                               }}
                           >
-                              <img src={imgUrl} className="w-full h-full object-cover" draggable={false} />
+                              <img src={finalImgUrl} className="w-full h-full object-cover" draggable={false} />
                           </div>
                       ) : (
                           <div className="w-full h-full rounded-lg border border-white/15 bg-black/40 flex items-center justify-center text-white/60" style={fontSizeStyle}>
-                              Sin imagen
+                              {(isFacedown && !isMine) ? '???' : 'Sin imagen'}
                           </div>
                       )}
                   </div>
@@ -220,55 +233,93 @@ export const ContextMenu = ({
                       <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-2">
                           {isMine ? (
                               <>
-                                  <button
-                                      className="w-full text-left rounded-lg bg-black/35 hover:bg-black/45 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                      style={buttonStyle}
-                                      onClick={() => sendAction('TAP', { objectId: obj.id })}
-                                  >
-                                      {obj.tapped ? 'Untap' : 'Tap'}
-                                  </button>
+                                  <div className="flex gap-2">
+                                      <button
+                                          className="flex-1 text-left rounded-lg bg-black/35 hover:bg-black/45 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('TAP', { objectId: obj.id })}
+                                      >
+                                          {obj.tapped ? '⬆️ Untap' : '⤵️ Tap'}
+                                      </button>
+                                      <button
+                                          className="flex-1 text-left rounded-lg bg-black/35 hover:bg-black/45 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('TOGGLE_FACE', { objectId: obj.id })}
+                                      >
+                                          🔄 Fold
+                                      </button>
+                                  </div>
 
                                   <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Mover a</div>
-                                  {['HAND', 'BATTLEFIELD', 'GRAVEYARD', 'EXILE'].map(zone => (
-                                      <button
-                                          key={zone}
-                                          className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                          style={buttonStyle}
-                                          onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: zone, toOwner: mySeat })}
-                                      >
-                                          {ZONE_LABELS[zone]}
-                                      </button>
-                                  ))}
-                                  <button
-                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                      style={buttonStyle}
-                                      onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
-                                  >
-                                      📚⬆️Biblioteca (arriba)
-                                  </button>
-                                  <button
-                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                      style={buttonStyle}
-                                      onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
-                                  >
-                                      📚⬇️Biblioteca (abajo)
-                                  </button>
+                                  {['HAND', 'BATTLEFIELD', 'GRAVEYARD'].map(zone => {
+                                      if (obj.zone === zone) return null; // Don't show current zone
+                                      return (
+                                          <button
+                                              key={zone}
+                                              className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                              style={buttonStyle}
+                                              onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: zone, toOwner: mySeat })}
+                                          >
+                                              {ZONE_LABELS[zone]}
+                                          </button>
+                                      );
+                                  })}
+                                  
+                                  {obj.zone !== 'EXILE' && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                            style={buttonStyle}
+                                            onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'EXILE', toOwner: mySeat })}
+                                        >
+                                            {ZONE_LABELS['EXILE']}
+                                        </button>
+                                        <button
+                                            className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                            style={buttonStyle}
+                                            onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'EXILE', toOwner: mySeat, faceState: 'FACEDOWN' })}
+                                        >
+                                            Exilio 🙈
+                                        </button>
+                                    </div>
+                                  )}
+
+                                  {obj.zone !== 'LIBRARY' && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                            style={buttonStyle}
+                                            onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
+                                        >
+                                            📚⬆️ Mazo (Arr)
+                                        </button>
+                                        <button
+                                            className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                            style={buttonStyle}
+                                            onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
+                                        >
+                                            📚⬇️ Mazo (Abj)
+                                        </button>
+                                    </div>
+                                  )}
 
                                   <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Contadores</div>
-                                  <button
-                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                      style={buttonStyle}
-                                      onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 })}
-                                  >
-                                      +1/+1
-                                  </button>
-                                  <button
-                                      className="w-full text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
-                                      style={buttonStyle}
-                                      onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 })}
-                                  >
-                                      -1/-1
-                                  </button>
+                                  <div className="flex gap-2">
+                                      <button
+                                          className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 })}
+                                      >
+                                          +1/+1
+                                      </button>
+                                      <button
+                                          className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 })}
+                                      >
+                                          -1/-1
+                                      </button>
+                                  </div>
                               </>
                           ) : (
                               <div className="text-amber-300 text-center border border-white/10 bg-black/30 rounded-lg px-3 py-2" style={fontSizeStyle}>

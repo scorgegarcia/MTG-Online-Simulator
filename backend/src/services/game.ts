@@ -505,7 +505,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       break;
     }
     case 'MOVE': {
-        const { objectId, fromZone, toZone, toOwner, position, index } = action.payload; // toOwner for "steal" logic, position for ordering
+        const { objectId, fromZone, toZone, toOwner, position, index, faceState } = action.payload; // toOwner for "steal" logic, position for ordering
         // Find object
         const obj = state.objects[objectId];
         if(!obj) break;
@@ -537,6 +537,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const oldZone = obj.zone;
         obj.zone = toZone;
         if (toOwner) obj.controller_seat = toOwner; // Change controller
+        if (faceState) obj.face_state = faceState;
 
         // Track trade origin if entering trade
         if (toZone === 'TRADE_OFFER') {
@@ -559,6 +560,15 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         }
         
         log(`Movió ${cardName} de ${oldZone} a ${toZone}${position ? ` (${position})` : ''}`);
+        break;
+    }
+    case 'TOGGLE_FACE': {
+        const { objectId } = action.payload;
+        const obj = state.objects[objectId];
+        if (obj) {
+            obj.face_state = obj.face_state === 'FACEDOWN' ? 'NORMAL' : 'FACEDOWN';
+            log(`${obj.face_state === 'FACEDOWN' ? 'Volteó boca abajo' : 'Volteó boca arriba'} una carta`);
+        }
         break;
     }
     case 'TAP': {

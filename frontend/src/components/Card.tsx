@@ -35,6 +35,13 @@ export const Card = memo(({
 }: CardProps) => {
     const { img: imgUrl, power, toughness } = useCardData(obj.scryfall_id);
     
+    const isFacedown = obj.face_state === 'FACEDOWN';
+    
+    // Always show card back if it's face down, even for me
+    const finalImgUrl = isFacedown
+        ? 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg' 
+        : imgUrl;
+
     const baseWidth = size === 'small' ? 64 : 128; // w-16 : w-32
     const baseHeight = size === 'small' ? 96 : 176; // h-24 : h-44
     
@@ -112,7 +119,7 @@ export const Card = memo(({
           )}
           style={style}
           data-card-id={obj.id}
-          data-img-url={imgUrl || ''}
+          data-img-url={finalImgUrl || ''}
           draggable={obj.controller_seat === mySeat}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -133,7 +140,7 @@ export const Card = memo(({
                   setHoveredCard({
                       obj,
                       rect: e.currentTarget.getBoundingClientRect(),
-                      img: imgUrl // Pass the already resolved image URL
+                      img: finalImgUrl // Pass the already resolved image URL
                   });
               }
           }}
@@ -145,7 +152,7 @@ export const Card = memo(({
           onClick={(e) => {
               e.stopPropagation();
               if (ignoreClickRef.current) return;
-
+              
               const x = e.clientX;
               const y = e.clientY;
               
@@ -178,13 +185,18 @@ export const Card = memo(({
               }
           }}
         >
-            {imgUrl ? <img src={imgUrl} className="w-full h-full object-cover rounded" draggable={false} /> : <div className="text-xs p-1">{obj.scryfall_id}</div>}
+            {finalImgUrl ? (
+                <img src={finalImgUrl} className={clsx("w-full h-full object-cover rounded")} draggable={false} />
+            ) : (
+                <div className="text-xs p-1">{isFacedown ? '???' : obj.scryfall_id}</div>
+            )}
+
             {Object.keys(obj.counters).length > 0 && (
                 <div className="absolute scale-150 top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
                     {Object.entries(obj.counters).map(([k,v]) => `${k}:${v}`).join(',')}
                 </div>
             )}
-            {inBattlefield && power !== undefined && toughness !== undefined && (
+            {inBattlefield && !isFacedown && power !== undefined && toughness !== undefined && (
                 <div className="absolute scale-150 bottom-1 right-1 bg-gray-200 text-black text-xs font-bold px-1 rounded border border-gray-400 shadow-sm z-10">
                     {power}/{toughness}
                 </div>
