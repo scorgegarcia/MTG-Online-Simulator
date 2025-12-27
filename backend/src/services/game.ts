@@ -647,6 +647,16 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
              const current = state.players[seat].commanderDamageReceived[sourceSeat] || 0;
              const newVal = Math.max(0, current + delta);
              state.players[seat].commanderDamageReceived[sourceSeat] = newVal;
+             
+             // Commander damage also reduces life
+             if (delta > 0) {
+                 state.players[seat].life -= delta;
+             } else {
+                 // If removing commander damage (undoing), should we give life back?
+                 // Usually yes, assuming it was a mistake correction.
+                 state.players[seat].life -= delta; // -(-1) = +1
+             }
+
              log(`Recibió ${Math.abs(delta)} daño de comandante de Jugador ${sourceSeat} (Total: ${newVal})`);
         }
         break;

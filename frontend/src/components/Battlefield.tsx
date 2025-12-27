@@ -343,7 +343,7 @@ export const OpponentBattlefield = memo(({
                     </div>
                 </div>
             )}
-            <div className="flex justify-between items-center text-xs text-red-300 mb-1 flex-shrink-0">
+            <div className="flex justify-between items-center text-s text-red-300 mb-1 flex-shrink-0">
                 <div className="flex items-center gap-1 font-bold">
                     <span>{player.username}'s Battlefield</span>
                     <span title="Commander Damage Dealt to You" className="cursor-help ml-1">
