@@ -7,6 +7,10 @@ import clsx from 'clsx';
 import { Card } from '../components/Card';
 import { HoverOverlay } from '../components/HoverOverlay';
 import { MyBattlefield, OpponentBattlefield } from '../components/Battlefield';
+import { LeftSideToolbar } from '../components/battlefield/LeftSideToolbar';
+import { RightSideToolbar } from '../components/battlefield/RightSideToolbar';
+import { CommanderDamageModal } from '../components/CommanderDamageModal';
+import { CreateTokenModal } from '../components/CreateTokenModal';
 import { TradeTray } from '../components/TradeTray';
 import { RevealTray } from '../components/RevealTray';
 import { ContextMenu } from '../components/ContextMenu';
@@ -65,6 +69,21 @@ export default function GameTable() {
   const bgmVideoId = 'B6Zsr7m1GFI';
   const bgmEmbedSrc = `https://www.youtube.com/embed/${bgmVideoId}?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&playlist=${bgmVideoId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&mute=0`;
   
+  // Toolbar states
+  const [commanderModalOpen, setCommanderModalOpen] = useState(false);
+  const [createTokenModalOpen, setCreateTokenModalOpen] = useState(false);
+  const [tradeModalOpen, setTradeModalOpen] = useState(false);
+  const [revealModalOpen, setRevealModalOpen] = useState(false);
+  const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
+
+  // Cooldown timer
+  useEffect(() => {
+      if (isThinkingCooldown) {
+          const timer = setTimeout(() => setIsThinkingCooldown(false), 1000);
+          return () => clearTimeout(timer);
+      }
+  }, [isThinkingCooldown]);
+
   // Derived state (moved up to allow safe hook usage)
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
   const mySeat = (myPlayer as any)?.seat;
@@ -414,6 +433,8 @@ export default function GameTable() {
       activeReveal.targetSeat === 'ALL'
   );
 
+  const opponents = gameState?.players ? Object.values(gameState.players).filter((p: any) => p.seat !== mySeat) : [];
+
   const commonProps = useMemo(() => ({
       mySeat,
       cardScale,
@@ -675,6 +696,91 @@ export default function GameTable() {
           </div>
       )}
 
+      {tradeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setTradeModalOpen(false)}>
+            <div className="bg-slate-900 border border-amber-500 rounded-lg p-6 shadow-2xl min-w-[300px]" onClick={e => e.stopPropagation()}>
+                <h3 className="text-amber-500 font-serif font-bold text-xl mb-6 text-center">Select Trading Partner</h3>
+                <div className="flex flex-col gap-3">
+                    {opponents.length === 0 && <div className="text-slate-500 text-center italic">No opponents available</div>}
+                    {opponents.map((p: any) => (
+                        <button 
+                            key={p.seat}
+                            className="p-3 bg-slate-800 hover:bg-amber-900/50 hover:border-amber-500 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                            onClick={() => {
+                                sendAction('TRADE_INIT', { initiatorSeat: mySeat, targetSeat: p.seat });
+                                setTradeModalOpen(false);
+                            }}
+                        >
+                            <span>{p.username}</span>
+                            <span className="text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                        </button>
+                    ))}
+                    <button 
+                        onClick={() => setTradeModalOpen(false)} 
+                        className="mt-4 py-2 text-slate-500 hover:text-white border-t border-slate-800 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {revealModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setRevealModalOpen(false)}>
+            <div className="bg-slate-900 border border-indigo-500 rounded-lg p-6 shadow-2xl min-w-[320px]" onClick={e => e.stopPropagation()}>
+                <h3 className="text-indigo-300 font-serif font-bold text-xl mb-6 text-center">Reveal Hand To...</h3>
+                <div className="flex flex-col gap-3">
+                    <button 
+                        className="p-3 bg-slate-800 hover:bg-indigo-900/50 hover:border-indigo-400 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                        onClick={() => {
+                            sendAction('REVEAL_START', { seat: mySeat, target: 'ALL' });
+                            setRevealModalOpen(false);
+                        }}
+                    >
+                        <span>Everyone</span>
+                        <span className="text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                    </button>
+                    {opponents.length === 0 && <div className="text-slate-500 text-center italic">No opponents available</div>}
+                    {opponents.map((p: any) => (
+                        <button 
+                            key={p.seat}
+                            className="p-3 bg-slate-800 hover:bg-indigo-900/50 hover:border-indigo-400 border border-slate-700 rounded text-slate-200 transition-all font-bold flex justify-between items-center group"
+                            onClick={() => {
+                                sendAction('REVEAL_START', { seat: mySeat, target: p.seat });
+                                setRevealModalOpen(false);
+                            }}
+                        >
+                            <span>{p.username}</span>
+                            <span className="text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                        </button>
+                    ))}
+                    <button 
+                        onClick={() => setRevealModalOpen(false)} 
+                        className="mt-4 py-2 text-slate-500 hover:text-white border-t border-slate-800 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {commanderModalOpen && (
+          <CommanderDamageModal 
+              gameState={gameState}
+              mySeat={mySeat}
+              onClose={() => setCommanderModalOpen(false)}
+              sendAction={sendAction}
+          />
+      )}
+
+      <CreateTokenModal 
+          isOpen={createTokenModalOpen}
+          onClose={() => setCreateTokenModalOpen(false)}
+          onCreate={(token) => sendAction('CREATE_TOKEN', { seat: mySeat, zone: 'BATTLEFIELD', token })}
+      />
+
       <ConfirmationModal
         isOpen={showExitModal}
         onClose={() => setShowExitModal(false)}
@@ -806,58 +912,79 @@ export default function GameTable() {
           </div>
       </div>
 
-      {/* Main Area: Battlefields */}
-      <div ref={battlefieldsContainerRef} className="flex-1 overflow-hidden relative flex flex-col">
-          {/* Background Texture */}
-          <div className="absolute inset-0 z-0 bg-slate-950">
-             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
-          </div>
-
-          {/* Opponents Battlefields (Top 50%) */}
-          <div
-            className="overflow-hidden p-0 bg-black/30 flex flex-col relative z-10"
-            style={{ height: opponentsBattlefieldHeight > 0 ? `${opponentsBattlefieldHeight}px` : undefined }}
-          >
-             <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
-                <Swords size={100} />
-             </div>
-             <div className="flex flex-wrap gap-2 justify-center w-full h-full items-stretch">
-                {amIRevealing ? (
-                    <div className="w-full h-full p-1">
-                        <RevealTray gameState={gameState} {...commonProps} />
-                    </div>
-                ) : amITrading ? (
-                    <div className="w-full h-full p-1">
-                        <TradeTray gameState={gameState} {...commonProps} />
-                    </div>
-                ) : (
-                    Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
-                        <div key={p.seat} className="flex-1 min-w-[300px] h-full rounded-lg border border-red-900/10 bg-gradient-to-b from-red-950/5 to-transparent">
-                            <OpponentBattlefield player={p} gameState={gameState} {...commonProps} />
-                        </div>
-                    ))
-                )}
-             </div>
-          </div>
-
-          <div
-            className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-0 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              isResizingBattlefields.current = true;
-              battlefieldsResizeStartY.current = e.clientY;
-              const fallback = battlefieldsContainerRef.current ? Math.floor(battlefieldsContainerRef.current.clientHeight / 2) : 0;
-              battlefieldsResizeStartHeight.current = opponentsBattlefieldHeight > 0 ? opponentsBattlefieldHeight : fallback;
-              document.body.style.cursor = 'row-resize';
-            }}
+      <div className="flex flex-1 overflow-hidden relative">
+          {/* Left Toolbar */}
+          <LeftSideToolbar 
+              gameState={gameState} 
+              mySeat={mySeat} 
+              setCommanderModalOpen={setCommanderModalOpen} 
+              sendAction={sendAction} 
           />
 
-          {/* My Battlefield (Bottom 50%) */}
-          <div className="flex-1 overflow-auto p-0 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
-              <div className="h-full rounded-lg border border-indigo-900/10">
-                  <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
+          {/* Main Area: Battlefields */}
+          <div ref={battlefieldsContainerRef} className="flex-1 overflow-hidden relative flex flex-col">
+              {/* Background Texture */}
+              <div className="absolute inset-0 z-0 bg-slate-950">
+                 <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
+              </div>
+
+              {/* Opponents Battlefields (Top 50%) */}
+              <div
+                className="overflow-hidden p-0 bg-black/30 flex flex-col relative z-10"
+                style={{ height: opponentsBattlefieldHeight > 0 ? `${opponentsBattlefieldHeight}px` : undefined }}
+              >
+                 <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
+                    <Swords size={100} />
+                 </div>
+                 <div className="flex flex-wrap gap-2 justify-center w-full h-full items-stretch">
+                    {amIRevealing ? (
+                        <div className="w-full h-full p-1">
+                            <RevealTray gameState={gameState} {...commonProps} />
+                        </div>
+                    ) : amITrading ? (
+                        <div className="w-full h-full p-1">
+                            <TradeTray gameState={gameState} {...commonProps} />
+                        </div>
+                    ) : (
+                        Object.values(gameState.players).filter((p: any) => p.seat !== mySeat).map((p: any) => (
+                            <div key={p.seat} className="flex-1 min-w-[300px] h-full rounded-lg border border-red-900/10 bg-gradient-to-b from-red-950/5 to-transparent">
+                                <OpponentBattlefield player={p} gameState={gameState} {...commonProps} />
+                            </div>
+                        ))
+                    )}
+                 </div>
+              </div>
+
+              <div
+                className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-0 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  isResizingBattlefields.current = true;
+                  battlefieldsResizeStartY.current = e.clientY;
+                  const fallback = battlefieldsContainerRef.current ? Math.floor(battlefieldsContainerRef.current.clientHeight / 2) : 0;
+                  battlefieldsResizeStartHeight.current = opponentsBattlefieldHeight > 0 ? opponentsBattlefieldHeight : fallback;
+                  document.body.style.cursor = 'row-resize';
+                }}
+              />
+
+              {/* My Battlefield (Bottom 50%) */}
+              <div className="flex-1 overflow-auto p-0 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
+                  <div className="h-full rounded-lg border border-indigo-900/10">
+                      <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
+                  </div>
               </div>
           </div>
+
+          {/* Right Toolbar */}
+          <RightSideToolbar 
+              mySeat={mySeat}
+              isThinkingCooldown={isThinkingCooldown}
+              setIsThinkingCooldown={setIsThinkingCooldown}
+              sendAction={sendAction}
+              setTradeModalOpen={setTradeModalOpen}
+              setRevealModalOpen={setRevealModalOpen}
+              setCreateTokenModalOpen={setCreateTokenModalOpen}
+          />
       </div>
 
       {/* Resizer Handle */}
