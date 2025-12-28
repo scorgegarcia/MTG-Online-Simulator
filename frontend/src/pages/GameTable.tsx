@@ -30,6 +30,8 @@ import {
   Eye,
   Copy,
   RotateCcw,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
@@ -57,6 +59,11 @@ export default function GameTable() {
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   const [initialLife, setInitialLife] = useState(40);
   const [showDamageVignette, setShowDamageVignette] = useState(false);
+  const bgmIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [bgmMuted, setBgmMuted] = useState(false);
+  const [bgmVolume, setBgmVolume] = useState(40);
+  const bgmVideoId = 'B6Zsr7m1GFI';
+  const bgmEmbedSrc = `https://www.youtube.com/embed/${bgmVideoId}?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&playlist=${bgmVideoId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&mute=0`;
   
   // Derived state (moved up to allow safe hook usage)
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
@@ -66,6 +73,28 @@ export default function GameTable() {
   useEffect(() => {
       mySeatRef.current = mySeat;
   }, [mySeat]);
+
+  const setBgmYoutubeMuted = useCallback((muted: boolean) => {
+    const iframe = bgmIframeRef.current;
+    if (!iframe?.contentWindow) return;
+    const func = muted ? 'mute' : 'unMute';
+    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+  }, []);
+
+  const setBgmYoutubeVolume = useCallback((volume: number) => {
+    const iframe = bgmIframeRef.current;
+    if (!iframe?.contentWindow) return;
+    const vol = Math.max(0, Math.min(100, Math.round(volume)));
+    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [vol] }), '*');
+  }, []);
+
+  const toggleBgmMuted = useCallback(() => {
+    setBgmMuted(prev => {
+      const next = !prev;
+      setBgmYoutubeMuted(next);
+      return next;
+    });
+  }, [setBgmYoutubeMuted]);
 
   useEffect(() => {
     const hoverAudio = new Audio(uiHoverSfx);
@@ -551,6 +580,18 @@ export default function GameTable() {
   
   return (
     <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30">
+      <iframe
+        ref={bgmIframeRef}
+        className="absolute w-px h-px opacity-0 pointer-events-none"
+        src={bgmEmbedSrc}
+        title="game-bgm"
+        allow="autoplay; encrypted-media"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={() => {
+          setBgmYoutubeVolume(bgmVolume);
+          setBgmYoutubeMuted(bgmMuted);
+        }}
+      />
       <SettingsModal 
           settingsOpen={settingsOpen} setSettingsOpen={setSettingsOpen}
           cardScale={cardScale} setCardScale={setCardScale}
@@ -710,6 +751,28 @@ export default function GameTable() {
               <span className="font-mono tracking-widest border border-slate-800 px-2 py-1 rounded bg-slate-950/50 mr-2 hidden sm:block">
                   ID: {gameInfo.code}
               </span>
+
+              <button
+                onClick={toggleBgmMuted}
+                className="text-slate-400 hover:text-amber-300 transition-colors p-1.5 hover:bg-slate-800 rounded-full"
+                title={bgmMuted ? 'Unmute' : 'Mute'}
+              >
+                {bgmMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={bgmVolume}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setBgmVolume(next);
+                  setBgmYoutubeVolume(next);
+                }}
+                className="w-24 accent-amber-500 hidden md:block"
+                title="Volumen"
+              />
               
               {gameInfo.host_id === user?.id && (
                   <button 
