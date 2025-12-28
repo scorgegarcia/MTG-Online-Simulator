@@ -293,14 +293,14 @@ export const ContextMenu = ({
                                             style={buttonStyle}
                                             onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'top' })}
                                         >
-                                            📚⬆️ Mazo (Arr)
+                                            📚⬆️ Mazo (Arriba)
                                         </button>
                                         <button
                                             className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                             style={buttonStyle}
                                             onClick={() => sendAction('MOVE', { objectId: obj.id, fromZone: obj.zone, toZone: 'LIBRARY', toOwner: mySeat, position: 'bottom' })}
                                         >
-                                            📚⬇️ Mazo (Abj)
+                                            📚⬇️ Mazo (Abajo)
                                         </button>
                                     </div>
                                   )}
