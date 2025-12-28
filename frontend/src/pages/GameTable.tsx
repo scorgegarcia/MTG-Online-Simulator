@@ -61,7 +61,7 @@ export default function GameTable() {
   const [showDamageVignette, setShowDamageVignette] = useState(false);
   const bgmIframeRef = useRef<HTMLIFrameElement | null>(null);
   const [bgmMuted, setBgmMuted] = useState(false);
-  const [bgmVolume, setBgmVolume] = useState(40);
+  const [bgmVolume, setBgmVolume] = useState(30);
   const bgmVideoId = 'B6Zsr7m1GFI';
   const bgmEmbedSrc = `https://www.youtube.com/embed/${bgmVideoId}?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&playlist=${bgmVideoId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&mute=0`;
   
@@ -147,7 +147,11 @@ export default function GameTable() {
   
   // Load settings from localStorage or default
   const [cardScale, setCardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
-  const [previewScale, setPreviewScale] = useState(() => parseFloat(localStorage.getItem('setting_previewScale') || '1'));
+  const [previewScale, setPreviewScale] = useState(() => {
+      const stored = parseFloat(localStorage.getItem('setting_previewScale') || '');
+      const val = Number.isFinite(stored) ? stored : 3;
+      return Math.min(3, Math.max(0.5, val));
+  });
   const [hoverScale, setHoverScale] = useState(() => {
       const val = parseFloat(localStorage.getItem('setting_hoverScale') || '300');
       return val < 10 ? 300 : val;
