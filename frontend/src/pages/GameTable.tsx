@@ -14,6 +14,9 @@ import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
 import { ZONE_LABELS } from '../utils/gameUtils';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
+import readyButtonSfx from '../assets/sfx/ready_button.mp3';
+import startGameSfx from '../assets/sfx/start_game.mp3';
 import { 
   Settings, 
   Heart, 
@@ -41,6 +44,9 @@ export default function GameTable() {
   const [gameState, setGameState] = useState<any>(null);
   const { handleGameAction } = useGameSound();
   const [gameInfo, setGameInfo] = useState<any>(null);
+  const lobbyHoverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lobbyReadyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lobbyStartAudioRef = useRef<HTMLAudioElement | null>(null);
   const [selectedDeck, setSelectedDeck] = useState('');
   const [myDecks, setMyDecks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
@@ -60,6 +66,47 @@ export default function GameTable() {
   useEffect(() => {
       mySeatRef.current = mySeat;
   }, [mySeat]);
+
+  useEffect(() => {
+    const hoverAudio = new Audio(uiHoverSfx);
+    hoverAudio.volume = 0.35;
+    lobbyHoverAudioRef.current = hoverAudio;
+
+    const readyAudio = new Audio(readyButtonSfx);
+    readyAudio.volume = 0.55;
+    lobbyReadyAudioRef.current = readyAudio;
+
+    const startAudio = new Audio(startGameSfx);
+    startAudio.volume = 0.55;
+    lobbyStartAudioRef.current = startAudio;
+
+    return () => {
+      lobbyHoverAudioRef.current = null;
+      lobbyReadyAudioRef.current = null;
+      lobbyStartAudioRef.current = null;
+    };
+  }, []);
+
+  const playLobbyHover = useCallback(() => {
+    const audio = lobbyHoverAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
+
+  const playLobbyReady = useCallback(() => {
+    const audio = lobbyReadyAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
+
+  const playLobbyStart = useCallback(() => {
+    const audio = lobbyStartAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
 
   const handleRestart = async () => {
       try {
@@ -400,14 +447,22 @@ export default function GameTable() {
                           <h2 className="text-xl font-serif font-bold text-slate-200 flex items-center gap-2">
                               <User className="text-indigo-400" /> Players
                           </h2>
-                          <button onClick={leaveLobby} className="flex items-center gap-2 text-red-400 text-sm hover:text-red-300 transition-colors group">
+                          <button
+                            onMouseEnter={playLobbyHover}
+                            onClick={leaveLobby}
+                            className="flex items-center gap-2 text-red-400 text-sm hover:text-red-300 transition-colors group"
+                          >
                               <LogOut size={14} className="group-hover:-translate-x-1 transition-transform" /> Leave Hall
                           </button>
                       </div>
                       
                       <div className="space-y-3 mb-8">
                           {gameInfo.players.map((p: any) => (
-                              <div key={p.id} className="flex justify-between items-center p-3 bg-slate-950/50 rounded border border-slate-800 hover:border-slate-600 transition-colors">
+                              <div
+                                key={p.id}
+                                onMouseEnter={playLobbyHover}
+                                className="flex justify-between items-center p-3 bg-slate-950/50 rounded border border-slate-800 hover:border-slate-600 transition-colors"
+                              >
                                   <div className="flex items-center gap-3">
                                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-amber-500 font-bold border border-slate-700">
                                           {p.seat}
@@ -428,12 +483,17 @@ export default function GameTable() {
                                 className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-serif"
                                 value={selectedDeck}
                                 onChange={e => setSelectedDeck(e.target.value)}
+                                onMouseEnter={playLobbyHover}
                               >
                                   <option value="">-- Choose a Grimoire --</option>
                                   {myDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                               </select>
                               <button 
-                                onClick={selectDeck} 
+                                onMouseEnter={playLobbyHover}
+                                onClick={() => {
+                                  playLobbyReady();
+                                  selectDeck();
+                                }}
                                 disabled={!selectedDeck} 
                                 className="px-6 bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-[0_0_15px_rgba(79,70,229,0.3)]"
                               >
@@ -452,6 +512,7 @@ export default function GameTable() {
                                           type="number" 
                                           value={initialLife}
                                           onChange={e => setInitialLife(parseInt(e.target.value) || 0)}
+                                          onMouseEnter={playLobbyHover}
                                           className="w-full p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-mono"
                                       />
                                   </div>
@@ -461,7 +522,11 @@ export default function GameTable() {
 
                       {gameInfo.host_id === user?.id && (
                           <button 
-                            onClick={startGame} 
+                            onMouseEnter={playLobbyHover}
+                            onClick={() => {
+                              playLobbyStart();
+                              startGame();
+                            }}
                             className="w-full mt-6 bg-gradient-to-r from-emerald-900 to-teal-900 hover:from-emerald-800 hover:to-teal-800 border border-emerald-700 py-4 rounded-lg font-bold text-lg text-emerald-100 shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
                           >
                               <Swords size={24} /> BEGIN THE DUEL

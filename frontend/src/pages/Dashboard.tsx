@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
+import selectSfx from '../assets/sfx/select.mp3';
 import { 
   Swords, 
   Scroll, 
@@ -21,9 +23,40 @@ export default function Dashboard() {
   const [decks, setDecks] = useState<any[]>([]);
   const [gameCode, setGameCode] = useState('');
   const navigate = useNavigate();
+  const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
+  const selectAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     axios.get(`${API_BASE_URL}/decks`).then(res => setDecks(res.data));
+  }, []);
+
+  useEffect(() => {
+    const hoverAudio = new Audio(uiHoverSfx);
+    hoverAudio.volume = 0.35;
+    hoverAudioRef.current = hoverAudio;
+
+    const selectAudio = new Audio(selectSfx);
+    selectAudio.volume = 0.45;
+    selectAudioRef.current = selectAudio;
+
+    return () => {
+      hoverAudioRef.current = null;
+      selectAudioRef.current = null;
+    };
+  }, []);
+
+  const playHover = useCallback(() => {
+    const audio = hoverAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
+
+  const playSelect = useCallback(() => {
+    const audio = selectAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }, []);
 
   const createGame = async () => {
@@ -70,7 +103,11 @@ export default function Dashboard() {
           </div>
           
           <button 
-            onClick={logout} 
+            onMouseEnter={playHover}
+            onClick={() => {
+              playSelect();
+              logout();
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-red-950/30 border border-red-900/50 hover:border-red-500 text-red-400 hover:text-red-200 rounded transition-all duration-300 group"
           >
             <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -98,7 +135,11 @@ export default function Dashboard() {
 
               {/* Host Game Button */}
               <button 
-                onClick={createGame} 
+                onMouseEnter={playHover}
+                onClick={() => {
+                  playSelect();
+                  createGame();
+                }}
                 className="w-full relative overflow-hidden bg-gradient-to-r from-indigo-900 to-blue-900 hover:from-indigo-800 hover:to-blue-800 border border-indigo-700 py-4 rounded-lg mb-6 group/btn transition-all shadow-lg shadow-indigo-900/20"
               >
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
@@ -122,11 +163,17 @@ export default function Dashboard() {
                 <input 
                   value={gameCode}
                   onChange={e => setGameCode(e.target.value.toUpperCase())}
+                  onMouseEnter={playHover}
+                  onFocus={playSelect}
                   placeholder="RUNE CODE"
                   className="flex-1 bg-slate-950 border border-slate-700 text-slate-100 p-3 rounded font-mono text-center uppercase tracking-[0.2em] focus:outline-none focus:border-amber-500 transition-colors placeholder-slate-700 shadow-inner"
                 />
                 <button 
-                  onClick={joinGame} 
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playSelect();
+                    joinGame();
+                  }}
                   className="bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/50 hover:border-emerald-500 text-emerald-100 px-6 rounded font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                 >
                   JOIN
@@ -150,6 +197,8 @@ export default function Dashboard() {
                 </div>
                 <Link 
                   to="/decks/new" 
+                  onMouseEnter={playHover}
+                  onClick={playSelect}
                   className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/20 hover:border-amber-500/50 px-3 py-2 rounded text-sm transition-all"
                 >
                   <PlusCircle size={16} />
@@ -160,17 +209,29 @@ export default function Dashboard() {
               {/* Deck List */}
               <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 {decks.map(deck => (
-                  <div key={deck.id} className="group/item flex justify-between items-center bg-slate-950 border border-slate-800 hover:border-amber-500/30 p-3 rounded transition-colors relative overflow-hidden">
+                  <div
+                    key={deck.id}
+                    onMouseEnter={playHover}
+                    className="group/item flex justify-between items-center bg-slate-950 border border-slate-800 hover:border-amber-500/30 p-3 rounded transition-colors relative overflow-hidden"
+                  >
                     {/* Hover Glow Effect */}
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-600 opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
                     
-                    <Link to={`/decks/${deck.id}`} className="flex items-center gap-3 hover:text-amber-400 font-medium truncate flex-1 transition-colors pl-2">
+                    <Link
+                      to={`/decks/${deck.id}`}
+                      onClick={playSelect}
+                      className="flex items-center gap-3 hover:text-amber-400 font-medium truncate flex-1 transition-colors pl-2"
+                    >
                       <Scroll size={16} className="text-slate-600 group-hover/item:text-amber-500 transition-colors" />
                       <span className="font-serif tracking-wide text-slate-300 group-hover/item:text-amber-100">{deck.name}</span>
                     </Link>
                     
                     <button 
-                      onClick={() => deleteDeck(deck.id)} 
+                      onMouseEnter={playHover}
+                      onClick={() => {
+                        playSelect();
+                        deleteDeck(deck.id);
+                      }}
                       className="text-slate-600 hover:text-red-400 p-2 rounded hover:bg-red-950/30 transition-all opacity-0 group-hover/item:opacity-100"
                       title="Burn Grimoire"
                     >
