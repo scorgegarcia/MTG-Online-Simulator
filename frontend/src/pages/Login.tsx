@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Sparkles, Scroll, Sword, Shield, Lock, Mail, Gem, Volume2, VolumeX } from 'lucide-react';
+import naslocApproved from '../assets/img/nasloc_approved_200x200.png';
+import naslocMotd from '../assets/img/nasloc_motd.jpg';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -14,6 +16,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [entered, setEntered] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [naslocImgError, setNaslocImgError] = useState(false);
+  const [isNaslocMotdOpen, setIsNaslocMotdOpen] = useState(false);
   const bgPlayerRef = useRef<HTMLIFrameElement | null>(null);
   
   // Estado visual adicional para la interfaz mágica
@@ -87,6 +91,27 @@ export default function Login() {
         </button>
       )}
 
+      {isNaslocMotdOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => setIsNaslocMotdOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[90vh] bg-slate-950 border border-slate-700 rounded-lg shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded bg-slate-900/80 border border-slate-700 text-slate-200 hover:text-amber-200 hover:border-amber-500/50 hover:bg-slate-900 transition-colors"
+              onClick={() => setIsNaslocMotdOpen(false)}
+            >
+              Cerrar
+            </button>
+            <img src={naslocMotd} alt="Nasloc MOTD" className="block w-full h-auto max-h-[90vh] object-contain" />
+          </div>
+        </div>
+      )}
+
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950 transition-opacity duration-700 ${entered ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       >
@@ -133,18 +158,34 @@ export default function Login() {
         {/* Aura Brillante Exterior */}
         <div className="absolute inset-0 bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-700 rounded-xl blur-[2px] opacity-70"></div>
         
-        <div className="relative bg-slate-900 border-2 border-amber-600/50 rounded-lg shadow-2xl overflow-hidden">
-          
-          {/* Textura de cuero oscuro */}
-          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
+        <div className="relative">
+          {!naslocImgError && (
+            <button
+              type="button"
+              className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 z-40 w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[200px] md:h-[200px]"
+              onClick={() => setIsNaslocMotdOpen(true)}
+              aria-label="Abrir Nasloc MOTD"
+            >
+              <img
+                src={naslocApproved}
+                alt="Nasloc Approved"
+                className="w-full h-full object-contain"
+                onError={() => setNaslocImgError(true)}
+              />
+            </button>
+          )}
 
-          {/* Decoraciones de esquinas (Estilo Libro de Hechizos) */}
-          <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-amber-500/40 rounded-tl-lg"></div>
-          <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-amber-500/40 rounded-tr-lg"></div>
-          <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-amber-500/40 rounded-bl-lg"></div>
-          <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-amber-500/40 rounded-br-lg"></div>
+          <div className="relative bg-slate-900 border-2 border-amber-600/50 rounded-lg shadow-2xl overflow-hidden">
+            {/* Textura de cuero oscuro */}
+            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
 
-          <div className="relative p-8 px-10">
+            {/* Decoraciones de esquinas (Estilo Libro de Hechizos) */}
+            <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-amber-500/40 rounded-tl-lg"></div>
+            <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-amber-500/40 rounded-tr-lg"></div>
+            <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-amber-500/40 rounded-bl-lg"></div>
+            <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-amber-500/40 rounded-br-lg"></div>
+
+            <div className="relative p-8 px-10">
             {/* Cabecera Mística */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4 text-amber-500">
@@ -245,6 +286,7 @@ export default function Login() {
 
             </form>
           </div>
+        </div>
         </div>
       </div>
     </div>
