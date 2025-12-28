@@ -123,7 +123,7 @@ export const OpponentBattlefield = memo(({
     const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const };
 
     return (
-        <div className="p-1 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden relative">
+        <div className="p-0 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden relative">
             <style>{`
                 @keyframes fadeOut {
                 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }

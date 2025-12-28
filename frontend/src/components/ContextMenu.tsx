@@ -192,7 +192,7 @@ export const ContextMenu = ({
                   maxHeight: 'calc(100vh - 20px)',
                   background: `radial-gradient(120% 140% at 20% 0%, ${palette.background} 0%, rgba(0,0,0,0.78) 55%, ${palette.background2} 100%)`,
                   border: `1px solid ${palette.border}`,
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(100px)',
               }}
           >
               <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
