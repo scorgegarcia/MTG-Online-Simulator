@@ -560,7 +560,7 @@ export default function GameTable() {
   };
 
   if (!gameInfo) return (
-    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse">
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse select-none">
         <Layers className="mr-2 animate-spin" /> Summoning Battlefield...
     </div>
   );
@@ -568,7 +568,7 @@ export default function GameTable() {
   // LOBBY VIEW
   if (!gameState && gameInfo.status === 'LOBBY') {
       return (
-          <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex flex-col items-center justify-center relative overflow-hidden font-sans">
+          <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex flex-col items-center justify-center relative overflow-hidden font-sans select-none">
               {/* Background Ambience */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black z-0"></div>
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-20 z-0"></div>
@@ -699,13 +699,13 @@ export default function GameTable() {
   }
 
   if (!gameState) return (
-    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse">
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-indigo-400 font-serif animate-pulse select-none">
         <Layers className="mr-2 animate-spin" /> Connecting to Plane...
     </div>
   );
   
   return (
-    <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-amber-500/30">
+    <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans select-none">
       <iframe
         ref={bgmIframeRef}
         className="absolute w-px h-px opacity-0 pointer-events-none"
