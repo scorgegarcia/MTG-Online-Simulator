@@ -108,6 +108,7 @@ export const addCard = async (req: AuthRequest, res: Response) => {
     const mana_cost = cardData.mana_cost;
     const image_url_small = cardData.image_uris?.small || cardData.card_faces?.[0]?.image_uris?.small;
     const image_url_normal = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
+    const back_image_url = cardData.card_faces?.[1]?.image_uris?.normal || cardData.card_faces?.[1]?.image_uris?.large;
 
     // Check if card exists in deck
     const existingCard = await prisma.deckCard.findFirst({
@@ -130,7 +131,8 @@ export const addCard = async (req: AuthRequest, res: Response) => {
                 type_line,
                 mana_cost,
                 image_url_small,
-                image_url_normal
+                image_url_normal,
+                back_image_url
             }
         });
     }
@@ -282,7 +284,22 @@ export const importDeck = async (req: AuthRequest, res: Response) => {
             if (key) cardData = resolvedCardsMap.get(key);
         }
 
+        // Fallback: Fuzzy Search for partial names (e.g. DFCs like "Delver of Secrets")
+        if (!cardData) {
+             try {
+                 const fuzzyResult = await scryfallService.getCardByName(cardInput.name);
+                 if (fuzzyResult) {
+                     cardData = fuzzyResult;
+                     resolvedCardsMap.set(cardInput.name, cardData); 
+                 }
+             } catch (e) { 
+                console.log('Fuzzy search failed for', cardInput.name); 
+             }
+        }
+
         if (cardData) {
+            const back_image_url = cardData.card_faces?.[1]?.image_uris?.normal || cardData.card_faces?.[1]?.image_uris?.large;
+
             deckCardsData.push({
                 deck_id: deck.id,
                 scryfall_id: cardData.id,
@@ -292,7 +309,8 @@ export const importDeck = async (req: AuthRequest, res: Response) => {
                 type_line: cardData.type_line,
                 mana_cost: cardData.mana_cost,
                 image_url_small: cardData.image_uris?.small || cardData.card_faces?.[0]?.image_uris?.small,
-                image_url_normal: cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal
+                image_url_normal: cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal,
+                back_image_url
             });
         }
     }

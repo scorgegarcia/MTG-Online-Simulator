@@ -33,6 +33,18 @@ export const getCardById = async (id: string) => {
   }
 };
 
+export const getCardByName = async (name: string) => {
+    try {
+        // Use fuzzy search to handle partial names like "Delver of Secrets" for DFCs
+        const response = await axios.get(`${BASE_URL}/cards/named`, {
+            params: { fuzzy: name }
+        });
+        return response.data;
+    } catch (error) {
+        return null;
+    }
+};
+
 export const getCardsCollection = async (identifiers: any[]) => {
     try {
         const response = await axios.post(`${BASE_URL}/cards/collection`, {
