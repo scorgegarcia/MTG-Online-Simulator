@@ -42,7 +42,7 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             </button>
 
             <button 
-                className={`w-full h-fit py-0 rounded flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors ${isThinkingCooldown ? 'bg-slate-800 text-gray-600 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600 text-gray-300'}`}
+                className={`w-full h-fit py-0 rounded flex flex-col items-center justify-center gap-0 text-xs font-bold transition-colors ${isThinkingCooldown ? 'bg-slate-800 text-gray-600 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600 text-gray-300'}`}
                 title="Notify Thinking"
                 disabled={isThinkingCooldown}
                 onClick={() => {
