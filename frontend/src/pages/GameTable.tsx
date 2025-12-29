@@ -390,8 +390,12 @@ export default function GameTable() {
     });
 
     socket.on('game:error', (err: any) => {
-        alert(err.message || 'Error');
-        if (err.state) setGameState(err.state);
+        if (err?.code === 'OUT_OF_SYNC') {
+            if (err.state) setGameState(err.state);
+            return;
+        }
+        alert(err?.message || 'Error');
+        if (err?.state) setGameState(err.state);
     });
 
     return () => {
@@ -779,7 +783,7 @@ export default function GameTable() {
       <CreateTokenModal 
           isOpen={createTokenModalOpen}
           onClose={() => setCreateTokenModalOpen(false)}
-          onCreate={(token) => sendAction('CREATE_TOKEN', { seat: mySeat, zone: 'BATTLEFIELD', token })}
+          onCreate={(token, quantity) => sendAction('CREATE_TOKENS', { seat: mySeat, zone: 'BATTLEFIELD', token, quantity })}
       />
 
       <LibraryRevealModal 

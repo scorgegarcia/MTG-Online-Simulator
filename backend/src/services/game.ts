@@ -58,6 +58,7 @@ interface GameObject {
   power?: string;
   toughness?: string;
   type_line?: string; // for tokens or manual override
+  oracle_text?: string; // for tokens (manual rules/description)
   trade_origin_zone?: string; // Where this card came from before joining a trade offer
 }
 
@@ -671,8 +672,41 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         }
         break;
     }
+    case 'CREATE_TOKENS': {
+        const { seat, zone, token, quantity } = action.payload;
+        const rawN = Number(quantity);
+        const count = Math.max(1, Math.min(20, Number.isFinite(rawN) ? Math.trunc(rawN) : 1));
+        const targetZone = zone || 'BATTLEFIELD';
+
+        if (!state.zoneIndex[seat][targetZone]) state.zoneIndex[seat][targetZone] = [];
+
+        for (let i = 0; i < count; i += 1) {
+            const objId = randomUUID();
+            const obj: GameObject = {
+                id: objId,
+                scryfall_id: null,
+                owner_seat: seat,
+                controller_seat: seat,
+                zone: targetZone,
+                face_state: 'NORMAL',
+                tapped: false,
+                counters: {},
+                note: token.name || '',
+                image_url: token.imageUrl,
+                power: token.power,
+                toughness: token.toughness,
+                type_line: token.type,
+                oracle_text: token.description
+            };
+            state.objects[objId] = obj;
+            state.zoneIndex[seat][targetZone].push(objId);
+        }
+
+        log(`Creo ${count} token(s) (${token.name || 'Token'}) en ${targetZone}`);
+        break;
+    }
     case 'CREATE_TOKEN': {
-        const { seat, zone, token } = action.payload; // token: { name, imageUrl, power, toughness, type }
+        const { seat, zone, token } = action.payload;
         const objId = randomUUID();
         const obj: GameObject = {
             id: objId,
@@ -684,10 +718,11 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
             tapped: false,
             counters: {},
             note: token.name || '',
-            image_url: token.imageUrl, // Custom URL or Scryfall token URL
+            image_url: token.imageUrl,
             power: token.power,
             toughness: token.toughness,
-            type_line: token.type
+            type_line: token.type,
+            oracle_text: token.description
         };
         state.objects[objId] = obj;
         if (!state.zoneIndex[seat][obj.zone]) state.zoneIndex[seat][obj.zone] = [];
