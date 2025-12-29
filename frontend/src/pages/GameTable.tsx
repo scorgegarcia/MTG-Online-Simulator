@@ -67,6 +67,7 @@ export default function GameTable() {
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   const [initialLife, setInitialLife] = useState(40);
   const [showDamageVignette, setShowDamageVignette] = useState(false);
+  const [passingSeats, setPassingSeats] = useState<number[]>([]);
   const bgmIframeRef = useRef<HTMLIFrameElement | null>(null);
   const [bgmMuted, setBgmMuted] = useState(false);
   const [bgmVolume, setBgmVolume] = useState(30);
@@ -437,6 +438,14 @@ export default function GameTable() {
                     setThinkingSeats(prev => prev.filter(s => s !== seat));
                 }, 1000);
             }
+
+            if (data.lastAction.type === 'PASS_TURN') {
+                const seat = data.lastAction.payload.seat;
+                setPassingSeats(prev => [...prev, seat]);
+                setTimeout(() => {
+                    setPassingSeats(prev => prev.filter(s => s !== seat));
+                }, 2000); // 1.5s animation + 0.5s fade-out
+            }
         }
     });
 
@@ -529,8 +538,9 @@ export default function GameTable() {
       sendAction,
       equipSelection,
       setEquipSelection,
-      thinkingSeats
-  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, equipSelection]);
+      thinkingSeats,
+      passingSeats
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
@@ -1053,6 +1063,8 @@ export default function GameTable() {
               setCommanderModalOpen={setCommanderModalOpen} 
               setDiceRollModalOpen={setDiceRollModalOpen}
               sendAction={sendAction} 
+              isThinkingCooldown={isThinkingCooldown}
+              setIsThinkingCooldown={setIsThinkingCooldown}
           />
 
           {/* Main Area: Battlefields */}
@@ -1125,8 +1137,6 @@ export default function GameTable() {
               mySeat={mySeat}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              isThinkingCooldown={isThinkingCooldown}
-              setIsThinkingCooldown={setIsThinkingCooldown}
               sendAction={sendAction}
               setTradeModalOpen={setTradeModalOpen}
               setRevealModalOpen={setRevealModalOpen}

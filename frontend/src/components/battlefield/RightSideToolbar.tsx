@@ -5,8 +5,6 @@ interface RightSideToolbarProps {
     mySeat: number;
     activeTab: string;
     setActiveTab: (tab: string) => void;
-    isThinkingCooldown: boolean;
-    setIsThinkingCooldown: (cooldown: boolean) => void;
     sendAction: (action: string, payload: any) => void;
     setTradeModalOpen: (open: boolean) => void;
     setRevealModalOpen: (open: boolean) => void;
@@ -19,8 +17,6 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
     mySeat,
     activeTab,
     setActiveTab,
-    isThinkingCooldown,
-    setIsThinkingCooldown,
     sendAction,
     setTradeModalOpen,
     setRevealModalOpen,
@@ -39,19 +35,6 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             >
                 <span className="text-xl">🏁</span>
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Now Is My Turn</span>
-            </button>
-
-            <button 
-                className={`w-full h-fit py-0 rounded flex flex-col items-center justify-center gap-0 text-xs font-bold transition-colors ${isThinkingCooldown ? 'bg-slate-800 text-gray-600 cursor-not-allowed' : 'bg-slate-700 hover:bg-slate-600 text-gray-300'}`}
-                title="Notify Thinking"
-                disabled={isThinkingCooldown}
-                onClick={() => {
-                    setIsThinkingCooldown(true);
-                    sendAction('THINKING', { seat: mySeat });
-                }}
-            >
-                <span className="text-xl">💬</span>
-                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Thinking...</span>
             </button>
 
             <button 
@@ -114,7 +97,7 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
                 onClick={() => setActiveTab(activeTab === 'SIDEBOARD' ? 'HAND' : 'SIDEBOARD')}
             >
                 <span className="text-xl">🛡️</span>
-                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Ver Sideboard</span>
+                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Sideboard</span>
             </button>
 
             <button 

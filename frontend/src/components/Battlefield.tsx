@@ -3,6 +3,7 @@ import { ReadOnlyZoneModal } from './ReadOnlyZoneModal';
 import React, { memo } from 'react';
 import { MyBattlefieldArea } from './battlefield/MyBattlefieldArea';
 import { OpponentBattlefieldArea } from './battlefield/OpponentBattlefieldArea';
+import { PassTurnAnimation } from './animations/PassTurnAnimation';
 
 interface BattlefieldSharedProps {
     gameState: any;
@@ -17,6 +18,7 @@ interface BattlefieldSharedProps {
     equipSelection?: { equipmentId: string } | null;
     setEquipSelection?: (selection: { equipmentId: string } | null) => void;
     thinkingSeats?: number[];
+    passingSeats?: number[];
 }
 
 export const MyBattlefield = memo(({
@@ -32,7 +34,8 @@ export const MyBattlefield = memo(({
     sendAction,
     equipSelection,
     setEquipSelection,
-    thinkingSeats
+    thinkingSeats,
+    passingSeats
 }: BattlefieldSharedProps & { seat: number }) => {
     const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -94,6 +97,10 @@ export const MyBattlefield = memo(({
               </div>
           )}
 
+          {passingSeats?.includes(seat) && (
+              <PassTurnAnimation />
+          )}
+
           <MyBattlefieldArea 
             isDraggingOver={isDraggingOver}
             handleDrop={handleDrop}
@@ -121,7 +128,8 @@ export const OpponentBattlefield = memo(({
     sendAction,
     equipSelection,
     setEquipSelection,
-    thinkingSeats
+    thinkingSeats,
+    passingSeats
 }: { player: any } & BattlefieldSharedProps) => {
     const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -161,6 +169,9 @@ export const OpponentBattlefield = memo(({
                         <span className="text-2xl">💬</span> Thinking...
                     </div>
                 </div>
+            )}
+            {passingSeats?.includes(player.seat) && (
+                <PassTurnAnimation />
             )}
             <div className="flex justify-between items-center text-s text-red-300 mb-1 flex-shrink-0">
                 <div className="flex items-center gap-1 font-bold">
