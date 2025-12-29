@@ -1,6 +1,6 @@
 # Magic Sandbox TCG
 
-Una aplicación web Full Stack para jugar Magic: The Gathering en modo Sandbox (sin reglas forzadas), multijugador y en tiempo real.
+Una aplicación web Full Stack para jugar Magic: The Gathering en modo Sandbox (sin reglas forzadas), multijugador y en tiempo real. Eso si, abrazate del discord o de algun VOIP porque si no, lo tienes complicado jajajaj
 
 ## Stack
 - **Frontend**: React, Vite, TypeScript, Tailwind CSS.
