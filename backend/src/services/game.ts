@@ -892,6 +892,31 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         log(`Destapeó todo (${count} permanentes) 🔄`);
         break;
     }
+    case 'START_TURN': {
+        const { seat } = action.payload;
+        // 1. Untap All
+        const battlefieldIds = state.zoneIndex[seat]?.['BATTLEFIELD'] || [];
+        let count = 0;
+        battlefieldIds.forEach(id => {
+            if (state.objects[id] && state.objects[id].tapped) {
+                state.objects[id].tapped = false;
+                count++;
+            }
+        });
+        
+        // 2. Draw 1
+        const library = state.zoneIndex[seat].LIBRARY;
+        const hand = state.zoneIndex[seat].HAND;
+        if (library.length > 0) {
+            const drawnId = library.shift()!;
+            hand.push(drawnId);
+            state.objects[drawnId].zone = 'HAND';
+            log(`Empezó su turno: DesTapó todo (${count}) y Robó una carta 🏁`);
+        } else {
+            log(`Empezó su turno: DesTapó todo (${count}) pero no quedan cartas en la biblioteca 🏁`);
+        }
+        break;
+    }
     case 'PEEK_LIBRARY': {
         log(`⚠️ Está viendo su biblioteca 👁️‼️`);
         break;

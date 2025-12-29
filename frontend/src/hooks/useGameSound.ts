@@ -71,6 +71,10 @@ export const useGameSound = () => {
             case 'UNTAP_ALL':
                 playSound('UNTAP_ALL');
                 break;
+            case 'START_TURN':
+                playSound('UNTAP_ALL');
+                setTimeout(() => playSound('DRAW'), 400);
+                break;
             case 'TAP':
                 playSound('TAP');
                 break;
