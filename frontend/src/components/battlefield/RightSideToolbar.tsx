@@ -3,6 +3,8 @@ import viewLibraryIcon from '../../assets/img/view_library.png';
 
 interface RightSideToolbarProps {
     mySeat: number;
+    activeTab: string;
+    setActiveTab: (tab: string) => void;
     isThinkingCooldown: boolean;
     setIsThinkingCooldown: (cooldown: boolean) => void;
     sendAction: (action: string, payload: any) => void;
@@ -15,6 +17,8 @@ interface RightSideToolbarProps {
 
 export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
     mySeat,
+    activeTab,
+    setActiveTab,
     isThinkingCooldown,
     setIsThinkingCooldown,
     sendAction,
@@ -91,6 +95,15 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             >
                 <span className="text-xl">🪙</span>
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Token</span>
+            </button>
+
+            <button 
+                className="w-full h-fit py-1 rounded bg-teal-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                title="Ver Sideboard"
+                onClick={() => setActiveTab(activeTab === 'SIDEBOARD' ? 'HAND' : 'SIDEBOARD')}
+            >
+                <span className="text-xl">🛡️</span>
+                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Ver Sideboard</span>
             </button>
 
             <button 

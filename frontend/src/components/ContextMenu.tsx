@@ -181,10 +181,10 @@ export const ContextMenu = ({
 
     return (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
+          <div className="fixed inset-0 z-[990]" onClick={() => setMenuOpen(null)} />
           <div 
               ref={menuRef}
-              className="fixed z-50 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              className="fixed z-[1000] rounded-xl shadow-2xl overflow-hidden flex flex-col"
               style={{
                   top: position.y,
                   left: position.x,

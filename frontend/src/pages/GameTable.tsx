@@ -1010,6 +1010,8 @@ export default function GameTable() {
           {/* Right Toolbar */}
           <RightSideToolbar 
               mySeat={mySeat}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
               isThinkingCooldown={isThinkingCooldown}
               setIsThinkingCooldown={setIsThinkingCooldown}
               sendAction={sendAction}

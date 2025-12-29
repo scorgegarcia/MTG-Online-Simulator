@@ -246,7 +246,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     };
 
     return (
-        <div className="bg-slate-900 z-[120] flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
+        <div className="bg-slate-900 z-[0] flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
             
             <div 
                 className={clsx(
