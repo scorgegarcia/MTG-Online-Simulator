@@ -181,6 +181,16 @@ export const ContextMenu = ({
     const [customPowerDelta, setCustomPowerDelta] = useState<number>(0);
     const [customToughnessDelta, setCustomToughnessDelta] = useState<number>(0);
 
+    useEffect(() => {
+        if (!menuOpen || !obj) return;
+        const counters = obj.counters ?? {};
+        const p1p1 = typeof counters.P1P1 === 'number' ? counters.P1P1 : 0;
+        const powerStored = typeof counters.POWER === 'number' ? counters.POWER : 0;
+        const toughnessStored = typeof counters.TOUGHNESS === 'number' ? counters.TOUGHNESS : 0;
+        setCustomPowerDelta(p1p1 + powerStored);
+        setCustomToughnessDelta(p1p1 + toughnessStored);
+    }, [menuOpen?.id]);
+
     if (!menuOpen || !obj) return null;
 
     return (
@@ -373,8 +383,13 @@ export const ContextMenu = ({
                                           className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                           style={buttonStyle}
                                           onClick={() => {
-                                              if (customPowerDelta === 0) return;
-                                              sendAction('COUNTERS', { objectId: obj.id, type: 'POWER', delta: customPowerDelta }, { closeMenu: false });
+                                              const counters = obj.counters ?? {};
+                                              const p1p1 = typeof counters.P1P1 === 'number' ? counters.P1P1 : 0;
+                                              const currentPowerStored = typeof counters.POWER === 'number' ? counters.POWER : 0;
+                                              const targetPowerStored = customPowerDelta - p1p1;
+                                              const delta = targetPowerStored - currentPowerStored;
+                                              if (delta === 0) return;
+                                              sendAction('COUNTERS', { objectId: obj.id, type: 'POWER', delta }, { closeMenu: false });
                                           }}
                                       >
                                           ⚔️
@@ -391,8 +406,13 @@ export const ContextMenu = ({
                                           className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                           style={buttonStyle}
                                           onClick={() => {
-                                              if (customToughnessDelta === 0) return;
-                                              sendAction('COUNTERS', { objectId: obj.id, type: 'TOUGHNESS', delta: customToughnessDelta }, { closeMenu: false });
+                                              const counters = obj.counters ?? {};
+                                              const p1p1 = typeof counters.P1P1 === 'number' ? counters.P1P1 : 0;
+                                              const currentToughnessStored = typeof counters.TOUGHNESS === 'number' ? counters.TOUGHNESS : 0;
+                                              const targetToughnessStored = customToughnessDelta - p1p1;
+                                              const delta = targetToughnessStored - currentToughnessStored;
+                                              if (delta === 0) return;
+                                              sendAction('COUNTERS', { objectId: obj.id, type: 'TOUGHNESS', delta }, { closeMenu: false });
                                           }}
                                       >
                                           🛡️
