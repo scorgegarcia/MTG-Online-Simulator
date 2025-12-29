@@ -18,6 +18,8 @@ import dragCardSfx from '../assets/sfx/drag_card.mp3';
 import dropCardSfx from '../assets/sfx/drop_card.mp3';
 import diceRollSfx from '../assets/sfx/dice_roll.mp3';
 import endOfTurnSfx from '../assets/sfx/end_of_turn.mp3';
+import confirmHandSfx from '../assets/sfx/confirm_hand.mp3';
+import retryMulliganSfx from '../assets/sfx/retry_mulligan.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -48,6 +50,8 @@ export const useGameSound = () => {
         loadAudio('DROP_CARD', dropCardSfx);
         loadAudio('DICE_ROLL', diceRollSfx);
         loadAudio('END_OF_TURN', endOfTurnSfx);
+        loadAudio('CONFIRM_HAND', confirmHandSfx);
+        loadAudio('RETRY_MULLIGAN', retryMulliganSfx);
     }, []);
 
     const playSound = useCallback((key: string) => {

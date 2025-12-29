@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCardData } from '../hooks/useCardData';
+import { useGameSound } from '../hooks/useGameSound';
 import { RefreshCw, Check, Layers } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -57,8 +58,21 @@ const MulliganCard = ({ obj }: { obj: any }) => {
 
 export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliganCount = 7 }: MulliganModalProps) => {
     const [mulliganCount, setMulliganCount] = useState(initialMulliganCount);
+    const { playSound } = useGameSound();
 
     if (!isOpen) return null;
+
+    const handleKeep = () => {
+        playSound('CONFIRM_HAND');
+        onKeep();
+    };
+
+    const handleMulligan = () => {
+        const n = Math.max(1, Math.min(7, mulliganCount));
+        playSound('RETRY_MULLIGAN');
+        onMulligan(n);
+        setMulliganCount(prev => Math.max(1, prev - 1));
+    };
 
     return (
         <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center">
@@ -116,12 +130,8 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                                 />
                             </div>
                             <button 
-                                onClick={() => {
-                                    const n = Math.max(1, Math.min(7, mulliganCount));
-                                    onMulligan(n);
-                                    setMulliganCount(prev => Math.max(1, prev - 1));
-                                }}
-                                className="group relative px-8 py-4 bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/50 hover:border-indigo-400 rounded-lg text-indigo-200 font-serif font-bold text-xl transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] overflow-hidden"
+                                onClick={handleMulligan}
+                                className="group relative px-10 py-4 bg-gradient-to-r from-rose-950 to-red-950 hover:from-rose-900 hover:to-red-900 border border-rose-500/50 hover:border-rose-400 rounded-lg text-rose-200 font-serif font-bold text-xl transition-all hover:shadow-[0_0_20px_rgba(244,63,94,0.4)] overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                 <div className="flex items-center gap-3">
@@ -134,7 +144,7 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                         <div className="w-px h-16 bg-slate-700/50" />
 
                         <button 
-                            onClick={onKeep}
+                            onClick={handleKeep}
                             className="group relative px-10 py-4 bg-gradient-to-r from-emerald-950 to-teal-950 hover:from-emerald-900 hover:to-teal-900 border border-emerald-500/50 hover:border-emerald-400 rounded-lg text-emerald-200 font-serif font-bold text-xl transition-all hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
