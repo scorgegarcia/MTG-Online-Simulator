@@ -206,6 +206,28 @@ export default function GameTable() {
   });
   const [uiScale, setUiScale] = useState(() => parseFloat(localStorage.getItem('setting_uiScale') || '1'));
 
+  // Hotkeys state
+  const [hotkeys, setHotkeys] = useState(() => {
+    const saved = localStorage.getItem('setting_hotkeys');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse hotkeys', e);
+      }
+    }
+    return {
+      draw: 'd',
+      viewLibrary: 'l',
+      untapAll: 'u',
+      createToken: 't'
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('setting_hotkeys', JSON.stringify(hotkeys));
+  }, [hotkeys]);
+
   const [panelHeight, setPanelHeight] = useState(() => parseFloat(localStorage.getItem('setting_panelHeight') || '280'));
   const isResizingPanel = useRef(false);
   const panelResizeStartY = useRef(0);
@@ -508,6 +530,35 @@ export default function GameTable() {
       if (options?.closeMenu !== false) setMenuOpen(null);
   }, [gameState, id, socket]);
 
+  // Keyboard events for hotkeys
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      
+      if (key === hotkeys.draw) {
+        e.preventDefault();
+        sendAction('DRAW', { seat: mySeatRef.current, n: 1 });
+      } else if (key === hotkeys.viewLibrary) {
+        e.preventDefault();
+        setViewLibraryModalOpen(true);
+      } else if (key === hotkeys.untapAll) {
+        e.preventDefault();
+        sendAction('UNTAP_ALL', { seat: mySeatRef.current });
+      } else if (key === hotkeys.createToken) {
+        e.preventDefault();
+        setCreateTokenModalOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen]);
+
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });
       setMenuOpen(null);
@@ -734,6 +785,7 @@ export default function GameTable() {
           previewScale={previewScale} setPreviewScale={setPreviewScale}
           hoverScale={hoverScale} setHoverScale={setHoverScale}
           uiScale={uiScale} setUiScale={setUiScale}
+          hotkeys={hotkeys} setHotkeys={setHotkeys}
       />
       {/* Damage Vignette */}
       <div 
