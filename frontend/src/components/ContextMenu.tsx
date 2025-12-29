@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useCardData } from '../hooks/useCardData';
 import { ZONE_LABELS } from '../utils/gameUtils';
+import { CardCounters } from './CardCounters';
 
 const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
     const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
@@ -15,7 +16,7 @@ const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
 
     return (
         <div
-            className="rounded-md overflow-hidden border border-amber-400/40 bg-black/30"
+            className="rounded-md overflow-hidden border border-amber-400/40 bg-black/30 relative"
             style={{
                 width: `${w}px`,
                 height: `${h}px`,
@@ -27,6 +28,7 @@ const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
             ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/50 text-xs">Sin imagen</div>
             )}
+            <CardCounters counters={obj?.counters} size="small" />
         </div>
     );
 };
@@ -271,12 +273,13 @@ export const ContextMenu = ({
                   <div className="shrink-0" style={{ width: `${previewWidth}px`, height: `${previewHeight}px` }}>
                       {finalImgUrl ? (
                           <div
-                              className="w-full h-full rounded-lg overflow-hidden border border-white/15"
+                              className="w-full h-full rounded-lg overflow-hidden border border-white/15 relative"
                               style={{
                                   boxShadow: `0 0 ${28 * uiScale}px ${palette.halo}, 0 0 ${70 * uiScale}px rgba(0,0,0,0.5)`,
                               }}
                           >
                               <img src={finalImgUrl} className="w-full h-full object-cover" draggable={false} />
+                              <CardCounters counters={obj?.counters} size="normal" className="scale-150 origin-top-right mt-1 mr-1" />
                           </div>
                       ) : (
                           <div className="w-full h-full rounded-lg border border-white/15 bg-black/40 flex items-center justify-center text-white/60" style={fontSizeStyle}>
