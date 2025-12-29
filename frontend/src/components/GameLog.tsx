@@ -26,7 +26,7 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
             <div className="relative h-full">
                 {expanded && (
                     <button 
-                      className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                      className="absolute top-2 right-2 z-[60] w-10 h-10 flex items-center justify-center bg-gray-800/80 rounded-full text-xl shadow-lg border border-gray-600 active:scale-95 transition-all"
                       onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
                     >
                         ⬇️
@@ -35,7 +35,7 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
                 
                 <div 
                   ref={logContainerRef}
-                  className={clsx("p-1 overflow-y-auto h-full flex flex-col gap-0 overscroll-contain touch-pan-y", !expanded && "justify-end")}
+                  className={clsx("p-1 overflow-y-auto h-full flex flex-col gap-0 overscroll-contain touch-pan-y", !expanded && "justify-end", expanded && "pr-14")}
                   style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                     {messagesToShow.map((msg: any) => (
