@@ -3,6 +3,8 @@ import { useCardData } from '../hooks/useCardData';
 import { RefreshCw, Check, Layers } from 'lucide-react';
 import clsx from 'clsx';
 
+const MULLIGAN_HOVER_SCALE_CLASS = 'group-hover:scale-[1.3]';
+
 interface MulliganModalProps {
     isOpen: boolean;
     hand: any[];
@@ -32,12 +34,12 @@ const MulliganCard = ({ obj }: { obj: any }) => {
     return (
         <div 
             className={clsx(
-                "relative rounded-xl overflow-hidden transition-all duration-500 transform hover:scale-110 hover:z-50",
+                "relative rounded-xl overflow-hidden transition-all duration-500 transform",
                 "bg-black",
                 "border-2",
                 glowClass
             )}
-            style={{ width: 'clamp(8rem, 12vw, 14rem)', aspectRatio: '2.5/3.5' }}
+            style={{ width: 'clamp(9rem, 14vw, 16rem)', aspectRatio: '2.5/3.5' }}
         >
             {img ? (
                 <img src={img} alt="Card" className="w-full h-full object-cover" />
@@ -69,7 +71,7 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                     Elige tu destino con sabiduría, planeswalker.
                 </p>
 
-                <div className="w-full max-w-7xl flex-1 min-h-0 flex flex-wrap justify-center content-center gap-4 mb-10 px-2 overflow-auto perspective-[1000px]">
+                <div className="w-full max-w-[69rem] flex-1 min-h-0 flex flex-wrap justify-center content-center gap-6 mb-10 px-8 py-16 overflow-y-hidden overflow-x-hidden perspective-[1000px]">
                     {hand.map((card, idx) => (
                         <div 
                             key={card.id} 
@@ -77,9 +79,11 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                                 animationDelay: `${idx * 100}ms`,
                                 transform: `rotate(${(idx - (hand.length-1)/2) * 2}deg) translateY(${Math.abs(idx - (hand.length-1)/2) * 5}px)`
                             }}
-                            className="animate-in slide-in-from-bottom-20 fade-in duration-700 fill-mode-backwards"
+                            className="group relative z-0 hover:z-50 animate-in slide-in-from-bottom-20 fade-in duration-700 fill-mode-backwards"
                         >
-                            <MulliganCard obj={card} />
+                            <div className={clsx("transition-transform duration-500", MULLIGAN_HOVER_SCALE_CLASS)}>
+                                <MulliganCard obj={card} />
+                            </div>
                         </div>
                     ))}
                     {hand.length === 0 && (
