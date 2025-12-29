@@ -13,6 +13,8 @@ import { CommanderDamageModal } from '../components/CommanderDamageModal';
 import { CreateTokenModal } from '../components/CreateTokenModal';
 import { TradeTray } from '../components/TradeTray';
 import { RevealTray } from '../components/RevealTray';
+import { LibraryRevealTray } from '../components/LibraryRevealTray';
+import { LibraryRevealModal } from '../components/LibraryRevealModal';
 import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
@@ -71,6 +73,7 @@ export default function GameTable() {
   const [createTokenModalOpen, setCreateTokenModalOpen] = useState(false);
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [revealModalOpen, setRevealModalOpen] = useState(false);
+  const [libraryRevealModalOpen, setLibraryRevealModalOpen] = useState(false);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
 
   // Cooldown timer
@@ -416,7 +419,8 @@ export default function GameTable() {
   const amIRevealing = activeReveal && (
       activeReveal.sourceSeat === mySeat || 
       activeReveal.targetSeat === mySeat || 
-      activeReveal.targetSeat === 'ALL'
+      activeReveal.targetSeat === 'ALL' ||
+      (Array.isArray(activeReveal.targetSeat) && activeReveal.targetSeat.includes(mySeat))
   );
 
   const opponents = gameState?.players ? Object.values(gameState.players).filter((p: any) => p.seat !== mySeat) : [];
@@ -762,6 +766,14 @@ export default function GameTable() {
           onCreate={(token) => sendAction('CREATE_TOKEN', { seat: mySeat, zone: 'BATTLEFIELD', token })}
       />
 
+      <LibraryRevealModal 
+          isOpen={libraryRevealModalOpen}
+          onClose={() => setLibraryRevealModalOpen(false)}
+          mySeat={mySeat}
+          opponents={opponents}
+          sendAction={sendAction}
+      />
+
       <ConfirmationModal
         isOpen={showExitModal}
         onClose={() => setShowExitModal(false)}
@@ -919,9 +931,15 @@ export default function GameTable() {
                  </div>
                  <div className="flex flex-wrap gap-1 justify-center w-full h-full items-stretch">
                     {amIRevealing ? (
-                        <div className="w-full h-full p-1">
-                            <RevealTray gameState={gameState} {...commonProps} />
-                        </div>
+                        gameState.reveal?.type === 'LIBRARY' ? (
+                            <div className="w-full h-full p-1">
+                                <LibraryRevealTray gameState={gameState} {...commonProps} />
+                            </div>
+                        ) : (
+                            <div className="w-full h-full p-1">
+                                <RevealTray gameState={gameState} {...commonProps} />
+                            </div>
+                        )
                     ) : amITrading ? (
                         <div className="w-full h-full p-1">
                             <TradeTray gameState={gameState} {...commonProps} />
@@ -965,6 +983,7 @@ export default function GameTable() {
               setTradeModalOpen={setTradeModalOpen}
               setRevealModalOpen={setRevealModalOpen}
               setCreateTokenModalOpen={setCreateTokenModalOpen}
+              setLibraryRevealModalOpen={setLibraryRevealModalOpen}
           />
       </div>
 

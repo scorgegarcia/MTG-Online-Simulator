@@ -31,7 +31,7 @@ export const RevealTray = ({
 
     const { sourceSeat, targetSeat, highlightedCards } = reveal;
     const isSource = sourceSeat === mySeat;
-    const isTarget = targetSeat === 'ALL' || targetSeat === mySeat;
+    const isTarget = targetSeat === 'ALL' || targetSeat === mySeat || (Array.isArray(targetSeat) && targetSeat.includes(mySeat));
 
     if (!isSource && !isTarget) return null;
 

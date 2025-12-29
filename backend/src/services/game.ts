@@ -16,9 +16,11 @@ interface GameState {
 }
 
 interface RevealSession {
+    type: 'HAND' | 'LIBRARY';
     sourceSeat: number;
-    targetSeat: number | 'ALL';
+    targetSeat: number | number[] | 'ALL';
     highlightedCards: string[];
+    revealedCardIds?: string[];
 }
 
 interface TradeSession {
@@ -517,6 +519,12 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         // Find object
         const obj = state.objects[objectId];
         if(!obj) break;
+        const oldControllerSeat = obj.controller_seat;
+        const oldZone = obj.zone;
+        const shouldRemoveFromLibraryReveal = state.reveal?.type === 'LIBRARY'
+            && state.reveal.sourceSeat === oldControllerSeat
+            && Array.isArray(state.reveal.revealedCardIds)
+            && state.reveal.revealedCardIds.includes(objectId);
 
         // Trade Logic: If moving to/from TRADE_OFFER, unlock trade
         if (state.trade && (fromZone === 'TRADE_OFFER' || toZone === 'TRADE_OFFER')) {
@@ -542,7 +550,6 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         removeFromZone(obj.controller_seat, obj.zone, objectId);
 
         // Update object
-        const oldZone = obj.zone;
         obj.zone = toZone;
         if (toOwner) obj.controller_seat = toOwner; // Change controller
         if (faceState) obj.face_state = faceState;
@@ -565,6 +572,10 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
             state.zoneIndex[destSeat][toZone].unshift(objectId);
         } else {
             state.zoneIndex[destSeat][toZone].push(objectId);
+        }
+
+        if (shouldRemoveFromLibraryReveal) {
+            state.reveal!.revealedCardIds = state.reveal!.revealedCardIds!.filter(id => id !== objectId);
         }
         
         log(`Movió ${cardName} de ${oldZone} a ${toZone}${position ? ` (${position})` : ''}`);
@@ -827,14 +838,37 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const { seat, target } = action.payload;
         if (state.reveal) break;
         if (actorSeat === undefined || seat !== actorSeat) break;
-        if (target !== 'ALL' && typeof target !== 'number') break;
+        if (target !== 'ALL' && typeof target !== 'number' && !Array.isArray(target)) break;
         state.reveal = {
+            type: 'HAND',
             sourceSeat: seat,
             targetSeat: target,
             highlightedCards: []
         };
-        const targetName = target === 'ALL' ? 'Todos' : `Jugador ${target}`;
+        const targetName = target === 'ALL' ? 'Todos' : Array.isArray(target) ? `Jugadores ${target.join(', ')}` : `Jugador ${target}`;
         log(`Mostró su mano a ${targetName}`);
+        break;
+    }
+    case 'REVEAL_LIBRARY_START': {
+        const { seat, amount, target } = action.payload;
+        if (state.reveal) break;
+        if (actorSeat === undefined || seat !== actorSeat) break;
+        if (target !== 'ALL' && typeof target !== 'number' && !Array.isArray(target)) break;
+        
+        const library = state.zoneIndex[seat]?.LIBRARY || [];
+        const count = Math.min(amount || 1, library.length);
+        const revealedIds = library.slice(0, count);
+
+        state.reveal = {
+            type: 'LIBRARY',
+            sourceSeat: seat,
+            targetSeat: target,
+            highlightedCards: [],
+            revealedCardIds: revealedIds
+        };
+        
+        const targetName = target === 'ALL' ? 'Todos' : Array.isArray(target) ? `Jugadores ${target.join(', ')}` : `Jugador ${target}`;
+        log(`Mostró las siguientes ${count} cartas de su biblioteca a ${targetName}`);
         break;
     }
     case 'REVEAL_CLOSE': {
@@ -848,7 +882,13 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const { cardId } = action.payload;
         if (!state.reveal) break;
         if (actorSeat === undefined) break;
-        if (state.reveal.targetSeat !== 'ALL' && actorSeat !== state.reveal.sourceSeat && actorSeat !== state.reveal.targetSeat) break;
+        const targetSeat = state.reveal.targetSeat;
+        const actorIsTarget = targetSeat === 'ALL'
+            ? true
+            : Array.isArray(targetSeat)
+                ? targetSeat.includes(actorSeat)
+                : targetSeat === actorSeat;
+        if (actorSeat !== state.reveal.sourceSeat && !actorIsTarget) break;
         if (!state.zoneIndex[state.reveal.sourceSeat]?.HAND?.includes(cardId)) break;
         
         const idx = state.reveal.highlightedCards.indexOf(cardId);

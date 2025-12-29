@@ -8,6 +8,7 @@ interface RightSideToolbarProps {
     setTradeModalOpen: (open: boolean) => void;
     setRevealModalOpen: (open: boolean) => void;
     setCreateTokenModalOpen: (open: boolean) => void;
+    setLibraryRevealModalOpen: (open: boolean) => void;
 }
 
 export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
@@ -17,7 +18,8 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
     sendAction,
     setTradeModalOpen,
     setRevealModalOpen,
-    setCreateTokenModalOpen
+    setCreateTokenModalOpen,
+    setLibraryRevealModalOpen
 }) => {
     return (
         <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700 overflow-auto [scrollbar-width:none]">
@@ -50,6 +52,15 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             >
                 <span className="text-xl">🔀</span>
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Shuffle Lib</span>
+            </button>
+
+            <button 
+                className="w-full h-fit py-1 rounded bg-purple-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                title="Show Next X Cards"
+                onClick={() => setLibraryRevealModalOpen(true)}
+            >
+                <span className="text-xl">📚</span>
+                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Peek Lib</span>
             </button>
 
             <button 
