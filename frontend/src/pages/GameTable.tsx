@@ -422,14 +422,14 @@ export default function GameTable() {
     return () => clearTimeout(t);
   }, [socket, isConnected, gameState, gameInfo?.status, id]);
 
-  const sendAction = useCallback((type: string, payload: any) => {
+  const sendAction = useCallback((type: string, payload: any, options?: { closeMenu?: boolean }) => {
       if(!gameState) return;
       socket?.emit('game:action', {
           gameId: id,
           expectedVersion: gameState.version,
           action: { type, payload }
       });
-      setMenuOpen(null);
+      if (options?.closeMenu !== false) setMenuOpen(null);
   }, [gameState, id, socket]);
 
   const activeTrade = gameState?.trade;

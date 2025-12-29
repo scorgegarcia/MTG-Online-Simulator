@@ -777,8 +777,13 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const { objectId, type, delta } = action.payload;
         const obj = state.objects[objectId];
         if (obj) {
-            obj.counters[type] = (obj.counters[type] || 0) + delta;
-            if (obj.counters[type] <= 0) delete obj.counters[type];
+            if (!obj.counters) obj.counters = {};
+            const next = (obj.counters[type] || 0) + delta;
+            if (next === 0) {
+                delete obj.counters[type];
+            } else {
+                obj.counters[type] = next;
+            }
             log(`${delta > 0 ? 'Agregó' : 'Removió'} ${type} contador`);
         }
         break;

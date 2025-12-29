@@ -46,6 +46,29 @@ export const Card = memo(({
         ? (obj.back_image_url || 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg')
         : imgUrl;
 
+    const counters: Record<string, any> = obj?.counters ?? {};
+    const formatSigned = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+    const counterParts: string[] = [];
+    const p1p1 = typeof counters.P1P1 === 'number' ? counters.P1P1 : 0;
+    const powerDelta = typeof counters.POWER === 'number' ? counters.POWER : 0;
+    const toughnessDelta = typeof counters.TOUGHNESS === 'number' ? counters.TOUGHNESS : 0;
+    const totalPowerDelta = p1p1 + powerDelta;
+    const totalToughnessDelta = p1p1 + toughnessDelta;
+    if (totalPowerDelta !== 0 || totalToughnessDelta !== 0) {
+        counterParts.push(`${formatSigned(totalPowerDelta)}/${formatSigned(totalToughnessDelta)}`);
+    }
+    Object.entries(counters).forEach(([k, v]) => {
+        if (k === 'P1P1' || k === 'POWER' || k === 'TOUGHNESS') return;
+        if (typeof v === 'number') {
+            if (v === 0) return;
+            counterParts.push(`${k}${v > 0 ? `+${v}` : `${v}`}`);
+            return;
+        }
+        if (v === undefined || v === null) return;
+        counterParts.push(String(k));
+    });
+    const countersText = counterParts.join(',');
+
     const baseWidth = size === 'small' ? 64 : 128; // w-16 : w-32
     const baseHeight = size === 'small' ? 96 : 176; // h-24 : h-44
     
@@ -195,9 +218,9 @@ export const Card = memo(({
                 <div className="text-xs p-1">{isFacedown ? '???' : obj.scryfall_id}</div>
             )}
 
-            {Object.keys(obj.counters).length > 0 && (
+            {countersText.length > 0 && (
                 <div className="absolute scale-150 top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
-                    {Object.entries(obj.counters).map(([k,v]) => `${k}:${v}`).join(',')}
+                    {countersText}
                 </div>
             )}
             {inBattlefield && !isFacedown && power !== undefined && toughness !== undefined && (

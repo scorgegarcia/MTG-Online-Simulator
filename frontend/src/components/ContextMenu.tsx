@@ -9,7 +9,7 @@ interface ContextMenuProps {
     mySeat: number;
     previewScale: number;
     uiScale: number;
-    sendAction: (type: string, payload: any) => void;
+    sendAction: (type: string, payload: any, options?: { closeMenu?: boolean }) => void;
 }
 
 export const ContextMenu = ({
@@ -176,6 +176,10 @@ export const ContextMenu = ({
     const fontSizeStyle = { fontSize: `${0.875 * uiScale}rem` };
     const metaFontSizeStyle = { fontSize: `${0.75 * uiScale}rem` };
     const buttonStyle = { padding: `${0.55 * uiScale}rem ${0.85 * uiScale}rem`, fontSize: `${0.85 * uiScale}rem` };
+    const inputStyle = { padding: `${0.55 * uiScale}rem ${0.65 * uiScale}rem`, fontSize: `${0.85 * uiScale}rem` };
+
+    const [customPowerDelta, setCustomPowerDelta] = useState<number>(0);
+    const [customToughnessDelta, setCustomToughnessDelta] = useState<number>(0);
 
     if (!menuOpen || !obj) return null;
 
@@ -308,18 +312,90 @@ export const ContextMenu = ({
                                   <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Contadores</div>
                                   <div className="flex gap-2">
                                       <button
-                                          className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          className="flex-1 text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                           style={buttonStyle}
-                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 })}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: 1 }, { closeMenu: false })}
                                       >
                                           +1/+1
                                       </button>
                                       <button
-                                          className="flex-1 text-left rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          className="flex-1 text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
                                           style={buttonStyle}
-                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 })}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'P1P1', delta: -1 }, { closeMenu: false })}
                                       >
                                           -1/-1
+                                      </button>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-2">
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'POWER', delta: -1 }, { closeMenu: false })}
+                                      >
+                                          <span className="block">-1</span>
+                                          <span className="block">⚔️</span>
+                                      </button>
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'POWER', delta: 1 }, { closeMenu: false })}
+                                      >
+                                          <span className="block">+1</span>
+                                          <span className="block">⚔️</span>
+                                      </button>
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'TOUGHNESS', delta: -1 }, { closeMenu: false })}
+                                      >
+                                          <span className="block">-1</span>
+                                          <span className="block">🛡️</span>
+                                      </button>
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => sendAction('COUNTERS', { objectId: obj.id, type: 'TOUGHNESS', delta: 1 }, { closeMenu: false })}
+                                      >
+                                          <span className="block">+1</span>
+                                          <span className="block">🛡️</span>
+                                      </button>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-2">
+                                      <input
+                                          className="w-full text-center rounded-lg bg-black/25 border border-white/10 text-white outline-none"
+                                          style={inputStyle}
+                                          type="number"
+                                          step={1}
+                                          value={customPowerDelta}
+                                          onChange={(e) => setCustomPowerDelta(Number(e.target.value) || 0)}
+                                      />
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => {
+                                              if (customPowerDelta === 0) return;
+                                              sendAction('COUNTERS', { objectId: obj.id, type: 'POWER', delta: customPowerDelta }, { closeMenu: false });
+                                          }}
+                                      >
+                                          ⚔️
+                                      </button>
+                                      <input
+                                          className="w-full text-center rounded-lg bg-black/25 border border-white/10 text-white outline-none"
+                                          style={inputStyle}
+                                          type="number"
+                                          step={1}
+                                          value={customToughnessDelta}
+                                          onChange={(e) => setCustomToughnessDelta(Number(e.target.value) || 0)}
+                                      />
+                                      <button
+                                          className="text-center rounded-lg bg-black/25 hover:bg-black/35 border border-white/10 hover:border-white/15 transition-colors text-white"
+                                          style={buttonStyle}
+                                          onClick={() => {
+                                              if (customToughnessDelta === 0) return;
+                                              sendAction('COUNTERS', { objectId: obj.id, type: 'TOUGHNESS', delta: customToughnessDelta }, { closeMenu: false });
+                                          }}
+                                      >
+                                          🛡️
                                       </button>
                                   </div>
                               </>
