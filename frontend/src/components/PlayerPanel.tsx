@@ -306,7 +306,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <div ref={handScrollRef} className="flex gap-1 overflow-x-auto scroll-smooth no-scrollbar px-12 w-full h-full items-stretch">
+                        <div ref={handScrollRef} className="flex gap-1 overflow-x-auto scroll-smooth no-scrollbar px-12 w-full h-full items-stretch overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {getZoneObjects(mySeat, 'HAND').map((obj: any, index: number) => (
                                 <div 
                                     key={obj.id} 
@@ -357,7 +357,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto py-0 scroll-smooth no-scrollbar px-12 w-full h-full items-stretch">
+                        <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto py-0 scroll-smooth no-scrollbar px-12 w-full h-full items-stretch overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {getZoneObjects(mySeat, 'LIBRARY').map((obj: any, i: number) => (
                                 <div key={obj.id} className="relative group min-w-max h-full flex items-stretch transform hover:-translate-y-2 transition-transform duration-200">
                                     <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} />
@@ -386,7 +386,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <div ref={zoneViewScrollRef} className="flex gap-2 overflow-x-auto scroll-smooth no-scrollbar px-12 w-full h-full items-start">
+                        <div ref={zoneViewScrollRef} className="flex gap-2 overflow-x-auto scroll-smooth no-scrollbar px-12 w-full h-full items-start overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {getZoneObjects(mySeat, currentTab).map((obj: any) => (
                                 <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity h-full max-h-full aspect-[2.5/3.5]">
                                     <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} />
@@ -409,9 +409,11 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
             </div>
 
             <div
-                className="w-2 bg-gradient-to-b from-slate-900 via-amber-700/30 to-slate-900 hover:via-amber-500/40 cursor-col-resize transition-colors z-40"
+                className="w-2 bg-gradient-to-b from-slate-900 via-amber-700/30 to-slate-900 hover:via-amber-500/40 cursor-col-resize transition-colors z-40 touch-action-none"
+                style={{ touchAction: 'none' }}
                 onPointerDown={(e) => {
                     e.preventDefault();
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
                     isResizingZonesPanel.current = true;
                     zonesResizeStartX.current = e.clientX;
                     zonesResizeStartWidth.current = zonesPanelWidth;

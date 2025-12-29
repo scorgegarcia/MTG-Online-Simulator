@@ -207,6 +207,8 @@ export default function GameTable() {
 
   const [panelHeight, setPanelHeight] = useState(() => parseFloat(localStorage.getItem('setting_panelHeight') || '280'));
   const isResizingPanel = useRef(false);
+  const panelResizeStartY = useRef(0);
+  const panelResizeStartHeight = useRef(0);
 
   const battlefieldsContainerRef = useRef<HTMLDivElement>(null);
   const [opponentsBattlefieldHeight, setOpponentsBattlefieldHeight] = useState(() => {
@@ -219,34 +221,33 @@ export default function GameTable() {
   const battlefieldsResizeStartHeight = useRef(0);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (isResizingPanel.current) {
-        setPanelHeight(prev => {
-           const newHeight = prev - e.movementY;
-           return Math.max(150, Math.min(window.innerHeight * 0.8, newHeight));
-        });
+        const deltaY = e.clientY - panelResizeStartY.current;
+        const newHeight = panelResizeStartHeight.current - deltaY;
+        const boundedHeight = Math.max(150, Math.min(window.innerHeight * 0.8, newHeight));
+        setPanelHeight(boundedHeight);
       }
     };
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
         if (isResizingPanel.current) {
             isResizingPanel.current = false;
             document.body.style.cursor = 'default';
-            localStorage.setItem('setting_panelHeight', panelHeight.toString());
         }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [panelHeight]);
+  }, []);
 
   useEffect(() => {
-      if (!isResizingPanel.current) {
-        localStorage.setItem('setting_panelHeight', panelHeight.toString());
-      }
+    if (!isResizingPanel.current) {
+      localStorage.setItem('setting_panelHeight', panelHeight.toString());
+    }
   }, [panelHeight]);
 
   useEffect(() => {
@@ -274,7 +275,6 @@ export default function GameTable() {
       if (!isResizingBattlefields.current) return;
       isResizingBattlefields.current = false;
       document.body.style.cursor = 'default';
-      localStorage.setItem('setting_opponentsBattlefieldHeight', opponentsBattlefieldHeight.toString());
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -283,7 +283,7 @@ export default function GameTable() {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [opponentsBattlefieldHeight]);
+  }, []);
 
   useEffect(() => {
     if (!isResizingBattlefields.current && opponentsBattlefieldHeight > 0) {
@@ -1096,9 +1096,11 @@ export default function GameTable() {
               </div>
 
               <div
-                className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-0 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)]"
+                className="h-2 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 cursor-row-resize transition-colors z-0 border-y border-slate-950 shadow-[0_0_10px_rgba(0,0,0,0.6)] touch-action-none"
+                style={{ touchAction: 'none' }}
                 onPointerDown={(e) => {
                   e.preventDefault();
+                  (e.target as HTMLElement).setPointerCapture(e.pointerId);
                   isResizingBattlefields.current = true;
                   battlefieldsResizeStartY.current = e.clientY;
                   const fallback = battlefieldsContainerRef.current ? Math.floor(battlefieldsContainerRef.current.clientHeight / 2) : 0;
@@ -1108,7 +1110,10 @@ export default function GameTable() {
               />
 
               {/* My Battlefield (Bottom 50%) */}
-              <div className="flex-1 overflow-auto p-0 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10">
+              <div 
+                className="flex-1 overflow-auto p-0 bg-gradient-to-t from-indigo-950/10 to-transparent relative z-10 overscroll-contain"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                   <div className="h-full rounded-lg border border-indigo-900/10">
                       <MyBattlefield gameState={gameState} seat={mySeat} {...commonProps} />
                   </div>
@@ -1133,10 +1138,14 @@ export default function GameTable() {
 
       {/* Resizer Handle */}
       <div 
-        className="h-1.5 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 hover:h-2 cursor-row-resize transition-all z-20 shadow-[0_-1px_5px_rgba(0,0,0,0.5)] border-y border-slate-950"
-        onMouseDown={(e) => {
+        className="h-1.5 bg-gradient-to-r from-slate-900 via-amber-700/50 to-slate-900 hover:via-amber-500 hover:h-2 cursor-row-resize transition-all z-20 shadow-[0_-1px_5px_rgba(0,0,0,0.5)] border-y border-slate-950 touch-action-none"
+        style={{ touchAction: 'none' }}
+        onPointerDown={(e) => {
             e.preventDefault(); 
+            (e.target as HTMLElement).setPointerCapture(e.pointerId);
             isResizingPanel.current = true;
+            panelResizeStartY.current = e.clientY;
+            panelResizeStartHeight.current = panelHeight;
             document.body.style.cursor = 'row-resize';
         }}
       />

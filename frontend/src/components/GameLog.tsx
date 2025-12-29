@@ -35,7 +35,8 @@ export const GameLog = ({ gameState }: { gameState: any }) => {
                 
                 <div 
                   ref={logContainerRef}
-                  className={clsx("p-1 overflow-y-auto h-full flex flex-col gap-0", !expanded && "justify-end")}
+                  className={clsx("p-1 overflow-y-auto h-full flex flex-col gap-0 overscroll-contain touch-pan-y", !expanded && "justify-end")}
+                  style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                     {messagesToShow.map((msg: any) => (
                         <div key={msg.id} className="opacity-80 hover:opacity-100">
