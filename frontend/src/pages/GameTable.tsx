@@ -208,20 +208,24 @@ export default function GameTable() {
 
   // Hotkeys state
   const [hotkeys, setHotkeys] = useState(() => {
+    const defaultHotkeys = {
+      draw: 'd',
+      viewLibrary: 'l',
+      untapAll: 'u',
+      createToken: 't',
+      tapUntap: ' '
+    };
+
     const saved = localStorage.getItem('setting_hotkeys');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return { ...defaultHotkeys, ...parsed };
       } catch (e) {
         console.error('Failed to parse hotkeys', e);
       }
     }
-    return {
-      draw: 'd',
-      viewLibrary: 'l',
-      untapAll: 'u',
-      createToken: 't'
-    };
+    return defaultHotkeys;
   });
 
   useEffect(() => {
@@ -552,12 +556,21 @@ export default function GameTable() {
       } else if (key === hotkeys.createToken) {
         e.preventDefault();
         setCreateTokenModalOpen(true);
+      } else if (key === hotkeys.tapUntap) {
+        e.preventDefault();
+        if (hoveredCard?.obj && hoveredCard.obj.controller_seat === mySeatRef.current) {
+          // Solo permitir tap en el campo de batalla
+          const isOnBattlefield = gameState?.zoneIndex?.[mySeatRef.current]?.['BATTLEFIELD']?.includes(hoveredCard.obj.id);
+          if (isOnBattlefield) {
+            sendAction('TAP', { objectId: hoveredCard.obj.id });
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen]);
+  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState]);
 
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });

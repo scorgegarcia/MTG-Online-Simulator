@@ -14,6 +14,7 @@ interface SettingsModalProps {
         viewLibrary: string;
         untapAll: string;
         createToken: string;
+        tapUntap: string;
     };
     setHotkeys: (hotkeys: any) => void;
 }
@@ -119,6 +120,11 @@ export const SettingsModal = ({
                                 value={hotkeys.createToken} 
                                 onChange={(val) => handleHotkeyChange('createToken', val)} 
                             />
+                            <HotkeyInput 
+                                label="Tap/Untap" 
+                                value={hotkeys.tapUntap} 
+                                onChange={(val) => handleHotkeyChange('tapUntap', val)} 
+                            />
                         </div>
                         <p className="text-[10px] text-slate-500 mt-4 italic text-center">
                             Haz clic en un recuadro y presiona una tecla para cambiarla.
@@ -175,12 +181,14 @@ const HotkeyInput = ({ label, value, onChange }: HotkeyInputProps) => (
         <div className="relative">
             <input 
                 type="text"
-                value={value.toUpperCase()}
+                value={value === ' ' ? 'ESPACIO' : (value || '').toUpperCase()}
                 readOnly
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-center font-mono font-bold text-indigo-400 focus:outline-none focus:border-indigo-500 transition-colors cursor-default"
                 onKeyDown={(e) => {
                     e.preventDefault();
-                    if (e.key.length === 1) {
+                    if (e.key === ' ') {
+                        onChange(' ');
+                    } else if (e.key.length === 1) {
                         onChange(e.key);
                     }
                 }}
