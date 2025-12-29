@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom MTG Cursor */
+html, body, * {
+  cursor: url('./assets/img/cursor_mtg.png'), auto;
+}
+
+/* Ensure interactive elements and Tailwind cursor classes also use the custom cursor */
+a, button, [role="button"], select, input, textarea, 
+.cursor-pointer, .cursor-not-allowed, .cursor-wait, .cursor-help, .cursor-move,
+.hover\:cursor-pointer:hover, .disabled\:cursor-not-allowed:disabled {
+  cursor: url('./assets/img/cursor_mtg.png'), pointer !important;
+}
+
+/* Specific cases where we might want to keep the original behavior but with the custom image as fallback */
+.cursor-col-resize {
+  cursor: url('./assets/img/cursor_mtg.png'), col-resize !important;
+}
+.cursor-row-resize {
+  cursor: url('./assets/img/cursor_mtg.png'), row-resize !important;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
