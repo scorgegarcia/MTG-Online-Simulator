@@ -548,6 +548,12 @@ export default function GameTable() {
       }
   };
 
+  const canStartDuel = useCallback(() => {
+    if (!gameInfo || !gameInfo.players) return false;
+    // Todos los jugadores deben tener un deck seleccionado
+    return gameInfo.players.every((p: any) => !!p.deck);
+  }, [gameInfo]);
+
   const leaveLobby = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/leave`);
       navigate('/');
@@ -660,16 +666,31 @@ export default function GameTable() {
                       )}
 
                       {gameInfo.host_id === user?.id && (
-                          <button 
-                            onMouseEnter={playLobbyHover}
-                            onClick={() => {
-                              playLobbyStart();
-                              startGame();
-                            }}
-                            className="w-full mt-6 bg-gradient-to-r from-emerald-900 to-teal-900 hover:from-emerald-800 hover:to-teal-800 border border-emerald-700 py-4 rounded-lg font-bold text-lg text-emerald-100 shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
-                          >
-                              <Swords size={24} /> BEGIN THE DUEL
-                          </button>
+                          <div className="relative group">
+                            <button 
+                                onMouseEnter={playLobbyHover}
+                                onClick={() => {
+                                    if (!canStartDuel()) return;
+                                    playLobbyStart();
+                                    startGame();
+                                }}
+                                disabled={!canStartDuel()}
+                                className={clsx(
+                                    "w-full mt-6 py-4 rounded-lg font-bold text-lg shadow-lg transition-all transform flex items-center justify-center gap-3 border",
+                                    canStartDuel() 
+                                        ? "bg-gradient-to-r from-emerald-900 to-teal-900 hover:from-emerald-800 hover:to-teal-800 border-emerald-700 text-emerald-100 active:scale-[0.99]" 
+                                        : "bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed opacity-60"
+                                )}
+                            >
+                                <Swords size={24} /> BEGIN THE DUEL
+                            </button>
+                            {!canStartDuel() && (
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-slate-200 text-xs py-2 px-4 rounded border border-slate-700 shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                    <span className="text-amber-500 font-bold">Wait!</span> All planeswalkers must select their grimoires first.
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-b border-r border-slate-700 rotate-45"></div>
+                                </div>
+                            )}
+                          </div>
                       )}
                   </div>
               </div>
