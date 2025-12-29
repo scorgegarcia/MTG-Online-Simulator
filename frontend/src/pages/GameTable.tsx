@@ -61,7 +61,7 @@ export default function GameTable() {
   const [showRevealModal, setShowRevealModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
-  const [mulliganModalOpen, setMulliganModalOpen] = useState(false);
+  const [openingHandKeptLocal, setOpeningHandKeptLocal] = useState(false);
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   const [initialLife, setInitialLife] = useState(40);
   const [showDamageVignette, setShowDamageVignette] = useState(false);
@@ -92,10 +92,22 @@ export default function GameTable() {
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
   const mySeat = (myPlayer as any)?.seat;
   const mySeatRef = useRef(mySeat);
+  const openingHandKeptServer = mySeat !== undefined ? ((gameState?.players?.[mySeat] as any)?.openingHandKept ?? true) : true;
+  const showMulliganModal = mySeat !== undefined && gameState && openingHandKeptServer === false && openingHandKeptLocal === false;
 
   useEffect(() => {
       mySeatRef.current = mySeat;
   }, [mySeat]);
+
+  useEffect(() => {
+      setOpeningHandKeptLocal(false);
+  }, [id]);
+
+  useEffect(() => {
+      if (openingHandKeptServer === false) {
+          setOpeningHandKeptLocal(false);
+      }
+  }, [openingHandKeptServer]);
 
   const setBgmYoutubeMuted = useCallback((muted: boolean) => {
     const iframe = bgmIframeRef.current;
@@ -331,9 +343,6 @@ export default function GameTable() {
     socket.on('game:snapshot', (data) => {
         console.log('[GameTable] game:snapshot', { version: data?.state?.version });
         setGameState(data.state);
-        if (data.state && data.state.version <= 5) {
-             setMulliganModalOpen(true);
-        }
     });
     
     socket.on('game:updated', (data) => {
@@ -371,7 +380,6 @@ export default function GameTable() {
 
     socket.on('game:started', () => {
         console.log('Game started event received');
-        setMulliganModalOpen(true);
         fetchGameInfo();
         socket.emit('game:join', { gameId: id });
     });
@@ -809,7 +817,6 @@ export default function GameTable() {
                       <button 
                         onClick={() => {
                             navigator.clipboard.writeText(id!);
-                            // Optional: Add visual feedback
                         }}
                         className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition-colors"
                         title="Copiar ID"
@@ -836,10 +843,13 @@ export default function GameTable() {
       </ConfirmationModal>
 
       <MulliganModal 
-          isOpen={mulliganModalOpen}
+          isOpen={showMulliganModal}
           hand={gameState?.zoneIndex?.[mySeat]?.HAND?.map((id: string) => gameState.objects[id]) || []}
           onMulligan={(n) => sendAction('MULLIGAN', { seat: mySeat, n })}
-          onKeep={() => setMulliganModalOpen(false)}
+          onKeep={() => {
+              setOpeningHandKeptLocal(true);
+              sendAction('KEEP_HAND', { seat: mySeat });
+          }}
       />
 
       {/* Top Bar (HUD) */}

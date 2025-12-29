@@ -39,6 +39,7 @@ interface PlayerState {
   life: number;
   counters: Record<string, number>;
   commanderDamageReceived: Record<number, number>; // sourceSeat -> damage
+  openingHandKept?: boolean;
 }
 
 interface GameObject {
@@ -143,7 +144,8 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       username: p.user.username,
       life: initialLife,
       counters: {},
-      commanderDamageReceived: {}
+      commanderDamageReceived: {},
+      openingHandKept: false
     };
     initialState.zoneIndex[p.seat] = {
       LIBRARY: [],
@@ -301,7 +303,8 @@ export const restartGame = async (gameId: string) => {
       username: p.user.username,
       life: initialLife,
       counters: {},
-      commanderDamageReceived: {}
+      commanderDamageReceived: {},
+      openingHandKept: false
     };
     initialState.zoneIndex[p.seat] = {
       LIBRARY: [],
@@ -521,25 +524,36 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       log(`Agarró ${count} carta(s)`);
       break;
     }
+    case 'KEEP_HAND': {
+      const { seat } = action.payload;
+      if (actorSeat === undefined || seat !== actorSeat) break;
+      if (!state.players[seat]) break;
+      state.players[seat].openingHandKept = true;
+      log(`Conservó su mano inicial`);
+      break;
+    }
     case 'MULLIGAN': {
       const { seat, n } = action.payload;
+      if (actorSeat === undefined || seat !== actorSeat) break;
+      if (!state.players[seat] || state.players[seat].openingHandKept) break;
+
+      const rawN = Number(n);
+      const drawN = Math.max(1, Math.min(7, Number.isFinite(rawN) ? Math.trunc(rawN) : 7));
+
       const hand = state.zoneIndex[seat].HAND;
       const library = state.zoneIndex[seat].LIBRARY;
-      
-      // Move hand to library
+
       const cardsToReturn = [...hand];
       state.zoneIndex[seat].HAND = [];
       library.push(...cardsToReturn);
       cardsToReturn.forEach(id => state.objects[id].zone = 'LIBRARY');
 
-      // Shuffle
       for (let i = library.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [library[i], library[j]] = [library[j], library[i]];
       }
 
-      // Draw X
-      const count = Math.min(n, library.length);
+      const count = Math.min(drawN, library.length);
       const drawn = library.splice(0, count);
       state.zoneIndex[seat].HAND = drawn;
       drawn.forEach(id => state.objects[id].zone = 'HAND');

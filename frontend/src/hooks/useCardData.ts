@@ -9,7 +9,7 @@ export const useCardData = (scryfallId: string | null) => {
             return;
         }
         
-        const cacheKey = `card_data_v3_${scryfallId}`; // Bump version
+        const cacheKey = `card_data_v3_${scryfallId}`;
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
             setData(JSON.parse(cached));

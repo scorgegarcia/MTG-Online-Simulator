@@ -7,10 +7,11 @@ export const categorizeObjects = (objects: any[]) => {
         let type = obj.type_line || '';
         
         if (!type && obj.scryfall_id) {
-            const cacheKey = `card_data_v2_${obj.scryfall_id}`;
-            const cached = localStorage.getItem(cacheKey);
+            const cachedV3 = localStorage.getItem(`card_data_v3_${obj.scryfall_id}`);
+            const cachedV2 = localStorage.getItem(`card_data_v2_${obj.scryfall_id}`);
+            const cached = cachedV3 || cachedV2;
             if (cached) {
-                try { type = JSON.parse(cached).type; } catch(e){}
+                try { type = JSON.parse(cached).type; } catch(_e) {}
             }
         }
         

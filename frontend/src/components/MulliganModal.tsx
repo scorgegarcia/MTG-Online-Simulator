@@ -5,15 +5,15 @@ import clsx from 'clsx';
 
 interface MulliganModalProps {
     isOpen: boolean;
-    hand: any[]; // Array of card objects
+    hand: any[];
     onMulligan: (count: number) => void;
     onKeep: () => void;
     initialMulliganCount?: number;
 }
 
 const getColorGlow = (colors?: string[]) => {
-    if (!colors || colors.length === 0) return 'shadow-[0_0_20px_rgba(200,200,200,0.5)] border-slate-400'; // Colorless
-    if (colors.length > 1) return 'shadow-[0_0_20px_rgba(212,175,55,0.6)] border-yellow-500'; // Gold
+    if (!colors || colors.length === 0) return 'shadow-[0_0_20px_rgba(200,200,200,0.5)] border-slate-400';
+    if (colors.length > 1) return 'shadow-[0_0_20px_rgba(212,175,55,0.6)] border-yellow-500';
 
     const map: Record<string, string> = {
         'W': 'shadow-[0_0_20px_rgba(255,255,240,0.6)] border-yellow-100',
@@ -33,10 +33,11 @@ const MulliganCard = ({ obj }: { obj: any }) => {
         <div 
             className={clsx(
                 "relative rounded-xl overflow-hidden transition-all duration-500 transform hover:scale-110 hover:z-50",
-                "w-48 h-[17rem] bg-black", // Fixed size large cards
+                "bg-black",
                 "border-2",
                 glowClass
             )}
+            style={{ width: 'clamp(8rem, 12vw, 14rem)', aspectRatio: '2.5/3.5' }}
         >
             {img ? (
                 <img src={img} alt="Card" className="w-full h-full object-cover" />
@@ -46,7 +47,6 @@ const MulliganCard = ({ obj }: { obj: any }) => {
                 </div>
             )}
             
-            {/* Shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none" style={{ backgroundSize: '200% 200%' }} />
         </div>
     );
@@ -61,7 +61,7 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
         <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-[15px]" />
             
-            <div className="relative z-10 w-full max-w-6xl flex flex-col items-center p-8 animate-in fade-in zoom-in duration-500">
+            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-[clamp(1rem,3vw,2rem)] animate-in fade-in zoom-in duration-500">
                 <h2 className="text-4xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-500 to-amber-200 mb-2 drop-shadow-[0_2px_10px_rgba(245,158,11,0.5)]">
                     Mano inicial
                 </h2>
@@ -69,7 +69,7 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                     Elige tu destino con sabiduría, planeswalker.
                 </p>
 
-                <div className="flex flex-wrap justify-center gap-4 mb-16 perspective-[1000px]">
+                <div className="w-full max-w-7xl flex-1 min-h-0 flex flex-wrap justify-center content-center gap-4 mb-10 px-2 overflow-auto perspective-[1000px]">
                     {hand.map((card, idx) => (
                         <div 
                             key={card.id} 
