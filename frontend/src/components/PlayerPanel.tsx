@@ -227,7 +227,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     };
 
     return (
-        <div className="bg-slate-900 z-20 flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
+        <div className="bg-slate-900 z-[120] flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
             
             <div 
                 className={clsx(
@@ -281,7 +281,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                     <div className="flex-1 min-w-0 w-full h-full relative group z-10">
                         <button
                             data-scroll-button="true"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollHand('left'); }}
                         >
@@ -319,7 +319,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         </div>
                         <button
                             data-scroll-button="true"
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollHand('right'); }}
                         >
@@ -332,7 +332,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                     <div className="flex-1 min-w-0 w-full h-full relative group z-10 pt-8">
                          <button 
                             data-scroll-button="true"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollLibrary('left'); }}
                         >
@@ -348,7 +348,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         </div>
                          <button 
                             data-scroll-button="true"
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollLibrary('right'); }}
                         >
@@ -361,7 +361,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                     <div className="flex-1 min-w-0 w-full h-full relative group z-10 pt-12">
                         <button
                             data-scroll-button="true"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollZoneView('left'); }}
                         >
@@ -379,7 +379,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         </div>
                         <button
                             data-scroll-button="true"
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm transform hover:scale-110"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-[130] bg-slate-900/80 hover:bg-amber-600/80 text-white p-2 rounded-full shadow-lg border border-slate-700 transition-all opacity-100 backdrop-blur-sm transform hover:scale-110"
                             onMouseEnter={() => commonProps?.setHoveredCard?.(null)}
                             onClick={(e) => { e.stopPropagation(); scrollZoneView('right'); }}
                         >
