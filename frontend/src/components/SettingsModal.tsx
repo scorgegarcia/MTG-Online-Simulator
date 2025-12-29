@@ -3,8 +3,6 @@ import { Settings, X, Keyboard, Minus, Plus } from 'lucide-react';
 interface SettingsModalProps {
     settingsOpen: boolean;
     setSettingsOpen: (open: boolean) => void;
-    cardScale: number;
-    setCardScale: any;
     previewScale: number;
     setPreviewScale: any;
     hoverScale: number;
@@ -23,8 +21,6 @@ interface SettingsModalProps {
 export const SettingsModal = ({
     settingsOpen,
     setSettingsOpen,
-    cardScale,
-    setCardScale,
     previewScale,
     setPreviewScale,
     hoverScale,
@@ -70,13 +66,6 @@ export const SettingsModal = ({
                         </h3>
                         
                         <div className="space-y-4">
-                            <ScaleControl 
-                                label="Escala de Cartas (Mesa)" 
-                                value={Math.round(cardScale * 100)} 
-                                onMinus={() => setCardScale((s: number) => Math.max(0.5, s - 0.1))}
-                                onPlus={() => setCardScale((s: number) => Math.min(2, s + 0.1))}
-                                unit="%"
-                            />
                             <ScaleControl 
                                 label="Menú Contextual (Previsualización)" 
                                 value={Math.round(previewScale * 100)} 

@@ -194,7 +194,7 @@ export default function GameTable() {
   };
   
   // Load settings from localStorage or default
-  const [cardScale, setCardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
+  const [cardScale] = useState(() => parseFloat(localStorage.getItem('setting_cardScale') || '1'));
   const [previewScale, setPreviewScale] = useState(() => {
       const stored = parseFloat(localStorage.getItem('setting_previewScale') || '');
       const val = Number.isFinite(stored) ? stored : 3;
@@ -781,7 +781,6 @@ export default function GameTable() {
       />
       <SettingsModal 
           settingsOpen={settingsOpen} setSettingsOpen={setSettingsOpen}
-          cardScale={cardScale} setCardScale={setCardScale}
           previewScale={previewScale} setPreviewScale={setPreviewScale}
           hoverScale={hoverScale} setHoverScale={setHoverScale}
           uiScale={uiScale} setUiScale={setUiScale}
