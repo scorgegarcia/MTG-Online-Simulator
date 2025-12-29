@@ -43,7 +43,7 @@ export const HoverOverlay = ({
             left: rect.left,
             width: rect.width,
             height: rect.height,
-            zIndex: 60,
+            zIndex: 125,
             position: 'fixed' as const,
             transition: 'none' 
         };
@@ -76,7 +76,7 @@ export const HoverOverlay = ({
                 left: targetLeft,
                 width: targetWidth,
                 height: targetHeight,
-                zIndex: 60,
+                zIndex: 125,
                 position: 'fixed',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
             });

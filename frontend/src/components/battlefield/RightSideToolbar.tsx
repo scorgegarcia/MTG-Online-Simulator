@@ -96,7 +96,10 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             <button 
                 className="w-full h-fit py-1 rounded bg-slate-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
                 title="View Library"
-                onClick={() => setViewLibraryModalOpen(true)}
+                onClick={() => {
+                    sendAction('PEEK_LIBRARY', { seat: mySeat });
+                    setViewLibraryModalOpen(true);
+                }}
             >
                 <img src={viewLibraryIcon} alt="View Library" className="w-6 h-6 object-contain" draggable={false} />
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">VIEW LIBRARY</span>

@@ -130,6 +130,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     const libraryScrollRef = useRef<HTMLDivElement>(null);
     const handScrollRef = useRef<HTMLDivElement>(null);
     const zoneViewScrollRef = useRef<HTMLDivElement>(null);
+    const prevTabRef = useRef<string | null>(null);
 
     const [zonesPanelWidth, setZonesPanelWidth] = useState(() => {
         const stored = parseFloat(localStorage.getItem('setting_zonesPanelWidth') || '');
@@ -203,6 +204,24 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
 
     const currentTab = activeTab || 'HAND';
     const isViewingHand = currentTab === 'HAND';
+
+    useEffect(() => {
+        if (prevTabRef.current === null) {
+            prevTabRef.current = currentTab;
+            return;
+        }
+        if (prevTabRef.current === currentTab) return;
+        prevTabRef.current = currentTab;
+
+        if (currentTab === 'LIBRARY') {
+            sendAction('PEEK_LIBRARY', { seat: mySeat });
+            return;
+        }
+
+        if (['HAND', 'GRAVEYARD', 'EXILE', 'COMMAND', 'SIDEBOARD'].includes(currentTab)) {
+            sendAction('PEEK_ZONE', { seat: mySeat, zone: currentTab });
+        }
+    }, [currentTab, mySeat, sendAction]);
 
     const handleZoneDrop = (e: React.DragEvent, targetZone: string) => {
         e.preventDefault();
