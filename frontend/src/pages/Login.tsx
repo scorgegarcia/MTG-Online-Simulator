@@ -194,7 +194,7 @@ export default function Login() {
               <h1 className="text-4xl font-serif font-bold text-amber-100 tracking-wider drop-shadow-lg bg-clip-text text-transparent bg-gradient-to-b from-amber-100 to-amber-600">
                 MAGIC SANDBOX
               </h1>
-              <p className="text-slate-400 text-sm mt-2 font-serif italic">Enter the gathering realm</p>
+              <p className="text-slate-400 text-sm mt-2 font-serif italic">Enter the gathering realm.</p>
             </div>
 
             {/* Formulario */}

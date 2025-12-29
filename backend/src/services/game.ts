@@ -1106,6 +1106,11 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         log(`está pensando... 💬`);
         break;
     }
+    case 'ROLL_DICE': {
+        const { sides, result } = action.payload;
+        log(`Tiró un dado de ${sides} caras: **${result}** 🎲`);
+        break;
+    }
   }
   return state;
 };

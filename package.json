@@ -12,7 +12,9 @@
     "db:migrate": "cd backend && npx prisma migrate dev",
     "db:seed": "cd backend && npx prisma db seed",
     "docker:up": "docker-compose up --build",
-    "docker:down": "docker-compose down"
+    "docker:down": "docker-compose down",
+    "docker:frontend": "docker-compose up -d frontend --build",
+    "docker:backend": "docker-compose up -d backend --build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

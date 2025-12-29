@@ -134,8 +134,8 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
 
     const [zonesPanelWidth, setZonesPanelWidth] = useState(() => {
         const stored = parseFloat(localStorage.getItem('setting_zonesPanelWidth') || '');
-        const base = Number.isFinite(stored) && stored > 0 ? stored : 420;
-        return Math.max(420, base);
+        const base = Number.isFinite(stored) && stored > 0 ? stored : 340;
+        return Math.max(340, base);
     });
     const isResizingZonesPanel = useRef(false);
     const zonesResizeStartX = useRef(0);
@@ -180,7 +180,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
         const handlePointerMove = (e: PointerEvent) => {
             if (!isResizingZonesPanel.current) return;
             const dx = zonesResizeStartX.current - e.clientX;
-            const minWidth = 420;
+            const minWidth = 340;
             const maxWidth = Math.max(minWidth, window.innerWidth - 240);
             const next = zonesResizeStartWidth.current + dx;
             setZonesPanelWidth(Math.max(minWidth, Math.min(maxWidth, next)));
@@ -421,12 +421,12 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
             />
 
             <div
-                className="min-w-[420px] shrink-0 bg-slate-950 border-l border-amber-500/20 flex flex-col p-2 relative shadow-[inset_10px_0_20px_rgba(0,0,0,0.5)] z-30"
+                className="min-w-[340px] shrink-0 bg-slate-950 border-l border-amber-500/20 flex flex-col p-2 relative shadow-[inset_10px_0_20px_rgba(0,0,0,0.5)] z-30"
                 style={{ width: `${zonesPanelWidth}px` }}
             >
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none"></div>
                 
-                <div className="flex gap-1 flex-nowrap h-full items-center justify-between z-10 px-1">
+                <div className="flex gap-1 flex-nowrap h-full items-center justify-center z-10 px-1">
                     {(() => {
                         const isHandSlot = !isViewingHand && currentTab === 'LIBRARY';
                         return (

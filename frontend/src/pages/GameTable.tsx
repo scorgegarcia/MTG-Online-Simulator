@@ -21,6 +21,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { MulliganModal } from '../components/MulliganModal';
+import { DiceRollModal } from '../components/DiceRollModal';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
 import readyButtonSfx from '../assets/sfx/ready_button.mp3';
 import startGameSfx from '../assets/sfx/start_game.mp3';
@@ -74,6 +75,7 @@ export default function GameTable() {
   
   // Toolbar states
   const [commanderModalOpen, setCommanderModalOpen] = useState(false);
+  const [diceRollModalOpen, setDiceRollModalOpen] = useState(false);
   const [createTokenModalOpen, setCreateTokenModalOpen] = useState(false);
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [revealModalOpen, setRevealModalOpen] = useState(false);
@@ -854,6 +856,12 @@ export default function GameTable() {
           />
       )}
 
+      <DiceRollModal 
+          isOpen={diceRollModalOpen}
+          onClose={() => setDiceRollModalOpen(false)}
+          sendAction={sendAction}
+      />
+
       <CreateTokenModal 
           isOpen={createTokenModalOpen}
           onClose={() => setCreateTokenModalOpen(false)}
@@ -1022,6 +1030,7 @@ export default function GameTable() {
               gameState={gameState} 
               mySeat={mySeat} 
               setCommanderModalOpen={setCommanderModalOpen} 
+              setDiceRollModalOpen={setDiceRollModalOpen}
               sendAction={sendAction} 
           />
 

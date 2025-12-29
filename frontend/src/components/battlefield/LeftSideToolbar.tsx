@@ -4,6 +4,7 @@ interface LeftSideToolbarProps {
     gameState: any;
     mySeat: number;
     setCommanderModalOpen: (open: boolean) => void;
+    setDiceRollModalOpen: (open: boolean) => void;
     sendAction: (action: string, payload: any) => void;
 }
 
@@ -11,12 +12,22 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
     gameState,
     mySeat,
     setCommanderModalOpen,
+    setDiceRollModalOpen,
     sendAction
 }) => {
     return (
         <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700 overflow-y-auto no-scrollbar">
             <button 
-                className="w-full h-fit py-1 rounded bg-red-900/80 hover:bg-red-800 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors shrink-0 mt-1"
+                className="w-full h-fit py-1 rounded bg-indigo-900/80 hover:bg-indigo-800 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors shrink-0 mt-1"
+                title="Tirar Dado"
+                onClick={() => setDiceRollModalOpen(true)}
+            >
+                <span className="text-xl">🎲</span>
+                <span className="text-[10px] uppercase text-center leading-3">Tirar<br/>Dado</span>
+            </button>
+
+            <button 
+                className="w-full h-fit py-1 rounded bg-red-900/80 hover:bg-red-800 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors shrink-0"
                 title="Commander Damage"
                 onClick={() => setCommanderModalOpen(true)}
             >

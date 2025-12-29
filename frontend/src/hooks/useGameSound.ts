@@ -16,6 +16,7 @@ import equipOnSfx from '../assets/sfx/equip_on.mp3';
 import equipOffSfx from '../assets/sfx/equip_off.mp3';
 import dragCardSfx from '../assets/sfx/drag_card.mp3';
 import dropCardSfx from '../assets/sfx/drop_card.mp3';
+import diceRollSfx from '../assets/sfx/dice_roll.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -44,6 +45,7 @@ export const useGameSound = () => {
         loadAudio('EQUIP_OFF', equipOffSfx);
         loadAudio('DRAG_CARD', dragCardSfx);
         loadAudio('DROP_CARD', dropCardSfx);
+        loadAudio('DICE_ROLL', diceRollSfx);
     }, []);
 
     const playSound = useCallback((key: string) => {
@@ -83,6 +85,9 @@ export const useGameSound = () => {
                 break;
             case 'THINKING':
                 playSound('THINKING');
+                break;
+            case 'ROLL_DICE':
+                playSound('DICE_ROLL');
                 break;
             case 'EQUIP_ATTACH':
                 playSound('EQUIP_ON');
@@ -148,5 +153,5 @@ export const useGameSound = () => {
         }
     }, [playSound]);
 
-    return { handleGameAction, playUiSound };
+    return { handleGameAction, playUiSound, playSound };
 };
