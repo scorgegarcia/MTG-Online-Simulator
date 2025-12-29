@@ -235,10 +235,16 @@ export const HoverOverlay = ({
 
               // Force close hover when dragging starts
               // We use setTimeout to ensure the drag operation starts before the element is unmounted
-              setTimeout(() => setHoveredCard(null), 10);
+              setTimeout(() => {
+                  setHoveredCard(null);
+                  window.dispatchEvent(new CustomEvent('ui:card-drag-start'));
+              }, 10);
 
               e.dataTransfer.effectAllowed = "move";
               e.dataTransfer.setData("text/plain", obj.id);
+          }}
+          onDragEnd={() => {
+              window.dispatchEvent(new CustomEvent('ui:card-drag-end'));
           }}
         >
             {img ? <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} /> : <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>}

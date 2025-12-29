@@ -60,6 +60,10 @@ interface GameObject {
   type_line?: string; // for tokens or manual override
   oracle_text?: string; // for tokens (manual rules/description)
   trade_origin_zone?: string; // Where this card came from before joining a trade offer
+  attached_to?: string;
+  equip_origin_seat?: number;
+  equip_origin_zone?: string;
+  equip_origin_index?: number;
 }
 
 // Helpers
@@ -513,6 +517,30 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
   };
   const actorSeat = Object.values(state.players).find(p => p.userId === userId)?.seat;
 
+  const removeFromZoneIndex = (seat: number, zone: string, objectId: string) => {
+      const list = state.zoneIndex[seat]?.[zone];
+      if (!list) return;
+      const idx = list.indexOf(objectId);
+      if (idx > -1) list.splice(idx, 1);
+  };
+
+  const insertIntoZoneIndex = (seat: number, zone: string, objectId: string, insertIndex?: number) => {
+      if (!state.zoneIndex[seat][zone]) state.zoneIndex[seat][zone] = [];
+      const list = state.zoneIndex[seat][zone];
+      if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= list.length) {
+          list.splice(insertIndex, 0, objectId);
+          return;
+      }
+      list.push(objectId);
+  };
+
+  const clearEquipLink = (obj: GameObject) => {
+      delete obj.attached_to;
+      delete obj.equip_origin_seat;
+      delete obj.equip_origin_zone;
+      delete obj.equip_origin_index;
+  };
+
   switch (action.type) {
     case 'DRAW': {
       const { seat, n } = action.payload; // seat to draw for
@@ -585,17 +613,18 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         const cardName = obj.scryfall_id ? 'Carta' : 'Token'; // Ideally fetch name from cache or store in object
         // We don't have card names in state objects currently (except note?), only scryfall_id.
         // Client resolves it. Server just logs "Card".
-        
-        // Remove from old zone
-        const removeFromZone = (seat: number, zone: string, id: string) => {
-            const list = state.zoneIndex[seat]?.[zone];
-            if(list) {
-                const idx = list.indexOf(id);
-                if(idx > -1) list.splice(idx, 1);
-            }
-        };
 
-        removeFromZone(obj.controller_seat, obj.zone, objectId);
+        if (obj.attached_to) {
+            clearEquipLink(obj);
+        }
+
+        if (oldZone === 'BATTLEFIELD' && toZone !== 'BATTLEFIELD') {
+            Object.values(state.objects).forEach(o => {
+                if (o?.attached_to === objectId) clearEquipLink(o);
+            });
+        }
+
+        removeFromZoneIndex(obj.controller_seat, obj.zone, objectId);
 
         // Update object
         obj.zone = toZone;
@@ -613,13 +642,14 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         // Add to new
         const destSeat = obj.controller_seat;
         if (!state.zoneIndex[destSeat][toZone]) state.zoneIndex[destSeat][toZone] = [];
-        
-        if (typeof index === 'number' && index >= 0 && index <= state.zoneIndex[destSeat][toZone].length) {
-             state.zoneIndex[destSeat][toZone].splice(index, 0, objectId);
+        const destList = state.zoneIndex[destSeat][toZone];
+
+        if (typeof index === 'number' && index >= 0 && index <= destList.length) {
+             destList.splice(index, 0, objectId);
         } else if (toZone === 'LIBRARY' && position === 'top') {
-            state.zoneIndex[destSeat][toZone].unshift(objectId);
+            destList.unshift(objectId);
         } else {
-            state.zoneIndex[destSeat][toZone].push(objectId);
+            destList.push(objectId);
         }
 
         if (shouldRemoveFromLibraryReveal) {
@@ -645,6 +675,66 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
             state.objects[objectId].tapped = typeof value === 'boolean' ? value : !state.objects[objectId].tapped;
             log(`${state.objects[objectId].tapped ? 'Tapó' : 'DesTapó'} la carta`);
         }
+        break;
+    }
+    case 'EQUIP_ATTACH': {
+        const { equipmentId, targetId } = action.payload || {};
+        if (actorSeat === undefined) break;
+        if (typeof equipmentId !== 'string' || typeof targetId !== 'string') break;
+        if (equipmentId === targetId) break;
+
+        const equipment = state.objects[equipmentId];
+        const target = state.objects[targetId];
+        if (!equipment || !target) break;
+        if (equipment.controller_seat !== actorSeat) break;
+        if (target.controller_seat !== actorSeat) break;
+        if (target.zone !== 'BATTLEFIELD') break;
+
+        if (equipment.attached_to) {
+            clearEquipLink(equipment);
+        }
+
+        const originSeat = equipment.controller_seat;
+        const originZone = equipment.zone;
+        const originList = state.zoneIndex[originSeat]?.[originZone] || [];
+        const originIndex = originList.indexOf(equipmentId);
+
+        equipment.equip_origin_seat = originSeat;
+        equipment.equip_origin_zone = originZone;
+        equipment.equip_origin_index = originIndex;
+
+        equipment.attached_to = targetId;
+        log(`Equipó una carta`);
+        break;
+    }
+    case 'EQUIP_DETACH': {
+        const { equipmentId } = action.payload || {};
+        if (actorSeat === undefined) break;
+        if (typeof equipmentId !== 'string') break;
+
+        const equipment = state.objects[equipmentId];
+        if (!equipment) break;
+        if (equipment.controller_seat !== actorSeat) break;
+        if (!equipment.attached_to) break;
+
+        const originSeat = equipment.equip_origin_seat;
+        const originZone = equipment.equip_origin_zone;
+        const originIndex = equipment.equip_origin_index;
+
+        delete equipment.attached_to;
+
+        if (typeof originSeat === 'number' && typeof originZone === 'string') {
+            removeFromZoneIndex(equipment.controller_seat, equipment.zone, equipmentId);
+            equipment.controller_seat = originSeat;
+            equipment.zone = originZone;
+            insertIntoZoneIndex(originSeat, originZone, equipmentId, originIndex);
+        }
+
+        delete equipment.equip_origin_seat;
+        delete equipment.equip_origin_zone;
+        delete equipment.equip_origin_index;
+
+        log(`Desequipó una carta`);
         break;
     }
     case 'SHUFFLE': {

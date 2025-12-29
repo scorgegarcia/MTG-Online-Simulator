@@ -104,7 +104,7 @@ export const AutoStackingRow: React.FC<AutoStackingRowProps> = ({
                     }}
                     className="flex-shrink-0 h-full flex items-center"
                 >
-                    <Card obj={obj} {...cardProps} />
+                    <Card obj={obj} {...cardProps} hasAttachedEquipment={(cardProps?.attachmentsByHost?.[obj.id] || []).length > 0} />
                 </div>
             ))}
         </div>

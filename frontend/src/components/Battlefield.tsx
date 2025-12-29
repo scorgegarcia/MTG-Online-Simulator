@@ -14,6 +14,8 @@ interface BattlefieldSharedProps {
     menuOpen: any;
     setMenuOpen: any;
     sendAction: any;
+    equipSelection?: { equipmentId: string } | null;
+    setEquipSelection?: (selection: { equipmentId: string } | null) => void;
     thinkingSeats?: number[];
 }
 
@@ -28,10 +30,20 @@ export const MyBattlefield = memo(({
     menuOpen,
     setMenuOpen,
     sendAction,
+    equipSelection,
+    setEquipSelection,
     thinkingSeats
 }: BattlefieldSharedProps & { seat: number }) => {
     const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
+    const attachmentsByHost = battlefield.reduce((acc: Record<string, any[]>, o: any) => {
+        const hostId = o?.attached_to;
+        if (hostId) {
+            if (!acc[hostId]) acc[hostId] = [];
+            acc[hostId].push(o);
+        }
+        return acc;
+    }, {});
     const { lands, creatures, others } = categorizeObjects(battlefield);
     
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
@@ -61,7 +73,7 @@ export const MyBattlefield = memo(({
         setIsDraggingOver(false);
     };
     
-    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true };
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, attachmentsByHost, equipSelection, setEquipSelection };
 
     return (
         <div className="flex h-full w-full gap-1 relative">
@@ -107,10 +119,20 @@ export const OpponentBattlefield = memo(({
     menuOpen,
     setMenuOpen,
     sendAction,
+    equipSelection,
+    setEquipSelection,
     thinkingSeats
 }: { player: any } & BattlefieldSharedProps) => {
     const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
+    const attachmentsByHost = battlefield.reduce((acc: Record<string, any[]>, o: any) => {
+        const hostId = o?.attached_to;
+        if (hostId) {
+            if (!acc[hostId]) acc[hostId] = [];
+            acc[hostId].push(o);
+        }
+        return acc;
+    }, {});
     const { lands, creatures, others } = categorizeObjects(battlefield);
     
     const handCount = gameState.zoneIndex[player.seat]?.['HAND']?.length || 0;
@@ -120,7 +142,7 @@ export const OpponentBattlefield = memo(({
 
     const [viewZone, setViewZone] = React.useState<{zone: 'GRAVEYARD' | 'EXILE', seat: number} | null>(null);
 
-    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const };
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const, attachmentsByHost, equipSelection, setEquipSelection };
 
     return (
         <div className="p-0 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden relative">

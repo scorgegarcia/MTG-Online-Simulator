@@ -12,6 +12,10 @@ import selectCardSfx from '../assets/sfx/select_card.mp3';
 import popSfx from '../assets/sfx/pop.mp3';
 import damageSfx from '../assets/sfx/damage.mp3';
 import damageCommanderSfx from '../assets/sfx/damage_commander.mp3';
+import equipOnSfx from '../assets/sfx/equip_on.mp3';
+import equipOffSfx from '../assets/sfx/equip_off.mp3';
+import dragCardSfx from '../assets/sfx/drag_card.mp3';
+import dropCardSfx from '../assets/sfx/drop_card.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -36,15 +40,23 @@ export const useGameSound = () => {
         loadAudio('THINKING', popSfx);
         loadAudio('DAMAGE', damageSfx);
         loadAudio('DAMAGE_COMMANDER', damageCommanderSfx);
+        loadAudio('EQUIP_ON', equipOnSfx);
+        loadAudio('EQUIP_OFF', equipOffSfx);
+        loadAudio('DRAG_CARD', dragCardSfx);
+        loadAudio('DROP_CARD', dropCardSfx);
     }, []);
 
-    const playSound = (key: string) => {
+    const playSound = useCallback((key: string) => {
         const audio = audioRefs.current[key];
         if (audio) {
             audio.currentTime = 0;
             audio.play().catch(e => console.warn("Audio play failed", e));
         }
-    };
+    }, []);
+
+    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD') => {
+        playSound(key);
+    }, [playSound]);
 
     const handleGameAction = useCallback((action: any, gameState: any, mySeat?: any) => {
         if (!action) return;
@@ -67,6 +79,12 @@ export const useGameSound = () => {
                 break;
             case 'THINKING':
                 playSound('THINKING');
+                break;
+            case 'EQUIP_ATTACH':
+                playSound('EQUIP_ON');
+                break;
+            case 'EQUIP_DETACH':
+                playSound('EQUIP_OFF');
                 break;
             case 'LIFE_SET':
                 if (mySeat !== undefined && action.payload.seat === mySeat && action.payload.delta < 0) {
@@ -124,7 +142,7 @@ export const useGameSound = () => {
             // PEK_ZONE / PEEK_LIBRARY usually don't need sound or maybe a generic click?
             // User didn't specify.
         }
-    }, []);
+    }, [playSound]);
 
-    return { handleGameAction };
+    return { handleGameAction, playUiSound };
 };

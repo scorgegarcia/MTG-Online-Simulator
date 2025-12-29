@@ -2,12 +2,27 @@ import React, { memo } from 'react';
 import clsx from 'clsx';
 import { useCardData } from '../hooks/useCardData';
 
+const glowStyles = `
+@keyframes equip_glow {
+  0% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(245,158,11,0.20), 0 0 22px rgba(245,158,11,0.22); }
+  50% { opacity: 1; filter: brightness(1.08); box-shadow: 0 0 14px rgba(245,158,11,0.40), 0 0 34px rgba(245,158,11,0.46); }
+  100% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(245,158,11,0.20), 0 0 22px rgba(245,158,11,0.22); }
+}
+@keyframes select_glow {
+  0% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(245,158,11,0.25), 0 0 26px rgba(245,158,11,0.30); }
+  50% { opacity: 1; filter: brightness(1.12); box-shadow: 0 0 16px rgba(245,158,11,0.48), 0 0 40px rgba(245,158,11,0.56); }
+  100% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(245,158,11,0.25), 0 0 26px rgba(245,158,11,0.30); }
+}
+`;
+
 interface CardProps {
     obj: any;
     size?: 'small' | 'normal';
     inBattlefield?: boolean;
     inHand?: boolean;
     fitHeight?: boolean;
+    applyTapTransform?: boolean;
+    hasAttachedEquipment?: boolean;
     mySeat: number;
     cardScale: number;
     hoverBlockedRef: React.MutableRefObject<string | null>;
@@ -16,6 +31,8 @@ interface CardProps {
     menuOpen: any;
     setMenuOpen: (menu: any) => void;
     sendAction: (type: string, payload: any) => void;
+    equipSelection?: { equipmentId: string } | null;
+    setEquipSelection?: (selection: { equipmentId: string } | null) => void;
 }
 
 export const Card = memo(({ 
@@ -24,6 +41,8 @@ export const Card = memo(({
     inBattlefield = false, 
     inHand: _inHand = false,
     fitHeight = false,
+    applyTapTransform = true,
+    hasAttachedEquipment = false,
     mySeat,
     cardScale,
     hoverBlockedRef,
@@ -31,7 +50,9 @@ export const Card = memo(({
     setHoveredCard,
     menuOpen,
     setMenuOpen,
-    sendAction
+    sendAction,
+    equipSelection,
+    setEquipSelection
 }: CardProps) => {
     const { img: imgUrlFromHook, power: powerFromHook, toughness: toughnessFromHook } = useCardData(obj.scryfall_id);
     
@@ -76,7 +97,7 @@ export const Card = memo(({
         height: '100%',
         aspectRatio: '2.5/3.5',
         width: 'auto',
-        transform: obj.tapped ? 'rotate(90deg) scale(0.8)' : 'none'
+        transform: applyTapTransform && obj.tapped ? 'rotate(90deg) scale(0.8)' : 'none'
     } : fitHeight ? {
         height: '100%',
         aspectRatio: '2.5/3.5',
@@ -94,9 +115,10 @@ export const Card = memo(({
         
         if (isDraggingRef) isDraggingRef.current = true;
 
-        // Force close hover when dragging starts to avoid overlay blocking drop
-        // Defer slightly to ensure drag starts smoothly
-        setTimeout(() => setHoveredCard(null), 10);
+        setTimeout(() => {
+            setHoveredCard(null);
+            window.dispatchEvent(new CustomEvent('ui:card-drag-start'));
+        }, 10);
 
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", obj.id);
@@ -105,11 +127,20 @@ export const Card = memo(({
     const handleDragEnd = () => {
         if (isDraggingRef) isDraggingRef.current = false;
         setHoveredCard(null);
+        window.dispatchEvent(new CustomEvent('ui:card-drag-end'));
     };
 
     const lastTapRef = React.useRef(0);
     const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const ignoreClickRef = React.useRef(false);
+
+    const hasGoldenHalo = inBattlefield && (hasAttachedEquipment || !!obj.attached_to);
+    const isEquipTarget =
+        !!equipSelection &&
+        inBattlefield &&
+        obj.controller_seat === mySeat &&
+        obj.id !== equipSelection.equipmentId;
+    const isEquipSource = !!equipSelection && obj.id === equipSelection.equipmentId;
 
     const handleTouchEnd = (e: React.TouchEvent) => {
         const now = Date.now();
@@ -163,6 +194,7 @@ export const Card = memo(({
               }
           }}
           onMouseEnter={(e) => {
+              if (equipSelection) return;
               if (!menuOpen && hoverBlockedRef.current !== obj.id && (!isDraggingRef || !isDraggingRef.current)) { 
                   setHoveredCard({
                       obj,
@@ -179,6 +211,29 @@ export const Card = memo(({
           onClick={(e) => {
               e.stopPropagation();
               if (ignoreClickRef.current) return;
+
+              if (equipSelection && inBattlefield) {
+                  if (isEquipSource) {
+                      if (clickTimeoutRef.current) {
+                          clearTimeout(clickTimeoutRef.current);
+                          clickTimeoutRef.current = null;
+                      }
+                      setHoveredCard(null);
+                      setMenuOpen(null);
+                      setEquipSelection?.(null);
+                      return;
+                  }
+                  if (!isEquipTarget) return;
+                  if (clickTimeoutRef.current) {
+                      clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                  }
+                  setHoveredCard(null);
+                  setMenuOpen(null);
+                  sendAction('EQUIP_ATTACH', { equipmentId: equipSelection.equipmentId, targetId: obj.id });
+                  setEquipSelection?.(null);
+                  return;
+              }
               
               const x = e.clientX;
               const y = e.clientY;
@@ -212,19 +267,45 @@ export const Card = memo(({
               }
           }}
         >
+            <style>{glowStyles}</style>
             {finalImgUrl ? (
                 <img src={finalImgUrl} className={clsx("w-full h-full object-cover rounded")} draggable={false} />
             ) : (
                 <div className="text-xs p-1">{isFacedown ? '???' : obj.scryfall_id}</div>
             )}
 
+            {equipSelection && inBattlefield && isEquipSource && (
+                <button
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 px-2 py-1 rounded bg-black/80 text-amber-200 border border-amber-400/60 text-[10px] whitespace-nowrap shadow-[0_0_18px_rgba(245,158,11,0.25)]"
+                    onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        setEquipSelection?.(null);
+                    }}
+                >
+                    haz clic aqui para cancelar, o presiona ESC
+                </button>
+            )}
+
+            {(hasGoldenHalo || isEquipTarget) && (
+                <div
+                    className="absolute pointer-events-none rounded"
+                    style={{
+                        inset: '-3px',
+                        border: `3px solid ${isEquipTarget ? 'rgba(245,158,11,0.95)' : 'rgba(245,158,11,0.75)'}`,
+                        zIndex: 20,
+                        animation: `${isEquipTarget ? 'select_glow' : 'equip_glow'} 1s ease-in-out infinite`,
+                    }}
+                />
+            )}
+
             {countersText.length > 0 && (
-                <div className="absolute scale-150 top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
+                <div className="absolute scale-150 top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1 z-30">
                     {countersText}
                 </div>
             )}
             {inBattlefield && !isFacedown && power !== undefined && toughness !== undefined && (
-                <div className="absolute scale-150 bottom-1 right-1 bg-gray-200 text-black text-xs font-bold px-1 rounded border border-gray-400 shadow-sm z-10">
+                <div className="absolute scale-150 bottom-1 right-1 bg-gray-200 text-black text-xs font-bold px-1 rounded border border-gray-400 shadow-sm z-30">
                     {power}/{toughness}
                 </div>
             )}

@@ -2,6 +2,35 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useCardData } from '../hooks/useCardData';
 import { ZONE_LABELS } from '../utils/gameUtils';
 
+const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
+    const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
+    const imgUrl = obj?.scryfall_id ? imgUrlFromHook : (obj?.image_url || '');
+    const isFacedown = obj?.face_state === 'FACEDOWN';
+    const finalImgUrl = isFacedown
+        ? (obj?.back_image_url || 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg')
+        : imgUrl;
+
+    const w = Math.max(48, Math.round(54 * uiScale));
+    const h = Math.round(w * (3.5 / 2.5));
+
+    return (
+        <div
+            className="rounded-md overflow-hidden border border-amber-400/40 bg-black/30"
+            style={{
+                width: `${w}px`,
+                height: `${h}px`,
+                boxShadow: '0 0 16px rgba(245,158,11,0.25)'
+            }}
+        >
+            {finalImgUrl ? (
+                <img src={finalImgUrl} className="w-full h-full object-cover" draggable={false} />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/50 text-xs">Sin imagen</div>
+            )}
+        </div>
+    );
+};
+
 interface ContextMenuProps {
     menuOpen: {id: string, x: number, y: number} | null;
     setMenuOpen: (menu: any) => void;
@@ -10,6 +39,7 @@ interface ContextMenuProps {
     previewScale: number;
     uiScale: number;
     sendAction: (type: string, payload: any, options?: { closeMenu?: boolean }) => void;
+    startEquipSelection: (equipmentId: string) => void;
 }
 
 export const ContextMenu = ({
@@ -19,13 +49,29 @@ export const ContextMenu = ({
     mySeat,
     previewScale,
     uiScale,
-    sendAction
+    sendAction,
+    startEquipSelection
 }: ContextMenuProps) => {
     const obj = menuOpen ? gameState.objects[menuOpen.id] : null;
-    const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
+    const { img: imgUrlFromHook, type: typeLineFromHook } = useCardData(obj?.scryfall_id ?? null);
     const imgUrl = obj?.scryfall_id ? imgUrlFromHook : (obj?.image_url || '');
     
     const isMine = !!obj && obj.controller_seat === mySeat;
+
+    const typeLineOverride = obj?.type_line ?? '';
+    const typeLine = useMemo(() => {
+        return String(typeLineOverride || typeLineFromHook || '');
+    }, [typeLineOverride, typeLineFromHook]);
+    const isEquipment = typeLine.toLowerCase().includes('equipment');
+    const isEquipped = !!obj?.attached_to;
+    const objId = obj?.id;
+    const attachedToMe = useMemo(() => {
+        if (!objId) return [];
+        return Object.values(gameState.objects || {}).filter((o: any) => o?.attached_to === objId);
+    }, [gameState, objId]);
+    const equippedHost = obj?.attached_to ? gameState.objects?.[obj.attached_to] : null;
+
+    const goldActionClass = "w-full text-left rounded-lg bg-black/35 hover:bg-black/45 border border-amber-400/70 hover:border-amber-300 transition-colors text-amber-100 shadow-[0_0_18px_rgba(245,158,11,0.25)] hover:shadow-[0_0_26px_rgba(245,158,11,0.45)]";
 
     const isFacedown = obj?.face_state === 'FACEDOWN';
     const finalImgUrl = isFacedown
@@ -83,7 +129,7 @@ export const ContextMenu = ({
         if (nextX !== position.x || nextY !== position.y) {
             setPosition({ x: nextX, y: nextY });
         }
-    }, [finalImgUrl, isMine, position.x, position.y, previewHeight, previewWidth, uiScale]);
+    }, [finalImgUrl, isMine, menuOpen, position.x, position.y, previewHeight, previewWidth, uiScale]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -189,7 +235,7 @@ export const ContextMenu = ({
         const toughnessStored = typeof counters.TOUGHNESS === 'number' ? counters.TOUGHNESS : 0;
         setCustomPowerDelta(p1p1 + powerStored);
         setCustomToughnessDelta(p1p1 + toughnessStored);
-    }, [menuOpen?.id]);
+    }, [menuOpen, obj]);
 
     if (!menuOpen || !obj) return null;
 
@@ -265,6 +311,40 @@ export const ContextMenu = ({
                                           🔄 Fold
                                       </button>
                                   </div>
+
+                                  {!isEquipment && attachedToMe.length > 0 && (
+                                      <div className="rounded-lg border border-amber-400/30 bg-black/25 p-2">
+                                          <div className="text-amber-200/80 font-semibold mb-2" style={fontSizeStyle}>Equipos</div>
+                                          <div className="flex flex-wrap gap-2">
+                                              {attachedToMe.map((e: any) => (
+                                                  <MiniCardPreview key={e.id} obj={e} uiScale={uiScale} />
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+
+                                  {isEquipment && equippedHost && (
+                                      <div className="rounded-lg border border-amber-400/30 bg-black/25 p-2">
+                                          <div className="text-amber-200/80 font-semibold mb-2" style={fontSizeStyle}>Equipado a</div>
+                                          <MiniCardPreview obj={equippedHost} uiScale={uiScale} />
+                                      </div>
+                                  )}
+
+                                  {isEquipment && obj.zone === 'BATTLEFIELD' && (
+                                      <button
+                                          className={goldActionClass}
+                                          style={buttonStyle}
+                                          onClick={() => {
+                                              if (isEquipped) {
+                                                  sendAction('EQUIP_DETACH', { equipmentId: obj.id });
+                                                  return;
+                                              }
+                                              startEquipSelection(obj.id);
+                                          }}
+                                      >
+                                          {isEquipped ? 'Desequipar' : 'Equipar'}
+                                      </button>
+                                  )}
 
                                   <div className="text-white/60 font-semibold mt-1" style={fontSizeStyle}>Mover a</div>
                                   {['HAND', 'BATTLEFIELD', 'GRAVEYARD'].map(zone => {

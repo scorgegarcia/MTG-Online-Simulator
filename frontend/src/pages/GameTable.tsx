@@ -49,7 +49,7 @@ export default function GameTable() {
   const { user } = useAuth();
   const { socket, isConnected } = useSocket(id!);
   const [gameState, setGameState] = useState<any>(null);
-  const { handleGameAction } = useGameSound();
+  const { handleGameAction, playUiSound } = useGameSound();
   const [gameInfo, setGameInfo] = useState<any>(null);
   const lobbyHoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const lobbyReadyAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,6 +58,7 @@ export default function GameTable() {
   const [myDecks, setMyDecks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
+  const [equipSelection, setEquipSelection] = useState<{ equipmentId: string } | null>(null);
   const [showRevealModal, setShowRevealModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
@@ -87,6 +88,15 @@ export default function GameTable() {
           return () => clearTimeout(timer);
       }
   }, [isThinkingCooldown]);
+
+  useEffect(() => {
+      if (!equipSelection) return;
+      const onKeyDown = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') setEquipSelection(null);
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => window.removeEventListener('keydown', onKeyDown);
+  }, [equipSelection]);
 
   // Derived state (moved up to allow safe hook usage)
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
@@ -284,29 +294,84 @@ export default function GameTable() {
   
   const hoverBlockedRef = useRef<string | null>(null);
   const isDraggingRef = useRef(false);
+  const isCardDraggingRef = useRef(false);
+  const dragSoundPlayedRef = useRef(false);
+  const dropSoundPlayedRef = useRef(false);
 
   // Global drag listeners to track drag state even if components unmount (like HoverOverlay)
   useEffect(() => {
-      const handleDragStart = () => { isDraggingRef.current = true; };
-      const handleDragEnd = () => { isDraggingRef.current = false; };
+      const isCardDragEvent = (e: DragEvent) => {
+          const target = e.target as HTMLElement | null;
+          if (!target || typeof (target as any).closest !== 'function') return false;
+          return !!target.closest('[data-card-id]');
+      };
+
+      const startCardDrag = () => {
+          isCardDraggingRef.current = true;
+          dropSoundPlayedRef.current = false;
+          if (dragSoundPlayedRef.current) return;
+          dragSoundPlayedRef.current = true;
+          playUiSound('DRAG_CARD');
+      };
+
+      const handleDragStart = (e: DragEvent) => {
+          isDraggingRef.current = true;
+          if (!isCardDragEvent(e)) return;
+          dragSoundPlayedRef.current = false;
+          dropSoundPlayedRef.current = false;
+          startCardDrag();
+      };
+
+      const handleDragEnd = (_e: DragEvent) => {
+          isDraggingRef.current = false;
+          if (!isCardDraggingRef.current) return;
+          isCardDraggingRef.current = false;
+          dragSoundPlayedRef.current = false;
+          if (dropSoundPlayedRef.current) return;
+          dropSoundPlayedRef.current = true;
+          playUiSound('DROP_CARD');
+      };
       
       // Safety: If mouse moves without buttons, we are definitely not dragging
       const handleMouseMove = (e: MouseEvent) => {
           if (isDraggingRef.current && e.buttons === 0) {
               isDraggingRef.current = false;
+              if (isCardDraggingRef.current) {
+                  isCardDraggingRef.current = false;
+                  dragSoundPlayedRef.current = false;
+                  if (!dropSoundPlayedRef.current) {
+                      dropSoundPlayedRef.current = true;
+                      playUiSound('DROP_CARD');
+                  }
+              }
           }
       };
+
+      const handleDrop = (_e: DragEvent) => {
+          if (!isCardDraggingRef.current) return;
+          isCardDraggingRef.current = false;
+          dragSoundPlayedRef.current = false;
+          if (dropSoundPlayedRef.current) return;
+          dropSoundPlayedRef.current = true;
+          playUiSound('DROP_CARD');
+      };
       
-      window.addEventListener('dragstart', handleDragStart);
-      window.addEventListener('dragend', handleDragEnd);
-      window.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('dragstart', handleDragStart, true);
+      document.addEventListener('dragend', handleDragEnd, true);
+      document.addEventListener('drop', handleDrop, true);
+      document.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('ui:card-drag-start', startCardDrag as EventListener);
+      window.addEventListener('ui:card-drag-end', handleDragEnd as EventListener);
       
       return () => {
-          window.removeEventListener('dragstart', handleDragStart);
-          window.removeEventListener('dragend', handleDragEnd);
-          window.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('dragstart', handleDragStart, true);
+          document.removeEventListener('dragend', handleDragEnd, true);
+          document.removeEventListener('drop', handleDrop, true);
+          document.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('ui:card-drag-start', startCardDrag as EventListener);
+          window.removeEventListener('ui:card-drag-end', handleDragEnd as EventListener);
       };
-  }, []);
+  }, [playUiSound]);
 
   // Save settings when changed
   useEffect(() => { localStorage.setItem('setting_cardScale', cardScale.toString()); }, [cardScale]);
@@ -432,6 +497,12 @@ export default function GameTable() {
       if (options?.closeMenu !== false) setMenuOpen(null);
   }, [gameState, id, socket]);
 
+  const startEquipSelection = useCallback((equipmentId: string) => {
+      setEquipSelection({ equipmentId });
+      setMenuOpen(null);
+      setHoveredCard(null);
+  }, []);
+
   const activeTrade = gameState?.trade;
   const amITrading = activeTrade && (activeTrade.initiatorSeat === mySeat || activeTrade.targetSeat === mySeat);
 
@@ -454,8 +525,10 @@ export default function GameTable() {
       menuOpen,
       setMenuOpen,
       sendAction,
+      equipSelection,
+      setEquipSelection,
       thinkingSeats
-  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats]);
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, equipSelection]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
@@ -657,6 +730,7 @@ export default function GameTable() {
           previewScale={previewScale}
           uiScale={uiScale}
           sendAction={sendAction}
+          startEquipSelection={startEquipSelection}
       />
       
       {showRevealModal && (
