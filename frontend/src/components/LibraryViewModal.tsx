@@ -19,12 +19,14 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
 }) => {
     const [query, setQuery] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
     const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (!isOpen) return;
         setQuery('');
         setSelectedId(null);
+        setHoveredId(null);
         setRemovedIds(new Set());
     }, [isOpen]);
 
@@ -52,16 +54,13 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
 
     useEffect(() => {
         if (!isOpen) return;
-        if (!selectedId && visibleObjects.length > 0) {
-            setSelectedId(visibleObjects[0].id);
-            return;
-        }
         if (selectedId && !visibleObjects.some((o: any) => o.id === selectedId)) {
-            setSelectedId(visibleObjects.length > 0 ? visibleObjects[0].id : null);
+            setSelectedId(null);
         }
     }, [isOpen, selectedId, visibleObjects]);
 
-    const selectedObj = selectedId ? gameState?.objects?.[selectedId] : null;
+    const displayId = selectedId || hoveredId;
+    const selectedObj = displayId ? gameState?.objects?.[displayId] : null;
 
     const { img: imgUrlFromHook } = useCardData(selectedObj?.scryfall_id || null);
 
@@ -142,6 +141,7 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
                                 <div className="p-2">
                                     {visibleObjects.map((obj: any) => {
                                         const isSelected = obj.id === selectedId;
+                                        const isHovered = obj.id === hoveredId;
                                         const name =
                                             obj?.face_state === 'FACEDOWN'
                                                 ? 'Unknown Card'
@@ -149,12 +149,22 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
                                         return (
                                             <button
                                                 key={obj.id}
-                                                onClick={() => setSelectedId(obj.id)}
+                                                onClick={() => {
+                                                    if (selectedId === obj.id) {
+                                                        setSelectedId(null);
+                                                    } else {
+                                                        setSelectedId(obj.id);
+                                                    }
+                                                }}
+                                                onMouseEnter={() => setHoveredId(obj.id)}
+                                                onMouseLeave={() => setHoveredId(null)}
                                                 className={clsx(
                                                     'w-full text-left px-3 py-2 rounded-lg border transition-colors flex items-center gap-2',
                                                     isSelected
                                                         ? 'bg-amber-900/25 border-amber-500/40 text-amber-200'
-                                                        : 'bg-slate-950/20 border-slate-800 text-slate-300 hover:bg-slate-950/40 hover:border-slate-700'
+                                                        : isHovered && !selectedId
+                                                            ? 'bg-slate-800 border-slate-600 text-slate-200'
+                                                            : 'bg-slate-950/20 border-slate-800 text-slate-300 hover:bg-slate-950/40 hover:border-slate-700'
                                                 )}
                                             >
                                                 <span className="truncate font-semibold">{name}</span>
