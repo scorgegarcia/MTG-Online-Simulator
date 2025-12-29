@@ -20,6 +20,7 @@ import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { MulliganModal } from '../components/MulliganModal';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
 import readyButtonSfx from '../assets/sfx/ready_button.mp3';
 import startGameSfx from '../assets/sfx/start_game.mp3';
@@ -60,6 +61,7 @@ export default function GameTable() {
   const [showRevealModal, setShowRevealModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
+  const [mulliganModalOpen, setMulliganModalOpen] = useState(false);
   const [thinkingSeats, setThinkingSeats] = useState<number[]>([]);
   const [initialLife, setInitialLife] = useState(40);
   const [showDamageVignette, setShowDamageVignette] = useState(false);
@@ -329,6 +331,9 @@ export default function GameTable() {
     socket.on('game:snapshot', (data) => {
         console.log('[GameTable] game:snapshot', { version: data?.state?.version });
         setGameState(data.state);
+        if (data.state && data.state.version <= 5) {
+             setMulliganModalOpen(true);
+        }
     });
     
     socket.on('game:updated', (data) => {
@@ -366,6 +371,7 @@ export default function GameTable() {
 
     socket.on('game:started', () => {
         console.log('Game started event received');
+        setMulliganModalOpen(true);
         fetchGameInfo();
         socket.emit('game:join', { gameId: id });
     });
@@ -828,6 +834,13 @@ export default function GameTable() {
               Esto barajará las bibliotecas, reiniciará las vidas y repartirá nuevas manos para todos los jugadores. Esta acción no se puede deshacer.
           </p>
       </ConfirmationModal>
+
+      <MulliganModal 
+          isOpen={mulliganModalOpen}
+          hand={gameState?.zoneIndex?.[mySeat]?.HAND?.map((id: string) => gameState.objects[id]) || []}
+          onMulligan={(n) => sendAction('MULLIGAN', { seat: mySeat, n })}
+          onKeep={() => setMulliganModalOpen(false)}
+      />
 
       {/* Top Bar (HUD) */}
       <div className="bg-slate-900/90 border-b border-slate-800 p-1 flex justify-between items-center shadow-lg z-30 backdrop-blur-sm relative">

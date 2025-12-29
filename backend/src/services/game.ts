@@ -521,6 +521,32 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       log(`Agarró ${count} carta(s)`);
       break;
     }
+    case 'MULLIGAN': {
+      const { seat, n } = action.payload;
+      const hand = state.zoneIndex[seat].HAND;
+      const library = state.zoneIndex[seat].LIBRARY;
+      
+      // Move hand to library
+      const cardsToReturn = [...hand];
+      state.zoneIndex[seat].HAND = [];
+      library.push(...cardsToReturn);
+      cardsToReturn.forEach(id => state.objects[id].zone = 'LIBRARY');
+
+      // Shuffle
+      for (let i = library.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [library[i], library[j]] = [library[j], library[i]];
+      }
+
+      // Draw X
+      const count = Math.min(n, library.length);
+      const drawn = library.splice(0, count);
+      state.zoneIndex[seat].HAND = drawn;
+      drawn.forEach(id => state.objects[id].zone = 'HAND');
+
+      log(`Hizo Mulligan a ${count} cartas`);
+      break;
+    }
     case 'MOVE': {
         const { objectId, fromZone, toZone, toOwner, position, index, faceState } = action.payload; // toOwner for "steal" logic, position for ordering
         // Find object

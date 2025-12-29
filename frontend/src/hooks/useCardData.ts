@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export const useCardData = (scryfallId: string | null) => {
-    const [data, setData] = useState<{img: string, type: string, power?: string, toughness?: string}>({ img: '', type: '' });
+    const [data, setData] = useState<{img: string, type: string, power?: string, toughness?: string, colors?: string[]}>({ img: '', type: '' });
     
     useEffect(() => {
         if(!scryfallId) {
@@ -9,7 +9,7 @@ export const useCardData = (scryfallId: string | null) => {
             return;
         }
         
-        const cacheKey = `card_data_v2_${scryfallId}`;
+        const cacheKey = `card_data_v3_${scryfallId}`; // Bump version
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
             setData(JSON.parse(cached));
@@ -23,8 +23,9 @@ export const useCardData = (scryfallId: string | null) => {
               const type = d.type_line || '';
               const power = d.power;
               const toughness = d.toughness;
+              const colors = d.colors || d.card_faces?.[0]?.colors || [];
               
-              const val = { img, type, power, toughness };
+              const val = { img, type, power, toughness, colors };
               localStorage.setItem(cacheKey, JSON.stringify(val));
               setData(val);
           })
