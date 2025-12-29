@@ -44,6 +44,7 @@ interface PlayerState {
 interface GameObject {
   id: string;
   scryfall_id: string | null; // null if token
+  name?: string;
   owner_seat: number;
   controller_seat: number;
   zone: string; // LIBRARY, HAND, BATTLEFIELD, GRAVEYARD, EXILE, COMMAND
@@ -169,6 +170,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
           const obj: GameObject = {
             id: objId,
             scryfall_id: card.scryfall_id,
+            name: card.name || undefined,
             owner_seat: p.seat,
             controller_seat: p.seat,
             zone: 'LIBRARY',
@@ -190,6 +192,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
             const obj: GameObject = {
               id: objId,
               scryfall_id: card.scryfall_id,
+              name: card.name || undefined,
               owner_seat: p.seat,
               controller_seat: p.seat,
               zone: 'COMMAND',
@@ -211,6 +214,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
             const obj: GameObject = {
               id: objId,
               scryfall_id: card.scryfall_id,
+              name: card.name || undefined,
               owner_seat: p.seat,
               controller_seat: p.seat,
               zone: 'SIDEBOARD',
@@ -324,6 +328,7 @@ export const restartGame = async (gameId: string) => {
           const obj: GameObject = {
             id: objId,
             scryfall_id: card.scryfall_id,
+            name: card.name || undefined,
             owner_seat: p.seat,
             controller_seat: p.seat,
             zone: 'LIBRARY',
@@ -345,6 +350,7 @@ export const restartGame = async (gameId: string) => {
             const obj: GameObject = {
               id: objId,
               scryfall_id: card.scryfall_id,
+              name: card.name || undefined,
               owner_seat: p.seat,
               controller_seat: p.seat,
               zone: 'COMMAND',
@@ -366,6 +372,7 @@ export const restartGame = async (gameId: string) => {
             const obj: GameObject = {
               id: objId,
               scryfall_id: card.scryfall_id,
+              name: card.name || undefined,
               owner_seat: p.seat,
               controller_seat: p.seat,
               zone: 'SIDEBOARD',

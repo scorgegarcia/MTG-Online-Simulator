@@ -1,4 +1,5 @@
 import React from 'react';
+import viewLibraryIcon from '../../assets/img/view_library.png';
 
 interface RightSideToolbarProps {
     mySeat: number;
@@ -9,6 +10,7 @@ interface RightSideToolbarProps {
     setRevealModalOpen: (open: boolean) => void;
     setCreateTokenModalOpen: (open: boolean) => void;
     setLibraryRevealModalOpen: (open: boolean) => void;
+    setViewLibraryModalOpen: (open: boolean) => void;
 }
 
 export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
@@ -19,7 +21,8 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
     setTradeModalOpen,
     setRevealModalOpen,
     setCreateTokenModalOpen,
-    setLibraryRevealModalOpen
+    setLibraryRevealModalOpen,
+    setViewLibraryModalOpen
 }) => {
     return (
         <div className="w-24 flex flex-col gap-2 py-0 items-center bg-gray-800/50 rounded border border-gray-700 overflow-auto [scrollbar-width:none]">
@@ -88,6 +91,15 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             >
                 <span className="text-xl">🪙</span>
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Token</span>
+            </button>
+
+            <button 
+                className="w-full h-fit py-1 rounded bg-slate-900 hover:bg-gray-600 flex flex-col items-center justify-center gap-1 text-xs font-bold text-gray-300 transition-colors"
+                title="View Library"
+                onClick={() => setViewLibraryModalOpen(true)}
+            >
+                <img src={viewLibraryIcon} alt="View Library" className="w-6 h-6 object-contain" draggable={false} />
+                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">VIEW LIBRARY</span>
             </button>
         </div>
     );

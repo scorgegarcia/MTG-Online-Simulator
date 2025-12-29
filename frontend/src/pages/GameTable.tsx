@@ -15,6 +15,7 @@ import { TradeTray } from '../components/TradeTray';
 import { RevealTray } from '../components/RevealTray';
 import { LibraryRevealTray } from '../components/LibraryRevealTray';
 import { LibraryRevealModal } from '../components/LibraryRevealModal';
+import { LibraryViewModal } from '../components/LibraryViewModal';
 import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
 import { GameLog } from '../components/GameLog';
@@ -74,6 +75,7 @@ export default function GameTable() {
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [revealModalOpen, setRevealModalOpen] = useState(false);
   const [libraryRevealModalOpen, setLibraryRevealModalOpen] = useState(false);
+  const [viewLibraryModalOpen, setViewLibraryModalOpen] = useState(false);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
 
   // Cooldown timer
@@ -774,6 +776,14 @@ export default function GameTable() {
           sendAction={sendAction}
       />
 
+      <LibraryViewModal
+          isOpen={viewLibraryModalOpen}
+          onClose={() => setViewLibraryModalOpen(false)}
+          gameState={gameState}
+          mySeat={mySeat}
+          sendAction={sendAction}
+      />
+
       <ConfirmationModal
         isOpen={showExitModal}
         onClose={() => setShowExitModal(false)}
@@ -984,6 +994,7 @@ export default function GameTable() {
               setRevealModalOpen={setRevealModalOpen}
               setCreateTokenModalOpen={setCreateTokenModalOpen}
               setLibraryRevealModalOpen={setLibraryRevealModalOpen}
+              setViewLibraryModalOpen={setViewLibraryModalOpen}
           />
       </div>
 
