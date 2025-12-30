@@ -72,6 +72,13 @@ interface GameObject {
 // Helpers
 const getGameRoom = (gameId: string) => `game:${gameId}`;
 
+const shuffleArray = (array: any[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+};
+
 export const handleJoinGame = async (io: Server, socket: Socket, gameId: string, userId: string) => {
   console.log('[handleJoinGame] start', { gameId, userId });
   const game = await prisma.game.findUnique({
@@ -240,10 +247,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       }
 
       // Shuffle Library
-      for (let i = libraryIds.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [libraryIds[i], libraryIds[j]] = [libraryIds[j], libraryIds[i]];
-      }
+      shuffleArray(libraryIds);
       
       initialState.zoneIndex[p.seat].LIBRARY = libraryIds;
 
@@ -399,10 +403,7 @@ export const restartGame = async (gameId: string) => {
       }
 
       // Shuffle Library
-      for (let i = libraryIds.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [libraryIds[i], libraryIds[j]] = [libraryIds[j], libraryIds[i]];
-      }
+      shuffleArray(libraryIds);
       
       initialState.zoneIndex[p.seat].LIBRARY = libraryIds;
 
@@ -583,10 +584,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       library.push(...cardsToReturn);
       cardsToReturn.forEach(id => state.objects[id].zone = 'LIBRARY');
 
-      for (let i = library.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [library[i], library[j]] = [library[j], library[i]];
-      }
+      shuffleArray(library);
 
       const count = Math.min(drawN, library.length);
       const drawn = library.splice(0, count);
@@ -806,11 +804,7 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
     case 'SHUFFLE': {
         const { seat } = action.payload;
         const library = state.zoneIndex[seat].LIBRARY;
-        // Fisher-Yates
-        for (let i = library.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [library[i], library[j]] = [library[j], library[i]];
-        }
+        shuffleArray(library);
         log(`Barajó su biblioteca`);
         break;
     }
