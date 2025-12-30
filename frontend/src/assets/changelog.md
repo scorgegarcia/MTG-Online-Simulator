@@ -11,6 +11,7 @@
 ### Changes
 - **Contadores**: Se movieron los contadores a la parte superior izquierda de las cartas para que no tapen el costo de maná de las cartas
 - **Algoritmo de Shuffle**: Alí tenía razón. Se mejoró el algoritmo de shuffle de Fisher Yates pues ya se usaba este algoritmo pero usaba numeros pseudoaleatoreos generados por js (era random matematico), ahora son True Random gracias a la entropía que ofrece la criptografía, porque js era basura para generar randomness... jajajaj
+- **Deck Selection**: Se mejoró la seleccion de deck para que el usuario pueda reconsiderar usar el deck que bloqueó en el lobby de la partida, y si decide cambiar de deck, la partida no podrá iniciar hasta que todos los jugadores hayan confirmado sus cambios.
 
 ### Bug/Fix
 - **Draw Bug**: Se corrigió un bug donde si hacias clic en la biblioteca si hacia draw de la carta que sigue, pero si hacias drag-n-drop traía la carta de abajo de la biblioteca.

@@ -7,7 +7,7 @@ import { startGame, restartGame } from '../services/game';
 // Schemas
 const createGameSchema = z.object({}); // No params needed? Or format?
 const joinGameSchema = z.object({ code: z.string() });
-const selectDeckSchema = z.object({ deckId: z.string() });
+const selectDeckSchema = z.object({ deckId: z.string().nullable() });
 const setGameOutcomeSchema = z.object({ outcome: z.union([z.enum(['WON', 'LOST']), z.null()]) });
 
 // Helpers
@@ -169,21 +169,29 @@ export const getGame = async (req: AuthRequest, res: Response) => {
 };
 
 export const selectDeck = async (req: AuthRequest, res: Response) => {
-    const { deckId } = selectDeckSchema.parse(req.body);
-    // Verify deck ownership
-    const deck = await prisma.deck.findUnique({ where: { id: deckId } });
-    if (!deck || deck.user_id !== req.userId) return res.status(403).json({ error: 'Invalid deck' });
+    try {
+        const { deckId } = selectDeckSchema.parse(req.body);
 
-    await prisma.gamePlayer.updateMany({
-        where: { game_id: req.params.id, user_id: req.userId },
-        data: { deck_id: deckId }
-    });
-    
-    // Notify lobby
-    console.log(`Emitting lobby:updated to game:${req.params.id}`); // Debug
-    (req as any).io?.to(`game:${req.params.id}`).emit('lobby:updated');
+        if (deckId) {
+            // Verify deck ownership
+            const deck = await prisma.deck.findUnique({ where: { id: deckId } });
+            if (!deck || deck.user_id !== req.userId) return res.status(403).json({ error: 'Invalid deck' });
+        }
 
-    res.json({ message: 'Deck selected' });
+        await prisma.gamePlayer.updateMany({
+            where: { game_id: req.params.id, user_id: req.userId },
+            data: { deck_id: deckId }
+        });
+        
+        // Notify lobby
+        console.log(`Emitting lobby:updated to game:${req.params.id}`); // Debug
+        (req as any).io?.to(`game:${req.params.id}`).emit('lobby:updated');
+
+        res.json({ message: 'Deck selection updated' });
+    } catch (error) {
+        console.error('selectDeck error:', error);
+        res.status(400).json({ error: 'Invalid input or deck' });
+    }
 };
 
 export const startGameEndpoint = async (req: AuthRequest, res: Response) => {

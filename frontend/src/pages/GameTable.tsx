@@ -36,6 +36,7 @@ import {
   Swords,
   Eye,
   Copy,
+  Check,
   RotateCcw,
   Volume2,
   VolumeX,
@@ -53,10 +54,12 @@ export default function GameTable() {
   const [gameState, setGameState] = useState<any>(null);
   const { handleGameAction, playUiSound } = useGameSound();
   const [gameInfo, setGameInfo] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
   const lobbyHoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const lobbyReadyAudioRef = useRef<HTMLAudioElement | null>(null);
   const lobbyStartAudioRef = useRef<HTMLAudioElement | null>(null);
   const [selectedDeck, setSelectedDeck] = useState('');
+  const [isDeckConfirmed, setIsDeckConfirmed] = useState(false);
   const [myDecks, setMyDecks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
@@ -419,6 +422,17 @@ export default function GameTable() {
       try {
           const res = await axios.get(`${API_BASE_URL}/games/${id}`);
           setGameInfo(res.data);
+          
+          // Sync confirmed state from server data
+          if (user?.id && res.data.players) {
+              const me = res.data.players.find((p: any) => p.user_id === user.id);
+              if (me?.deck_id) {
+                  setSelectedDeck(me.deck_id);
+                  setIsDeckConfirmed(true);
+              } else {
+                  setIsDeckConfirmed(false);
+              }
+          }
       } catch (e) {
           console.error("Failed to fetch game info", e);
       }
@@ -642,8 +656,16 @@ export default function GameTable() {
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
+      setIsDeckConfirmed(true);
       const res = await axios.get(`${API_BASE_URL}/games/${id}`);
       setGameInfo(res.data);
+  };
+
+  const unselectDeck = async () => {
+    await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: null });
+    setIsDeckConfirmed(false);
+    const res = await axios.get(`${API_BASE_URL}/games/${id}`);
+    setGameInfo(res.data);
   };
 
   const startGame = async () => {
@@ -686,9 +708,30 @@ export default function GameTable() {
                       <div className="flex items-center justify-center gap-2 text-amber-500 mb-2">
                           <Crown size={32} />
                       </div>
-                      <h1 className="text-4xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 tracking-wide">
-                          LOBBY: {gameInfo.code}
-                      </h1>
+                      <div className="flex items-center justify-center gap-4">
+                          <h1 className="text-4xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 tracking-wide">
+                              LOBBY: {gameInfo.code}
+                          </h1>
+                          <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(gameInfo.code);
+                                setCopied(true);
+                                playLobbyHover();
+                                setTimeout(() => setCopied(false), 2000);
+                            }}
+                            onMouseEnter={playLobbyHover}
+                            className={clsx(
+                                "p-2 rounded-lg border transition-all duration-300 flex items-center gap-2",
+                                copied 
+                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]" 
+                                    : "bg-slate-900/50 border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-500"
+                            )}
+                            title="Copy Lobby Code"
+                          >
+                            {copied ? <Check size={18} /> : <Copy size={18} />}
+                            {copied && <span className="text-xs font-bold uppercase tracking-tighter">Copied</span>}
+                          </button>
+                      </div>
                       <p className="text-slate-500 font-serif italic">Gather your allies</p>
                   </div>
 
@@ -733,10 +776,14 @@ export default function GameTable() {
                           <label className="block mb-2 text-xs uppercase tracking-widest text-slate-500 font-bold">Select your deck</label>
                           <div className="flex gap-2">
                               <select 
-                                className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-serif"
+                                className={clsx(
+                                    "flex-1 p-3 bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-amber-500 transition-colors font-serif",
+                                    isDeckConfirmed && "opacity-50 cursor-not-allowed bg-slate-950"
+                                )}
                                 value={selectedDeck}
                                 onChange={e => setSelectedDeck(e.target.value)}
                                 onMouseEnter={playLobbyHover}
+                                disabled={isDeckConfirmed}
                               >
                                   <option value="">-- Choose a Grimoire --</option>
                                   {myDecks.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -744,13 +791,24 @@ export default function GameTable() {
                               <button 
                                 onMouseEnter={playLobbyHover}
                                 onClick={() => {
-                                  playLobbyReady();
-                                  selectDeck();
+                                  if (isDeckConfirmed) {
+                                      playLobbyHover();
+                                      unselectDeck();
+                                  } else {
+                                      playLobbyReady();
+                                      selectDeck();
+                                  }
                                 }}
-                                disabled={!selectedDeck} 
-                                className="px-6 bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                                disabled={!selectedDeck && !isDeckConfirmed} 
+                                className={clsx(
+                                    "px-6 rounded font-bold transition-all border",
+                                    isDeckConfirmed 
+                                        ? "bg-red-900 hover:bg-red-800 border-red-700 text-red-100 hover:shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                                        : "bg-indigo-900 hover:bg-indigo-800 border-indigo-700 text-indigo-100 hover:shadow-[0_0_15px_rgba(79,70,229,0.3)]",
+                                    !selectedDeck && !isDeckConfirmed && "opacity-50 cursor-not-allowed"
+                                )}
                               >
-                                  Confirm
+                                  {isDeckConfirmed ? "Unconfirm" : "Confirm"}
                               </button>
                           </div>
                       </div>
