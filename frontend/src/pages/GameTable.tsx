@@ -60,6 +60,7 @@ export default function GameTable() {
   const [activeTab, setActiveTab] = useState('HAND'); // HAND, GRAVEYARD, EXILE, LIBRARY
   const [menuOpen, setMenuOpen] = useState<{id: string, x: number, y: number} | null>(null);
   const [equipSelection, setEquipSelection] = useState<{ equipmentId: string } | null>(null);
+  const [enchantSelection, setEnchantSelection] = useState<{ enchantmentId: string } | null>(null);
   const [showRevealModal, setShowRevealModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
@@ -93,13 +94,15 @@ export default function GameTable() {
   }, [isThinkingCooldown]);
 
   useEffect(() => {
-      if (!equipSelection) return;
+      if (!equipSelection && !enchantSelection) return;
       const onKeyDown = (e: KeyboardEvent) => {
-          if (e.key === 'Escape') setEquipSelection(null);
+          if (e.key !== 'Escape') return;
+          setEquipSelection(null);
+          setEnchantSelection(null);
       };
       window.addEventListener('keydown', onKeyDown);
       return () => window.removeEventListener('keydown', onKeyDown);
-  }, [equipSelection]);
+  }, [equipSelection, enchantSelection]);
 
   // Derived state (moved up to allow safe hook usage)
   const myPlayer = gameState?.players ? Object.values(gameState.players).find((p: any) => p.userId === user?.id) : null;
@@ -574,6 +577,14 @@ export default function GameTable() {
 
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });
+      setEnchantSelection(null);
+      setMenuOpen(null);
+      setHoveredCard(null);
+  }, []);
+
+  const startEnchantSelection = useCallback((enchantmentId: string) => {
+      setEnchantSelection({ enchantmentId });
+      setEquipSelection(null);
       setMenuOpen(null);
       setHoveredCard(null);
   }, []);
@@ -602,9 +613,11 @@ export default function GameTable() {
       sendAction,
       equipSelection,
       setEquipSelection,
+      enchantSelection,
+      setEnchantSelection,
       thinkingSeats,
       passingSeats
-  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection]);
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection, enchantSelection]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
@@ -828,6 +841,7 @@ export default function GameTable() {
           uiScale={uiScale}
           sendAction={sendAction}
           startEquipSelection={startEquipSelection}
+          startEnchantSelection={startEnchantSelection}
       />
       
       {showRevealModal && (

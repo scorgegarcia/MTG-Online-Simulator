@@ -17,6 +17,8 @@ interface BattlefieldSharedProps {
     sendAction: any;
     equipSelection?: { equipmentId: string } | null;
     setEquipSelection?: (selection: { equipmentId: string } | null) => void;
+    enchantSelection?: { enchantmentId: string } | null;
+    setEnchantSelection?: (selection: { enchantmentId: string } | null) => void;
     thinkingSeats?: number[];
     passingSeats?: number[];
 }
@@ -34,6 +36,8 @@ export const MyBattlefield = memo(({
     sendAction,
     equipSelection,
     setEquipSelection,
+    enchantSelection,
+    setEnchantSelection,
     thinkingSeats,
     passingSeats
 }: BattlefieldSharedProps & { seat: number }) => {
@@ -76,7 +80,7 @@ export const MyBattlefield = memo(({
         setIsDraggingOver(false);
     };
     
-    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, attachmentsByHost, equipSelection, setEquipSelection };
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, attachmentsByHost, equipSelection, setEquipSelection, enchantSelection, setEnchantSelection };
 
     return (
         <div className="flex h-full w-full gap-1 relative">
@@ -128,6 +132,8 @@ export const OpponentBattlefield = memo(({
     sendAction,
     equipSelection,
     setEquipSelection,
+    enchantSelection,
+    setEnchantSelection,
     thinkingSeats,
     passingSeats
 }: { player: any } & BattlefieldSharedProps) => {
@@ -150,7 +156,7 @@ export const OpponentBattlefield = memo(({
 
     const [viewZone, setViewZone] = React.useState<{zone: 'GRAVEYARD' | 'EXILE', seat: number} | null>(null);
 
-    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const, attachmentsByHost, equipSelection, setEquipSelection };
+    const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, size: 'small' as const, attachmentsByHost, equipSelection, setEquipSelection, enchantSelection, setEnchantSelection };
 
     return (
         <div className="p-0 border border-red-900/50 rounded bg-red-900/10 w-full h-full flex flex-col gap-0 overflow-hidden relative">

@@ -3,7 +3,7 @@ import { useCardData } from '../hooks/useCardData';
 import { ZONE_LABELS } from '../utils/gameUtils';
 import { CardCounters } from './CardCounters';
 
-const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
+const MiniCardPreview = ({ obj, uiScale, variant }: { obj: any; uiScale: number; variant: 'amber' | 'green' }) => {
     const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
     const imgUrl = obj?.scryfall_id ? imgUrlFromHook : (obj?.image_url || '');
     const isFacedown = obj?.face_state === 'FACEDOWN';
@@ -13,14 +13,20 @@ const MiniCardPreview = ({ obj, uiScale }: { obj: any; uiScale: number }) => {
 
     const w = Math.max(48, Math.round(54 * uiScale));
     const h = Math.round(w * (3.5 / 2.5));
+    const frameClassName = variant === 'green'
+        ? "rounded-md overflow-hidden border border-emerald-400/40 bg-black/30 relative"
+        : "rounded-md overflow-hidden border border-amber-400/40 bg-black/30 relative";
+    const frameShadow = variant === 'green'
+        ? '0 0 16px rgba(34,197,94,0.25)'
+        : '0 0 16px rgba(245,158,11,0.25)';
 
     return (
         <div
-            className="rounded-md overflow-hidden border border-amber-400/40 bg-black/30 relative"
+            className={frameClassName}
             style={{
                 width: `${w}px`,
                 height: `${h}px`,
-                boxShadow: '0 0 16px rgba(245,158,11,0.25)'
+                boxShadow: frameShadow
             }}
         >
             {finalImgUrl ? (
@@ -42,6 +48,7 @@ interface ContextMenuProps {
     uiScale: number;
     sendAction: (type: string, payload: any, options?: { closeMenu?: boolean }) => void;
     startEquipSelection: (equipmentId: string) => void;
+    startEnchantSelection: (enchantmentId: string) => void;
 }
 
 export const ContextMenu = ({
@@ -52,7 +59,8 @@ export const ContextMenu = ({
     previewScale,
     uiScale,
     sendAction,
-    startEquipSelection
+    startEquipSelection,
+    startEnchantSelection
 }: ContextMenuProps) => {
     const obj = menuOpen ? gameState.objects[menuOpen.id] : null;
     const { img: imgUrlFromHook, type: typeLineFromHook } = useCardData(obj?.scryfall_id ?? null);
@@ -65,15 +73,36 @@ export const ContextMenu = ({
         return String(typeLineOverride || typeLineFromHook || '');
     }, [typeLineOverride, typeLineFromHook]);
     const isEquipment = typeLine.toLowerCase().includes('equipment');
-    const isEquipped = !!obj?.attached_to;
+    const isEnchantment = typeLine.toLowerCase().includes('enchantment');
+    const isAttached = !!obj?.attached_to;
     const objId = obj?.id;
     const attachedToMe = useMemo(() => {
         if (!objId) return [];
         return Object.values(gameState.objects || {}).filter((o: any) => o?.attached_to === objId);
     }, [gameState, objId]);
-    const equippedHost = obj?.attached_to ? gameState.objects?.[obj.attached_to] : null;
+    const getTypeLineForObj = (o: any) => {
+        const direct = String(o?.type_line || '');
+        if (direct) return direct;
+        const sid = o?.scryfall_id;
+        if (!sid) return '';
+        const cached = localStorage.getItem(`card_data_v3_${sid}`);
+        if (!cached) return '';
+        try {
+            return String(JSON.parse(cached)?.type || '');
+        } catch {
+            return '';
+        }
+    };
+    const attachedEquipments = useMemo(() => {
+        return attachedToMe.filter((o: any) => getTypeLineForObj(o).toLowerCase().includes('equipment'));
+    }, [attachedToMe]);
+    const attachedEnchantments = useMemo(() => {
+        return attachedToMe.filter((o: any) => getTypeLineForObj(o).toLowerCase().includes('enchantment'));
+    }, [attachedToMe]);
+    const attachedHost = obj?.attached_to ? gameState.objects?.[obj.attached_to] : null;
 
     const goldActionClass = "w-full text-left rounded-lg bg-black/35 hover:bg-black/45 border border-amber-400/70 hover:border-amber-300 transition-colors text-amber-100 shadow-[0_0_18px_rgba(245,158,11,0.25)] hover:shadow-[0_0_26px_rgba(245,158,11,0.45)]";
+    const greenActionClass = "w-full text-left rounded-lg bg-black/35 hover:bg-black/45 border border-emerald-400/70 hover:border-emerald-300 transition-colors text-emerald-100 shadow-[0_0_18px_rgba(34,197,94,0.25)] hover:shadow-[0_0_26px_rgba(34,197,94,0.45)]";
 
     const isFacedown = obj?.face_state === 'FACEDOWN';
     const finalImgUrl = isFacedown
@@ -315,21 +344,39 @@ export const ContextMenu = ({
                                       </button>
                                   </div>
 
-                                  {!isEquipment && attachedToMe.length > 0 && (
+                                  {!isEquipment && attachedEquipments.length > 0 && (
                                       <div className="rounded-lg border border-amber-400/30 bg-black/25 p-2">
                                           <div className="text-amber-200/80 font-semibold mb-2" style={fontSizeStyle}>Equipos</div>
                                           <div className="flex flex-wrap gap-2">
-                                              {attachedToMe.map((e: any) => (
-                                                  <MiniCardPreview key={e.id} obj={e} uiScale={uiScale} />
+                                              {attachedEquipments.map((e: any) => (
+                                                  <MiniCardPreview key={e.id} obj={e} uiScale={uiScale} variant="amber" />
                                               ))}
                                           </div>
                                       </div>
                                   )}
 
-                                  {isEquipment && equippedHost && (
+                                  {!isEquipment && attachedEnchantments.length > 0 && (
+                                      <div className="rounded-lg border border-emerald-400/30 bg-black/25 p-2">
+                                          <div className="text-emerald-200/80 font-semibold mb-2" style={fontSizeStyle}>Encantamientos</div>
+                                          <div className="flex flex-wrap gap-2">
+                                              {attachedEnchantments.map((e: any) => (
+                                                  <MiniCardPreview key={e.id} obj={e} uiScale={uiScale} variant="green" />
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+
+                                  {isEquipment && attachedHost && (
                                       <div className="rounded-lg border border-amber-400/30 bg-black/25 p-2">
                                           <div className="text-amber-200/80 font-semibold mb-2" style={fontSizeStyle}>Equipado a</div>
-                                          <MiniCardPreview obj={equippedHost} uiScale={uiScale} />
+                                          <MiniCardPreview obj={attachedHost} uiScale={uiScale} variant="amber" />
+                                      </div>
+                                  )}
+
+                                  {isEnchantment && attachedHost && (
+                                      <div className="rounded-lg border border-emerald-400/30 bg-black/25 p-2">
+                                          <div className="text-emerald-200/80 font-semibold mb-2" style={fontSizeStyle}>Encantado a</div>
+                                          <MiniCardPreview obj={attachedHost} uiScale={uiScale} variant="green" />
                                       </div>
                                   )}
 
@@ -338,14 +385,30 @@ export const ContextMenu = ({
                                           className={goldActionClass}
                                           style={buttonStyle}
                                           onClick={() => {
-                                              if (isEquipped) {
+                                              if (isAttached) {
                                                   sendAction('EQUIP_DETACH', { equipmentId: obj.id });
                                                   return;
                                               }
                                               startEquipSelection(obj.id);
                                           }}
                                       >
-                                          {isEquipped ? 'Desequipar' : 'Equipar'}
+                                          {isAttached ? 'Desequipar' : 'Equipar'}
+                                      </button>
+                                  )}
+
+                                  {isEnchantment && obj.zone === 'BATTLEFIELD' && (
+                                      <button
+                                          className={greenActionClass}
+                                          style={buttonStyle}
+                                          onClick={() => {
+                                              if (isAttached) {
+                                                  sendAction('ENCHANT_DETACH', { enchantmentId: obj.id });
+                                                  return;
+                                              }
+                                              startEnchantSelection(obj.id);
+                                          }}
+                                      >
+                                          {isAttached ? 'Desencantar' : 'Encantar'}
                                       </button>
                                   )}
 

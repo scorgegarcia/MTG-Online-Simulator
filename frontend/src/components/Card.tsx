@@ -14,6 +14,16 @@ const glowStyles = `
   50% { opacity: 1; filter: brightness(1.12); box-shadow: 0 0 16px rgba(245,158,11,0.48), 0 0 40px rgba(245,158,11,0.56); }
   100% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(245,158,11,0.25), 0 0 26px rgba(245,158,11,0.30); }
 }
+@keyframes enchant_glow {
+  0% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(34,197,94,0.20), 0 0 22px rgba(34,197,94,0.22); }
+  50% { opacity: 1; filter: brightness(1.08); box-shadow: 0 0 14px rgba(34,197,94,0.40), 0 0 34px rgba(34,197,94,0.46); }
+  100% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(34,197,94,0.20), 0 0 22px rgba(34,197,94,0.22); }
+}
+@keyframes enchant_select_glow {
+  0% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(34,197,94,0.25), 0 0 26px rgba(34,197,94,0.30); }
+  50% { opacity: 1; filter: brightness(1.12); box-shadow: 0 0 16px rgba(34,197,94,0.48), 0 0 40px rgba(34,197,94,0.56); }
+  100% { opacity: 0.55; filter: brightness(1); box-shadow: 0 0 10px rgba(34,197,94,0.25), 0 0 26px rgba(34,197,94,0.30); }
+}
 `;
 
 interface CardProps {
@@ -24,6 +34,7 @@ interface CardProps {
     fitHeight?: boolean;
     applyTapTransform?: boolean;
     hasAttachedEquipment?: boolean;
+    attachedObjects?: any[];
     mySeat: number;
     cardScale: number;
     hoverBlockedRef: React.MutableRefObject<string | null>;
@@ -34,6 +45,8 @@ interface CardProps {
     sendAction: (type: string, payload: any) => void;
     equipSelection?: { equipmentId: string } | null;
     setEquipSelection?: (selection: { equipmentId: string } | null) => void;
+    enchantSelection?: { enchantmentId: string } | null;
+    setEnchantSelection?: (selection: { enchantmentId: string } | null) => void;
 }
 
 export const Card = memo(({ 
@@ -44,6 +57,7 @@ export const Card = memo(({
     fitHeight = false,
     applyTapTransform = true,
     hasAttachedEquipment = false,
+    attachedObjects,
     mySeat,
     cardScale,
     hoverBlockedRef,
@@ -53,13 +67,20 @@ export const Card = memo(({
     setMenuOpen,
     sendAction,
     equipSelection,
-    setEquipSelection
+    setEquipSelection,
+    enchantSelection,
+    setEnchantSelection
 }: CardProps) => {
-    const { img: imgUrlFromHook, power: powerFromHook, toughness: toughnessFromHook } = useCardData(obj.scryfall_id);
+    const { img: imgUrlFromHook, power: powerFromHook, toughness: toughnessFromHook, type: typeLineFromHook } = useCardData(obj.scryfall_id);
     
     const imgUrl = obj.scryfall_id ? imgUrlFromHook : (obj.image_url || '');
     const power = obj.scryfall_id ? powerFromHook : obj.power;
     const toughness = obj.scryfall_id ? toughnessFromHook : obj.toughness;
+    const typeLineOverride = obj?.type_line ?? '';
+    const typeLine = String(typeLineOverride || typeLineFromHook || '');
+    const lowerTypeLine = typeLine.toLowerCase();
+    const isEquipment = lowerTypeLine.includes('equipment');
+    const isEnchantment = lowerTypeLine.includes('enchantment');
     
     const isFacedown = obj.face_state === 'FACEDOWN';
     
@@ -114,13 +135,49 @@ export const Card = memo(({
     const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const ignoreClickRef = React.useRef(false);
 
-    const hasGoldenHalo = inBattlefield && (hasAttachedEquipment || !!obj.attached_to);
+    const resolvedAttachedObjects = Array.isArray(attachedObjects) ? attachedObjects : [];
+    const getTypeLineForObj = (o: any) => {
+        const direct = String(o?.type_line || '');
+        if (direct) return direct;
+        const sid = o?.scryfall_id;
+        if (!sid) return '';
+        const cached = localStorage.getItem(`card_data_v3_${sid}`);
+        if (!cached) return '';
+        try {
+            return String(JSON.parse(cached)?.type || '');
+        } catch {
+            return '';
+        }
+    };
+    const attachedEquipmentCount = resolvedAttachedObjects.filter((o: any) => getTypeLineForObj(o).toLowerCase().includes('equipment')).length;
+    const attachedEnchantmentCount = resolvedAttachedObjects.filter((o: any) => getTypeLineForObj(o).toLowerCase().includes('enchantment')).length;
+    const hasAnyAttachmentsFallback = hasAttachedEquipment || !!obj.attached_to;
+
+    const hasGreenHalo = inBattlefield && (
+        (attachedEnchantmentCount > 0) ||
+        (isEnchantment && !!obj.attached_to)
+    );
+    const hasAmberHalo = inBattlefield && (
+        !hasGreenHalo && (
+            (attachedEquipmentCount > 0) ||
+            (isEquipment && !!obj.attached_to) ||
+            (hasAnyAttachmentsFallback && resolvedAttachedObjects.length === 0)
+        )
+    );
+
     const isEquipTarget =
         !!equipSelection &&
         inBattlefield &&
         obj.controller_seat === mySeat &&
         obj.id !== equipSelection.equipmentId;
     const isEquipSource = !!equipSelection && obj.id === equipSelection.equipmentId;
+
+    const isEnchantTarget =
+        !!enchantSelection &&
+        inBattlefield &&
+        obj.controller_seat === mySeat &&
+        obj.id !== enchantSelection.enchantmentId;
+    const isEnchantSource = !!enchantSelection && obj.id === enchantSelection.enchantmentId;
 
     const handleTouchEnd = (e: React.TouchEvent) => {
         const now = Date.now();
@@ -174,7 +231,7 @@ export const Card = memo(({
               }
           }}
           onMouseEnter={(e) => {
-              if (equipSelection) return;
+              if (equipSelection || enchantSelection) return;
               if (!menuOpen && hoverBlockedRef.current !== obj.id && (!isDraggingRef || !isDraggingRef.current)) { 
                   setHoveredCard({
                       obj,
@@ -212,6 +269,29 @@ export const Card = memo(({
                   setMenuOpen(null);
                   sendAction('EQUIP_ATTACH', { equipmentId: equipSelection.equipmentId, targetId: obj.id });
                   setEquipSelection?.(null);
+                  return;
+              }
+
+              if (enchantSelection && inBattlefield) {
+                  if (isEnchantSource) {
+                      if (clickTimeoutRef.current) {
+                          clearTimeout(clickTimeoutRef.current);
+                          clickTimeoutRef.current = null;
+                      }
+                      setHoveredCard(null);
+                      setMenuOpen(null);
+                      setEnchantSelection?.(null);
+                      return;
+                  }
+                  if (!isEnchantTarget) return;
+                  if (clickTimeoutRef.current) {
+                      clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                  }
+                  setHoveredCard(null);
+                  setMenuOpen(null);
+                  sendAction('ENCHANT_ATTACH', { enchantmentId: enchantSelection.enchantmentId, targetId: obj.id });
+                  setEnchantSelection?.(null);
                   return;
               }
               
@@ -267,14 +347,43 @@ export const Card = memo(({
                 </button>
             )}
 
-            {(hasGoldenHalo || isEquipTarget) && (
+            {enchantSelection && inBattlefield && isEnchantSource && (
+                <button
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 px-2 py-1 rounded bg-black/80 text-emerald-200 border border-emerald-400/60 text-[10px] whitespace-nowrap shadow-[0_0_18px_rgba(34,197,94,0.25)]"
+                    onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        setEnchantSelection?.(null);
+                    }}
+                >
+                    haz clic aqui para cancelar, o presiona ESC
+                </button>
+            )}
+
+            {(hasAmberHalo || hasGreenHalo || isEquipTarget || isEnchantTarget) && (
                 <div
                     className="absolute pointer-events-none rounded"
                     style={{
                         inset: '-3px',
-                        border: `3px solid ${isEquipTarget ? 'rgba(245,158,11,0.95)' : 'rgba(245,158,11,0.75)'}`,
+                        border: `3px solid ${
+                            isEnchantTarget
+                                ? 'rgba(34,197,94,0.95)'
+                                : isEquipTarget
+                                    ? 'rgba(245,158,11,0.95)'
+                                    : hasGreenHalo
+                                        ? 'rgba(34,197,94,0.75)'
+                                        : 'rgba(245,158,11,0.75)'
+                        }`,
                         zIndex: 20,
-                        animation: `${isEquipTarget ? 'select_glow' : 'equip_glow'} 1s ease-in-out infinite`,
+                        animation: `${
+                            isEnchantTarget
+                                ? 'enchant_select_glow'
+                                : isEquipTarget
+                                    ? 'select_glow'
+                                    : hasGreenHalo
+                                        ? 'enchant_glow'
+                                        : 'equip_glow'
+                        } 1s ease-in-out infinite`,
                     }}
                 />
             )}

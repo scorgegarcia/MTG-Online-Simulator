@@ -64,6 +64,9 @@ interface GameObject {
   equip_origin_seat?: number;
   equip_origin_zone?: string;
   equip_origin_index?: number;
+  enchant_origin_seat?: number;
+  enchant_origin_zone?: string;
+  enchant_origin_index?: number;
 }
 
 // Helpers
@@ -539,6 +542,9 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
       delete obj.equip_origin_seat;
       delete obj.equip_origin_zone;
       delete obj.equip_origin_index;
+      delete obj.enchant_origin_seat;
+      delete obj.enchant_origin_zone;
+      delete obj.enchant_origin_index;
   };
 
   switch (action.type) {
@@ -735,6 +741,66 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         delete equipment.equip_origin_index;
 
         log(`Desequipó una carta`);
+        break;
+    }
+    case 'ENCHANT_ATTACH': {
+        const { enchantmentId, targetId } = action.payload || {};
+        if (actorSeat === undefined) break;
+        if (typeof enchantmentId !== 'string' || typeof targetId !== 'string') break;
+        if (enchantmentId === targetId) break;
+
+        const enchantment = state.objects[enchantmentId];
+        const target = state.objects[targetId];
+        if (!enchantment || !target) break;
+        if (enchantment.controller_seat !== actorSeat) break;
+        if (target.controller_seat !== actorSeat) break;
+        if (target.zone !== 'BATTLEFIELD') break;
+
+        if (enchantment.attached_to) {
+            clearEquipLink(enchantment);
+        }
+
+        const originSeat = enchantment.controller_seat;
+        const originZone = enchantment.zone;
+        const originList = state.zoneIndex[originSeat]?.[originZone] || [];
+        const originIndex = originList.indexOf(enchantmentId);
+
+        enchantment.enchant_origin_seat = originSeat;
+        enchantment.enchant_origin_zone = originZone;
+        enchantment.enchant_origin_index = originIndex;
+
+        enchantment.attached_to = targetId;
+        log(`Encantó una carta`);
+        break;
+    }
+    case 'ENCHANT_DETACH': {
+        const { enchantmentId } = action.payload || {};
+        if (actorSeat === undefined) break;
+        if (typeof enchantmentId !== 'string') break;
+
+        const enchantment = state.objects[enchantmentId];
+        if (!enchantment) break;
+        if (enchantment.controller_seat !== actorSeat) break;
+        if (!enchantment.attached_to) break;
+
+        const originSeat = enchantment.enchant_origin_seat;
+        const originZone = enchantment.enchant_origin_zone;
+        const originIndex = enchantment.enchant_origin_index;
+
+        delete enchantment.attached_to;
+
+        if (typeof originSeat === 'number' && typeof originZone === 'string') {
+            removeFromZoneIndex(enchantment.controller_seat, enchantment.zone, enchantmentId);
+            enchantment.controller_seat = originSeat;
+            enchantment.zone = originZone;
+            insertIntoZoneIndex(originSeat, originZone, enchantmentId, originIndex);
+        }
+
+        delete enchantment.enchant_origin_seat;
+        delete enchantment.enchant_origin_zone;
+        delete enchantment.enchant_origin_index;
+
+        log(`Desencantó una carta`);
         break;
     }
     case 'SHUFFLE': {

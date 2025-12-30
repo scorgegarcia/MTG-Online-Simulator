@@ -104,6 +104,12 @@ export const useGameSound = () => {
             case 'EQUIP_DETACH':
                 playSound('EQUIP_OFF');
                 break;
+            case 'ENCHANT_ATTACH':
+                playSound('EQUIP_ON');
+                break;
+            case 'ENCHANT_DETACH':
+                playSound('EQUIP_OFF');
+                break;
             case 'LIFE_SET':
                 if (mySeat !== undefined && action.payload.seat === mySeat && action.payload.delta < 0) {
                     playSound('DAMAGE');
