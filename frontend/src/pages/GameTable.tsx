@@ -18,6 +18,7 @@ import { LibraryRevealModal } from '../components/LibraryRevealModal';
 import { LibraryViewModal } from '../components/LibraryViewModal';
 import { ContextMenu } from '../components/ContextMenu';
 import { SettingsModal } from '../components/SettingsModal';
+import { LifeTotalModal } from '../components/LifeTotalModal';
 import { GameLog } from '../components/GameLog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { MulliganModal } from '../components/MulliganModal';
@@ -83,6 +84,8 @@ export default function GameTable() {
   const [revealModalOpen, setRevealModalOpen] = useState(false);
   const [libraryRevealModalOpen, setLibraryRevealModalOpen] = useState(false);
   const [viewLibraryModalOpen, setViewLibraryModalOpen] = useState(false);
+  const [lifeModalOpen, setLifeModalOpen] = useState(false);
+  const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
 
   // Cooldown timer
@@ -983,6 +986,21 @@ export default function GameTable() {
           />
       )}
 
+      <LifeTotalModal 
+          isOpen={lifeModalOpen}
+          onClose={() => {
+              setLifeModalOpen(false);
+              setLifeModalTarget(null);
+          }}
+          currentLife={lifeModalTarget?.life || 0}
+          username={lifeModalTarget?.username || ''}
+          onApply={(newLife) => {
+              if (lifeModalTarget) {
+                  sendAction('LIFE_SET', { seat: lifeModalTarget.seat, value: newLife });
+              }
+          }}
+      />
+
       <DiceRollModal 
           isOpen={diceRollModalOpen}
           onClose={() => setDiceRollModalOpen(false)}
@@ -1078,18 +1096,36 @@ export default function GameTable() {
                             : "bg-slate-800/50 border-slate-700"
                     )}
                   >
-                      <span className={clsx("font-serif font-bold text-sm tracking-wide truncate max-w-[100px]", p.seat === mySeat ? "text-indigo-200" : "text-slate-400")}>
-                        {p.username}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 rounded-full border border-slate-700 overflow-hidden bg-slate-900 flex-shrink-0">
+                              {p.avatar_url ? (
+                                  <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover" />
+                              ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                      <User size={12} />
+                                  </div>
+                              )}
+                          </div>
+                          <span className={clsx("font-serif font-bold text-sm tracking-wide truncate max-w-[80px]", p.seat === mySeat ? "text-indigo-200" : "text-slate-400")}>
+                            {p.username}
+                          </span>
+                      </div>
                       <div className="flex items-center gap-3 mt-1">
-                        <div className="flex items-center gap-1.5 text-red-500 drop-shadow-sm">
-                            <Heart size={14} fill="currentColor" /> 
+                        <button 
+                            onClick={() => {
+                                setLifeModalTarget(p);
+                                setLifeModalOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 text-red-500 drop-shadow-sm hover:scale-110 transition-transform cursor-pointer group"
+                            title="Cambiar vida"
+                        >
+                            <Heart size={14} className="group-hover:fill-red-500 transition-colors" fill="currentColor" /> 
                             <span className="font-bold text-lg font-mono leading-none">{p.life}</span>
-                        </div>
+                        </button>
                         {p.seat === mySeat && (
                             <div className="flex gap-0.5 ml-1">
-                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: 1 })} className="text-[10px] bg-slate-700 hover:bg-emerald-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">+</button>
-                                <button onClick={() => sendAction('LIFE_SET', { seat: mySeat, delta: -1 })} className="text-[10px] bg-slate-700 hover:bg-red-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">-</button>
+                                <button onClick={(e) => { e.stopPropagation(); sendAction('LIFE_SET', { seat: mySeat, delta: 1 }); }} className="text-[10px] bg-slate-700 hover:bg-emerald-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">+</button>
+                                <button onClick={(e) => { e.stopPropagation(); sendAction('LIFE_SET', { seat: mySeat, delta: -1 }); }} className="text-[10px] bg-slate-700 hover:bg-red-700 hover:text-white w-5 h-5 rounded flex items-center justify-center transition-colors">-</button>
                             </div>
                         )}
                       </div>

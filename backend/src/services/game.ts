@@ -36,6 +36,7 @@ interface PlayerState {
   seat: number;
   userId: string;
   username: string;
+  avatar_url?: string | null;
   life: number;
   counters: Record<string, number>;
   commanderDamageReceived: Record<number, number>; // sourceSeat -> damage
@@ -158,6 +159,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       seat: p.seat,
       userId: p.user_id,
       username: p.user.username,
+      avatar_url: p.user.avatar_url,
       life: initialLife,
       counters: {},
       commanderDamageReceived: {},
@@ -314,6 +316,7 @@ export const restartGame = async (gameId: string) => {
       seat: p.seat,
       userId: p.user_id,
       username: p.user.username,
+      avatar_url: p.user.avatar_url,
       life: initialLife,
       counters: {},
       commanderDamageReceived: {},
