@@ -15,6 +15,7 @@ import {
   Dice5,
   Crown
 } from 'lucide-react';
+import Changelog from '../components/dashboard/Changelog';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -251,6 +252,9 @@ export default function Dashboard() {
           </div>
 
         </div>
+
+        {/* --- Section 3: The Chronicles (Changelog) --- */}
+        <Changelog />
       </div>
     </div>
   );
