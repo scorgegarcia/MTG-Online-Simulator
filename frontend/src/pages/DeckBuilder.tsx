@@ -18,7 +18,7 @@ import {
   Crown,
   FileText,
 } from 'lucide-react';
-import { ImportDeckModal } from '../components/ImportDeckModal';
+import ImportDeckModal from '../components/ImportDeckModal';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 

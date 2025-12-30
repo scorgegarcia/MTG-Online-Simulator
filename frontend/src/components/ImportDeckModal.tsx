@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { FileText, X } from 'lucide-react';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
@@ -10,7 +10,7 @@ interface ImportDeckModalProps {
   onClose: () => void;
 }
 
-export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClose }) => {
+const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [importText, setImportText] = useState('');
   const [importMode, setImportMode] = useState<'arena' | 'flat'>('flat');
@@ -127,10 +127,10 @@ export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClos
               cards: parsedCards
           });
           navigate(`/decks/${res.data.id}`);
-          onClose();
           setShowNameModal(false);
           setImportText('');
           setParsedCards([]);
+          onClose();
       } catch (e) {
           alert('Error importing deck');
       } finally {
@@ -142,8 +142,8 @@ export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClos
 
   return (
     <>
-      {/* --- Main Import Modal --- */}
-      {!showNameModal && (
+      {/* --- Import Modal --- */}
+      {!showNameModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 rounded-t-xl">
@@ -192,10 +192,8 @@ export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClos
             </div>
           </div>
         </div>
-      )}
-
-      {/* --- Name Confirmation Modal --- */}
-      {showNameModal && (
+      ) : (
+        /* --- Name Confirmation Modal --- */
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md">
              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50 rounded-t-xl">
@@ -236,3 +234,5 @@ export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClos
     </>
   );
 };
+
+export default ImportDeckModal;
