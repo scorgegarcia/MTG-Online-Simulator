@@ -308,7 +308,7 @@ export const ContextMenu = ({
                               }}
                           >
                               <img src={finalImgUrl} className="w-full h-full object-cover" draggable={false} />
-                              <CardCounters counters={obj?.counters} size="normal" className="scale-150 origin-top-right mt-1 mr-1" />
+                              <CardCounters counters={obj?.counters} size="normal" className="scale-150 origin-top-left" />
                           </div>
                       ) : (
                           <div className="w-full h-full rounded-lg border border-white/15 bg-black/40 flex items-center justify-center text-white/60" style={fontSizeStyle}>

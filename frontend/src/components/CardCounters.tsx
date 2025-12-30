@@ -60,7 +60,7 @@ export const CardCounters: React.FC<CardCountersProps> = ({ counters, className,
                 }
             `}</style>
             <div className={clsx(
-                "absolute top-0 right-0 z-50 rounded-full text-white font-bold magic-blue-flame pointer-events-none select-none",
+                "absolute top-[1px] left-[1px] z-50 rounded-full text-white font-bold magic-blue-flame pointer-events-none select-none",
                 sizeClasses[size],
                 className
             )}>

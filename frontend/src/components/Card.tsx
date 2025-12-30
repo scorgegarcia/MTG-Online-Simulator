@@ -388,7 +388,7 @@ export const Card = memo(({
                 />
             )}
 
-            <CardCounters counters={counters} className="scale-150 origin-top-right" size="small" />
+            <CardCounters counters={counters} className="scale-150 origin-top-left" size="small" />
             {inBattlefield && !isFacedown && power !== undefined && toughness !== undefined && (
                 <div className="absolute scale-150 bottom-1 right-1 bg-gray-200 text-black text-xs font-bold px-1 rounded border border-gray-400 shadow-sm z-30">
                     {power}/{toughness}

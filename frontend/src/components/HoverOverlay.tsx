@@ -228,7 +228,7 @@ export const HoverOverlay = ({
           }}
         >
             {img ? <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} /> : <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>}
-            <CardCounters counters={counters} className="scale-150 origin-top-right" />
+            <CardCounters counters={counters} className="scale-150 origin-top-left" />
         </div>
     );
 };
