@@ -74,8 +74,32 @@ export default function GameTable() {
   const [showDamageVignette, setShowDamageVignette] = useState(false);
   const [passingSeats, setPassingSeats] = useState<number[]>([]);
   const bgmIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [bgmMuted, setBgmMuted] = useState(false);
-  const [bgmVolume, setBgmVolume] = useState(30);
+  const [bgmMuted, setBgmMuted] = useState(() => localStorage.getItem('setting_bgmMuted') === 'true');
+  const [bgmVolume, setBgmVolume] = useState(() => {
+    const saved = localStorage.getItem('setting_bgmVolume');
+    return saved ? parseFloat(saved) : 10;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('setting_bgmMuted', bgmMuted.toString());
+  }, [bgmMuted]);
+
+  useEffect(() => {
+    localStorage.setItem('setting_bgmVolume', bgmVolume.toString());
+  }, [bgmVolume]);
+
+  // Mapping functions for precise low volume control
+  // 0-60 on slider -> 0-10 volume
+  // 60-100 on slider -> 10-100 volume
+  const sliderToVolume = useCallback((sliderVal: number) => {
+    if (sliderVal <= 60) return (sliderVal / 60) * 10;
+    return 10 + ((sliderVal - 60) / 40) * 90;
+  }, []);
+
+  const volumeToSlider = useCallback((vol: number) => {
+    if (vol <= 10) return (vol / 10) * 60;
+    return 60 + ((vol - 10) / 90) * 40;
+  }, []);
   const bgmVideoId = 'B6Zsr7m1GFI';
   const bgmEmbedSrc = `https://www.youtube.com/embed/${bgmVideoId}?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&playlist=${bgmVideoId}&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&mute=0`;
   
@@ -1207,14 +1231,16 @@ export default function GameTable() {
                 type="range"
                 min={0}
                 max={100}
-                value={bgmVolume}
+                step={0.1}
+                value={volumeToSlider(bgmVolume)}
                 onChange={(e) => {
-                  const next = Number(e.target.value);
-                  setBgmVolume(next);
-                  setBgmYoutubeVolume(next);
+                  const sliderVal = Number(e.target.value);
+                  const vol = sliderToVolume(sliderVal);
+                  setBgmVolume(vol);
+                  setBgmYoutubeVolume(vol);
                 }}
                 className="w-24 accent-amber-500 hidden md:block"
-                title="Volumen"
+                title={`Volumen: ${Math.round(bgmVolume)}%`}
               />
               
               {gameInfo.host_id === user?.id && (
