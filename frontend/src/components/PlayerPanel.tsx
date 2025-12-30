@@ -242,7 +242,11 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
 
     const getTopCard = (zone: string) => {
         const objs = getZoneObjects(mySeat, zone);
-        return objs.length > 0 ? objs[objs.length - 1] : null;
+        if (objs.length === 0) return null;
+        if (zone === 'LIBRARY') {
+            return objs[0];
+        }
+        return objs[objs.length - 1];
     };
 
     return (
