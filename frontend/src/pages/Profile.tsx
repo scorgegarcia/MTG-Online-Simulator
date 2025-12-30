@@ -8,10 +8,11 @@ import {
   Medal,
   Calendar,
   Mail,
-  Edit3,
   CheckCircle2,
   XCircle,
-  Swords
+  Swords,
+  Camera,
+  X
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
@@ -32,13 +33,17 @@ type GameListItem = {
 };
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const selectAudioRef = useRef<HTMLAudioElement | null>(null);
   const [games, setGames] = useState<GameListItem[]>([]);
   const [deckCount, setDeckCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [outcomesByGameId, setOutcomesByGameId] = useState<Record<string, 'WON' | 'LOST' | undefined>>({});
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAvatarUrl, setNewAvatarUrl] = useState(user?.avatar_url || '');
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit' }), []);
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }), []);
@@ -137,6 +142,19 @@ export default function Profile() {
     return { battlesWon: won, battlesLost: lost };
   }, [games, outcomesByGameId]);
 
+  const handleUpdateAvatar = async () => {
+    setIsUpdatingAvatar(true);
+    try {
+      const res = await axios.put(`${API_BASE_URL}/auth/avatar`, { avatar_url: newAvatarUrl || null });
+      updateUser(res.data.user);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update avatar:', error);
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 relative overflow-hidden">
       
@@ -171,20 +189,28 @@ export default function Profile() {
               <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
               <div className="relative z-10">
-                <div className="w-32 h-32 mx-auto bg-slate-950 rounded-full border-2 border-amber-500/30 flex items-center justify-center mb-4 shadow-2xl shadow-amber-500/10">
-                  <User size={64} className="text-amber-500/50" />
+                <div className="relative w-32 h-32 mx-auto mb-4 group/avatar">
+                  <div className="w-full h-full bg-slate-950 rounded-full border-2 border-amber-500/30 flex items-center justify-center overflow-hidden shadow-2xl shadow-amber-500/10 transition-transform duration-500 group-hover/avatar:scale-105">
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={64} className="text-amber-500/50" />
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      playSelect();
+                      setIsModalOpen(true);
+                    }}
+                    onMouseEnter={playHover}
+                    className="absolute bottom-0 right-0 w-10 h-10 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg border-2 border-slate-950 transition-all transform hover:scale-110 active:scale-95 z-20"
+                    title="Change Avatar"
+                  >
+                    <Camera size={20} />
+                  </button>
                 </div>
                 <h1 className="text-2xl font-serif font-bold text-slate-100 mb-1">{user?.username}</h1>
-                <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">Master Summoner</p>
-                
-                <button 
-                  onMouseEnter={playHover}
-                  onClick={playSelect}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm transition-all"
-                >
-                  <Edit3 size={14} />
-                  <span>Edit Identity</span>
-                </button>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Master Summoner</p>
               </div>
             </div>
 
@@ -334,6 +360,86 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Avatar Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+          ></div>
+          
+          <div className="relative bg-slate-900 border-2 border-amber-500/50 rounded-2xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-in fade-in zoom-in duration-300">
+            <div className="bg-gradient-to-r from-amber-900/40 to-slate-900 p-6 border-b border-amber-500/20 flex justify-between items-center">
+              <h3 className="text-xl font-serif font-bold text-amber-500 flex items-center gap-2">
+                <Camera size={24} />
+                Update Avatar
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Image URL
+                </label>
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={newAvatarUrl}
+                    onChange={(e) => setNewAvatarUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-lg px-4 py-3 text-slate-200 outline-none transition-all placeholder:text-slate-700"
+                  />
+                  <div className="absolute inset-0 rounded-lg bg-amber-500/5 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity"></div>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">
+                  Paste the URL of an image that reflects your planeswalker essence.
+                </p>
+              </div>
+
+              {newAvatarUrl && (
+                <div className="space-y-2 text-center">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">
+                    Preview
+                  </label>
+                  <div className="w-24 h-24 mx-auto rounded-full border-2 border-amber-500/30 overflow-hidden bg-slate-950 shadow-xl">
+                    <img 
+                      src={newAvatarUrl} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://www.transparenttextures.com/patterns/dark-matter.png';
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-900/80 p-6 border-t border-slate-800 flex gap-4">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition-all border border-slate-700"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleUpdateAvatar}
+                disabled={isUpdatingAvatar}
+                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-lg transition-all shadow-lg shadow-amber-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpdatingAvatar ? 'Aplicando...' : 'Aplicar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
