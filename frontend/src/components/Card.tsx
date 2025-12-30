@@ -39,7 +39,7 @@ interface CardProps {
     cardScale: number;
     hoverBlockedRef: React.MutableRefObject<string | null>;
     isDraggingRef?: React.MutableRefObject<boolean>;
-    setHoveredCard: (card: {obj: any, rect: DOMRect, img: string} | null) => void;
+    setHoveredCard: (card: {obj: any, rect: DOMRect, img: string, isPlayerPanel?: boolean} | null) => void;
     menuOpen: any;
     setMenuOpen: (menu: any) => void;
     sendAction: (type: string, payload: any) => void;
@@ -47,6 +47,7 @@ interface CardProps {
     setEquipSelection?: (selection: { equipmentId: string } | null) => void;
     enchantSelection?: { enchantmentId: string } | null;
     setEnchantSelection?: (selection: { enchantmentId: string } | null) => void;
+    isPlayerPanel?: boolean;
 }
 
 export const Card = memo(({ 
@@ -69,7 +70,8 @@ export const Card = memo(({
     equipSelection,
     setEquipSelection,
     enchantSelection,
-    setEnchantSelection
+    setEnchantSelection,
+    isPlayerPanel = false
 }: CardProps) => {
     const { img: imgUrlFromHook, power: powerFromHook, toughness: toughnessFromHook, type: typeLineFromHook } = useCardData(obj.scryfall_id);
     
@@ -215,6 +217,7 @@ export const Card = memo(({
           style={style}
           data-card-id={obj.id}
           data-img-url={finalImgUrl || ''}
+          data-is-player-panel={isPlayerPanel}
           draggable={obj.controller_seat === mySeat}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -236,7 +239,8 @@ export const Card = memo(({
                   setHoveredCard({
                       obj,
                       rect: e.currentTarget.getBoundingClientRect(),
-                      img: finalImgUrl // Pass the already resolved image URL
+                      img: finalImgUrl, // Pass the already resolved image URL
+                      isPlayerPanel
                   });
               }
           }}

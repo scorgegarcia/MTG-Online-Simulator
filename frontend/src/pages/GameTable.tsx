@@ -322,7 +322,7 @@ export default function GameTable() {
   }, [opponentsBattlefieldHeight]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<{obj: any, rect: DOMRect, img: string} | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<{obj: any, rect: DOMRect, img: string, isPlayerPanel?: boolean} | null>(null);
   
   const hoverBlockedRef = useRef<string | null>(null);
   const isDraggingRef = useRef(false);
@@ -562,10 +562,28 @@ export default function GameTable() {
       } else if (key === hotkeys.tapUntap) {
         e.preventDefault();
         if (hoveredCard?.obj && hoveredCard.obj.controller_seat === mySeatRef.current) {
-          // Solo permitir tap en el campo de batalla
-          const isOnBattlefield = gameState?.zoneIndex?.[mySeatRef.current]?.['BATTLEFIELD']?.includes(hoveredCard.obj.id);
+          const objectId = hoveredCard.obj.id;
+          const currentZone = hoveredCard.obj.zone;
+          
+          // Verificar si está en el campo de batalla
+          const isOnBattlefield = gameState?.zoneIndex?.[mySeatRef.current]?.['BATTLEFIELD']?.includes(objectId);
+          
           if (isOnBattlefield) {
-            sendAction('TAP', { objectId: hoveredCard.obj.id });
+            sendAction('TAP', { objectId });
+          } else {
+            // Verificar si el hover proviene del PlayerPanel
+            if (hoveredCard.isPlayerPanel) {
+              const playerPanelZones = ['HAND', 'LIBRARY', 'GRAVEYARD', 'EXILE', 'COMMAND', 'SIDEBOARD'];
+              if (playerPanelZones.includes(currentZone)) {
+                sendAction('MOVE', { 
+                  objectId, 
+                  fromZone: currentZone, 
+                  toZone: 'BATTLEFIELD', 
+                  toOwner: mySeatRef.current 
+                });
+                setHoveredCard(null); // Cerrar el hover al mover
+              }
+            }
           }
         }
       }
@@ -573,7 +591,7 @@ export default function GameTable() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState]);
+  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState, panelHeight, setHoveredCard]);
 
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });

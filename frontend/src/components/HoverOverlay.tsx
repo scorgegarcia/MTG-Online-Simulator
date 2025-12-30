@@ -2,8 +2,8 @@ import React, { useState, useLayoutEffect } from 'react';
 import { CardCounters } from './CardCounters';
 
 interface HoverOverlayProps {
-    hoveredCard: {obj: any, rect: DOMRect, img: string} | null;
-    setHoveredCard: (card: {obj: any, rect: DOMRect, img: string} | null) => void;
+    hoveredCard: {obj: any, rect: DOMRect, img: string, isPlayerPanel?: boolean} | null;
+    setHoveredCard: (card: {obj: any, rect: DOMRect, img: string, isPlayerPanel?: boolean} | null) => void;
     hoverScale: number;
     gameState: any;
     mySeat: number;
@@ -141,11 +141,13 @@ export const HoverOverlay = ({
               const newId = topCardEl.getAttribute('data-card-id');
               if (newId && newId !== obj.id) {
                   const newImg = topCardEl.getAttribute('data-img-url');
+                  const isPlayerPanelAttr = topCardEl.getAttribute('data-is-player-panel');
                   if (gameState.objects[newId]) {
                        setHoveredCard({
                            obj: gameState.objects[newId],
                            rect: topCardEl.getBoundingClientRect(),
-                           img: newImg || ''
+                           img: newImg || '',
+                           isPlayerPanel: isPlayerPanelAttr === 'true'
                        });
                   }
               }

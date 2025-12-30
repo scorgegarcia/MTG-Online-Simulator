@@ -85,6 +85,7 @@ const ZonePile: React.FC<ZonePileProps> = ({
                                     fitHeight={true} 
                                     {...commonProps} 
                                     sendAction={sendAction}
+                                    isPlayerPanel={true}
                                 />
                             </div>
                         ) : (
@@ -250,7 +251,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     };
 
     return (
-        <div className="bg-slate-900 z-[0] flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
+        <div id="player-panel" className="bg-slate-900 z-[0] flex shadow-[0_-5px_15px_rgba(0,0,0,0.5)] relative" style={{ height: panelHeight }}>
             
             <div 
                 className={clsx(
@@ -336,7 +337,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                                         }
                                     }}
                                 >
-                                    <Card obj={obj} size="normal" inHand={true} fitHeight={true} {...commonProps} sendAction={sendAction} />
+                                    <Card obj={obj} size="normal" inHand={true} fitHeight={true} {...commonProps} sendAction={sendAction} isPlayerPanel={true} />
                                 </div>
                             ))}
                         </div>
@@ -364,7 +365,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         <div ref={libraryScrollRef} className="flex gap-2 overflow-x-auto py-0 scroll-smooth no-scrollbar px-12 w-full h-full items-stretch overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {getZoneObjects(mySeat, 'LIBRARY').map((obj: any, i: number) => (
                                 <div key={obj.id} className="relative group min-w-max h-full flex items-stretch transform hover:-translate-y-2 transition-transform duration-200">
-                                    <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} />
+                                    <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} isPlayerPanel={true} />
                                     <div className="absolute -top-2 -right-2 bg-slate-900 text-slate-400 text-[10px] px-1.5 py-0.5 rounded border border-slate-700 shadow-sm z-20">{i+1}</div>
                                 </div>
                             ))}
@@ -393,7 +394,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
                         <div ref={zoneViewScrollRef} className="flex gap-2 overflow-x-auto scroll-smooth no-scrollbar px-12 w-full h-full items-start overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {getZoneObjects(mySeat, currentTab).map((obj: any) => (
                                 <div key={obj.id} className="relative z-10 opacity-90 hover:opacity-100 transition-opacity h-full max-h-full aspect-[2.5/3.5]">
-                                    <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} />
+                                    <Card obj={obj} size="small" fitHeight={true} {...commonProps} sendAction={sendAction} isPlayerPanel={true} />
                                 </div>
                             ))}
                             {getZoneObjects(mySeat, currentTab).length === 0 && (
