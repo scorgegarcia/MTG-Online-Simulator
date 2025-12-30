@@ -12,7 +12,9 @@ import {
   XCircle,
   Swords,
   Camera,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
@@ -37,6 +39,8 @@ export default function Profile() {
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const selectAudioRef = useRef<HTMLAudioElement | null>(null);
   const [games, setGames] = useState<GameListItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
   const [deckCount, setDeckCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [outcomesByGameId, setOutcomesByGameId] = useState<Record<string, 'WON' | 'LOST' | undefined>>({});
@@ -75,6 +79,8 @@ export default function Profile() {
       .then(([gamesRes, decksRes]) => {
         if (cancelled) return;
         const nextGames = Array.isArray(gamesRes.data) ? (gamesRes.data as GameListItem[]) : [];
+        // Sort games by created_at descending
+        nextGames.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setGames(nextGames);
         setDeckCount(Array.isArray(decksRes.data) ? decksRes.data.length : 0);
         setOutcomesByGameId(() => {
@@ -141,6 +147,12 @@ export default function Profile() {
     }
     return { battlesWon: won, battlesLost: lost };
   }, [games, outcomesByGameId]);
+
+  const totalPages = Math.ceil(games.length / ITEMS_PER_PAGE);
+  const paginatedGames = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return games.slice(start, start + ITEMS_PER_PAGE);
+  }, [games, currentPage]);
 
   const handleUpdateAvatar = async () => {
     setIsUpdatingAvatar(true);
@@ -262,13 +274,13 @@ export default function Profile() {
                   <div className="p-4 text-sm text-slate-500 font-serif italic">Scrying your recent battles...</div>
                 )}
 
-                {!isLoading && games.length === 0 && (
+                {!isLoading && paginatedGames.length === 0 && (
                   <div className="p-6 text-center text-slate-500 font-serif italic">
                     No battles recorded yet.
                   </div>
                 )}
 
-                {!isLoading && games.map((g) => {
+                {!isLoading && paginatedGames.map((g) => {
                   const createdAt = new Date(g.created_at);
                   const createdLabel = Number.isNaN(createdAt.getTime()) ? g.created_at : dateTimeFormatter.format(createdAt);
                   const opponentNames = (g.players || [])
@@ -348,6 +360,55 @@ export default function Profile() {
                     </div>
                   );
                 })}
+
+                {/* Pagination Controls */}
+                {!isLoading && totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800/50 mt-2">
+                    <button
+                      onClick={() => {
+                        playSelect();
+                        setCurrentPage(prev => Math.max(1, prev - 1));
+                      }}
+                      disabled={currentPage === 1}
+                      onMouseEnter={playHover}
+                      className="p-1 rounded-md text-slate-500 hover:text-amber-500 hover:bg-slate-800/50 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => {
+                            playSelect();
+                            setCurrentPage(page);
+                          }}
+                          onMouseEnter={playHover}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md text-[10px] font-bold transition-all ${
+                            currentPage === page
+                              ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                              : 'text-slate-600 hover:text-slate-300 hover:bg-slate-800/50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        playSelect();
+                        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                      }}
+                      disabled={currentPage === totalPages}
+                      onMouseEnter={playHover}
+                      className="p-1 rounded-md text-slate-500 hover:text-amber-500 hover:bg-slate-800/50 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
