@@ -8,6 +8,8 @@ interface LeftSideToolbarProps {
     sendAction: (action: string, payload: any) => void;
     isThinkingCooldown: boolean;
     setIsThinkingCooldown: (cooldown: boolean) => void;
+    showCommanderDamage: boolean;
+    setShowCommanderDamage: (show: boolean) => void;
 }
 
 export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
@@ -17,7 +19,9 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
     setDiceRollModalOpen,
     sendAction,
     isThinkingCooldown,
-    setIsThinkingCooldown
+    setIsThinkingCooldown,
+    showCommanderDamage,
+    setShowCommanderDamage
 }) => {
     const [isInteractionsOpen, setIsInteractionsOpen] = useState(false);
     const interactionsRef = useRef<HTMLDivElement>(null);
@@ -44,6 +48,15 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
                 >
                     <span className="text-xl">🎲</span>
                     <span className="text-[10px] uppercase text-center leading-3">Tirar<br/>Dado</span>
+                </button>
+
+                <button 
+                    className={`w-full h-fit py-1 rounded flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors shrink-0 ${showCommanderDamage ? 'bg-red-600 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]' : 'bg-red-950/80 hover:bg-red-900 text-gray-300'}`}
+                    title="Toggle Damage Display"
+                    onClick={() => setShowCommanderDamage(!showCommanderDamage)}
+                >
+                    <span className="text-xl">👁️</span>
+                    <span className="text-[10px] uppercase text-center leading-3">Ver<br/>Daño</span>
                 </button>
 
                 <button 

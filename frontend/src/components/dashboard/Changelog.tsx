@@ -1,13 +1,34 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { ScrollText, ChevronDown } from 'lucide-react';
+import { ScrollText, ChevronDown, X } from 'lucide-react';
 import changelogContent from '../../assets/changelog.md?raw';
 
 export default function Changelog() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   return (
     <div className="w-full mt-12 transition-all duration-500 ease-in-out">
+      {/* Zoom Modal */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-300"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+            onClick={() => setZoomedImage(null)}
+          >
+            <X size={24} />
+          </button>
+          <img 
+            src={zoomedImage} 
+            alt="Zoomed" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
+          />
+        </div>
+      )}
+
       <div className={`group relative bg-slate-900/40 border ${isExpanded ? 'border-amber-500/40' : 'border-slate-800 hover:border-slate-700'} rounded-xl transition-all duration-300`}>
         
         {/* Header / Toggle Button */}
@@ -50,7 +71,22 @@ export default function Changelog() {
                   prose-li:text-slate-400 prose-strong:text-amber-500
                   prose-ul:list-disc prose-ul:pl-4
                 ">
-                  <ReactMarkdown>{changelogContent}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      img: ({ node, ...props }) => (
+                        <div className="my-4">
+                          <img
+                            {...props}
+                            className="w-48 h-auto rounded-lg border-2 border-amber-900/50 cursor-zoom-in hover:border-amber-500/50 transition-all shadow-lg hover:scale-[1.02]"
+                            onClick={() => setZoomedImage(props.src || null)}
+                          />
+                          {props.alt && <p className="text-[10px] text-slate-500 mt-1 italic">{props.alt}</p>}
+                        </div>
+                      )
+                    }}
+                  >
+                    {changelogContent}
+                  </ReactMarkdown>
                 </div>
               </div>
 

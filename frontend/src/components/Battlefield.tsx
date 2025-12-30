@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import { MyBattlefieldArea } from './battlefield/MyBattlefieldArea';
 import { OpponentBattlefieldArea } from './battlefield/OpponentBattlefieldArea';
 import { PassTurnAnimation } from './animations/PassTurnAnimation';
+import { CommanderDamageOverlay } from './battlefield/CommanderDamageOverlay';
 
 interface BattlefieldSharedProps {
     gameState: any;
@@ -21,6 +22,7 @@ interface BattlefieldSharedProps {
     setEnchantSelection?: (selection: { enchantmentId: string } | null) => void;
     thinkingSeats?: number[];
     passingSeats?: number[];
+    showCommanderDamage?: boolean;
 }
 
 export const MyBattlefield = memo(({
@@ -39,7 +41,8 @@ export const MyBattlefield = memo(({
     enchantSelection,
     setEnchantSelection,
     thinkingSeats,
-    passingSeats
+    passingSeats,
+    showCommanderDamage
 }: BattlefieldSharedProps & { seat: number }) => {
     const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -105,6 +108,10 @@ export const MyBattlefield = memo(({
               <PassTurnAnimation />
           )}
 
+          {showCommanderDamage && (
+              <CommanderDamageOverlay gameState={gameState} seat={seat} />
+          )}
+
           <MyBattlefieldArea 
             isDraggingOver={isDraggingOver}
             handleDrop={handleDrop}
@@ -135,7 +142,8 @@ export const OpponentBattlefield = memo(({
     enchantSelection,
     setEnchantSelection,
     thinkingSeats,
-    passingSeats
+    passingSeats,
+    showCommanderDamage
 }: { player: any } & BattlefieldSharedProps) => {
     const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -178,6 +186,9 @@ export const OpponentBattlefield = memo(({
             )}
             {passingSeats?.includes(player.seat) && (
                 <PassTurnAnimation />
+            )}
+            {showCommanderDamage && (
+                <CommanderDamageOverlay gameState={gameState} seat={player.seat} />
             )}
             <div className="flex justify-between items-center text-s text-red-300 mb-1 flex-shrink-0">
                 <div className="flex items-center gap-1 font-bold">

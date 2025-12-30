@@ -114,6 +114,7 @@ export default function GameTable() {
   const [lifeModalOpen, setLifeModalOpen] = useState(false);
   const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
+  const [showCommanderDamage, setShowCommanderDamage] = useState(false);
 
   // Cooldown timer
   useEffect(() => {
@@ -675,8 +676,9 @@ export default function GameTable() {
       enchantSelection,
       setEnchantSelection,
       thinkingSeats,
-      passingSeats
-  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection, enchantSelection]);
+      passingSeats,
+      showCommanderDamage
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection, enchantSelection, showCommanderDamage]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
@@ -1278,10 +1280,12 @@ export default function GameTable() {
               mySeat={mySeat} 
               setCommanderModalOpen={setCommanderModalOpen} 
               setDiceRollModalOpen={setDiceRollModalOpen}
-              sendAction={sendAction} 
-              isThinkingCooldown={isThinkingCooldown}
-              setIsThinkingCooldown={setIsThinkingCooldown}
-          />
+              sendAction={sendAction}
+                isThinkingCooldown={isThinkingCooldown}
+                setIsThinkingCooldown={setIsThinkingCooldown}
+                showCommanderDamage={showCommanderDamage}
+                setShowCommanderDamage={setShowCommanderDamage}
+              />
 
           {/* Main Area: Battlefields */}
           <div ref={battlefieldsContainerRef} className="flex-1 overflow-hidden relative flex flex-col">

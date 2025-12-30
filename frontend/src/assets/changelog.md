@@ -1,11 +1,21 @@
 # Magic-TRAE Changelog
 ## [25.12.29]
 ### New Features
+- **Modal de Daño de Comandante**: Se crea un modal para poder ver el daño de comandante que ha recibido cada jugador por parte de otros jugadores.
+
+![Ejemplo de Modal de Daño de Comandante](https://i.ibb.co/Z6N99V7Q/image.png)
+
 - **Encantamientos**: Ya se pueden "encantar" cartas con encantamientos asi como funcionaban ya los equipamientos.
-- **Castear Cartas**: La misma hotkey para tap/untap a las cartas en el campo de batalla, sirve para castear cartas hacia el campo de batalla.
+
+![Ejemplo de Encantamiento aplicado](https://i.ibb.co/7NSkcf97/image.png)
+
+- **Castear Cartas**: La misma hotkey para tap/untap a las cartas en el campo de batalla, ahora tambien sirve para castear cartas hacia el campo de batalla.
 - **Changelog**: Se crea este changelog para seguir el progreso del proyecto y notificar cambios.
 - **Pagina de Perfil**: Se crea una pagina de perfil para que el usuario pueda administrar su cuenta, ver información de sus partidas, ir a sus partidas, clasificarlas como ganadas o perdidas, etc.
 - **Modal de Vida**: Se crea un modal para poder cambiar la vida de un jugador en cualquier momento de la partida.
+
+![Ejemplo de Modal de Vida](https://i.ibb.co/kg3XhvqK/image.png)
+
 - **Historial de partidas**: Se agrega un historial de partidas en la pagina de perfil para que el usuario pueda ver sus partidas anteriores y clasificarlas como ganadas o perdidas de manera manual para que pueda llevar un control de estadisticas.
 
 ### Changes
@@ -15,4 +25,4 @@
 
 ### Bug/Fix
 - **Draw Bug**: Se corrigió un bug donde si hacias clic en la biblioteca si hacia draw de la carta que sigue, pero si hacias drag-n-drop traía la carta de abajo de la biblioteca.
-
+- **Log de Partidas**: El botón de colapsar log quedaba detras de las propias lineas de log haciendo que fuera dificil o imposible dependiendo del navegador colapsar el log. Ahora el botón está en un div distinto al log para que no quede detras de las lineas de log.
