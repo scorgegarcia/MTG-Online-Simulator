@@ -99,7 +99,7 @@ export default function Dashboard() {
               <span className="text-xs font-bold tracking-[0.2em] uppercase">Planeswalker Sanctum</span>
             </div>
             <h1 className="text-4xl font-serif font-bold text-slate-100 drop-shadow-md">
-              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600">{user?.username}</span>
+              Welcome, <Link to="/profile" className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 underline decoration-amber-500/30 hover:decoration-amber-500 transition-all underline-offset-4">{user?.username}</Link>
             </h1>
           </div>
           

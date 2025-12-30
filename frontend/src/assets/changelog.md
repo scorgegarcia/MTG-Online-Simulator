@@ -4,6 +4,7 @@
 - **Encantamientos**: Ya se pueden "encantar" cartas con encantamientos asi como funcionaban ya los equipamientos.
 - **Castear Cartas**: La misma hotkey para tap/untap a las cartas en el campo de batalla, sirve para castear cartas hacia el campo de batalla.
 - **Changelog**: Se crea este changelog para seguir el progreso del proyecto y notificar cambios.
+- **Pagina de Perfil**: Se crea una pagina de perfil para que el usuario pueda administrar su cuenta, ver información de sus partidas, ir a sus partidas, clasificarlas como ganadas o perdidas, etc.
 
 ### Changes
 - **Contadores**: Se movieron los contadores a la parte superior izquierda de las cartas para que no tapen el costo de maná de las cartas

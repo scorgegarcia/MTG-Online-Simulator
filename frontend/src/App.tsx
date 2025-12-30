@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import DeckBuilder from './pages/DeckBuilder';
 import GameTable from './pages/GameTable';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -20,6 +21,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/decks/:id" element={<PrivateRoute><DeckBuilder /></PrivateRoute>} />
           <Route path="/game" element={<Navigate to="/" />} />
           <Route path="/game/:id" element={<PrivateRoute><GameTable /></PrivateRoute>} />

@@ -19,6 +19,7 @@ model User {
   hostedGames   Game[]         @relation("HostUser")
   gamePlayers   GamePlayer[]
   gameEvents    GameEvent[]
+  gameResults   GameResult[]
 
   @@map("users")
 }
@@ -82,6 +83,7 @@ model Game {
   players    GamePlayer[]
   gameState  GameState?
   events     GameEvent[]
+  results    GameResult[]
 
   @@map("games")
 }
@@ -129,4 +131,24 @@ model GameEvent {
   user       User     @relation(fields: [user_id], references: [id])
 
   @@map("game_events")
+}
+
+enum GameOutcome {
+  WON
+  LOST
+}
+
+model GameResult {
+  id         String      @id @default(uuid())
+  user_id    String
+  game_id    String
+  outcome    GameOutcome
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  game       Game        @relation(fields: [game_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, game_id])
+  @@map("game_results")
 }

@@ -8,9 +8,74 @@ import { startGame, restartGame } from '../services/game';
 const createGameSchema = z.object({}); // No params needed? Or format?
 const joinGameSchema = z.object({ code: z.string() });
 const selectDeckSchema = z.object({ deckId: z.string() });
+const setGameOutcomeSchema = z.object({ outcome: z.union([z.enum(['WON', 'LOST']), z.null()]) });
 
 // Helpers
 const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+export const listMyGames = async (req: AuthRequest, res: Response) => {
+  try {
+    const games = await prisma.game.findMany({
+      where: {
+        players: {
+          some: {
+            user_id: req.userId!,
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 25,
+      include: {
+        host: { select: { id: true, username: true } },
+        players: {
+          include: { user: { select: { id: true, username: true } } },
+          orderBy: { seat: 'asc' },
+        },
+        results: {
+          where: { user_id: req.userId! },
+          select: { outcome: true },
+        },
+      },
+    });
+
+    res.json(
+      games.map(({ results, ...g }) => ({
+        ...g,
+        myOutcome: results?.[0]?.outcome ?? null,
+      }))
+    );
+  } catch {
+    res.status(500).json({ error: 'Failed to list games' });
+  }
+};
+
+export const setMyGameOutcome = async (req: AuthRequest, res: Response) => {
+  const gameId = req.params.id;
+  const { outcome } = setGameOutcomeSchema.parse(req.body);
+
+  const player = await prisma.gamePlayer.findFirst({
+    where: { game_id: gameId, user_id: req.userId },
+    select: { id: true },
+  });
+
+  if (!player) return res.status(403).json({ error: 'Not a player in this game' });
+
+  if (outcome === null) {
+    await prisma.gameResult.deleteMany({
+      where: { game_id: gameId, user_id: req.userId! },
+    });
+    return res.json({ outcome: null });
+  }
+
+  const saved = await prisma.gameResult.upsert({
+    where: { user_id_game_id: { user_id: req.userId!, game_id: gameId } },
+    create: { user_id: req.userId!, game_id: gameId, outcome },
+    update: { outcome },
+    select: { outcome: true },
+  });
+
+  res.json({ outcome: saved.outcome });
+};
 
 export const createGame = async (req: AuthRequest, res: Response) => {
   try {
