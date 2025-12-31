@@ -20,6 +20,8 @@ import diceRollSfx from '../assets/sfx/dice_roll.mp3';
 import endOfTurnSfx from '../assets/sfx/end_of_turn.mp3';
 import confirmHandSfx from '../assets/sfx/confirm_hand.mp3';
 import retryMulliganSfx from '../assets/sfx/retry_mulligan.mp3';
+import arrowOnSfx from '../assets/sfx/woosh_agudo.mp3';
+import arrowOffSfx from '../assets/sfx/woosh_grave.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -52,6 +54,8 @@ export const useGameSound = () => {
         loadAudio('END_OF_TURN', endOfTurnSfx);
         loadAudio('CONFIRM_HAND', confirmHandSfx);
         loadAudio('RETRY_MULLIGAN', retryMulliganSfx);
+        loadAudio('ARROW_ON', arrowOnSfx);
+        loadAudio('ARROW_OFF', arrowOffSfx);
     }, []);
 
     const playSound = useCallback((key: string) => {
@@ -62,7 +66,7 @@ export const useGameSound = () => {
         }
     }, []);
 
-    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD' | 'SELECT') => {
+    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD' | 'SELECT' | 'ARROW_ON' | 'ARROW_OFF') => {
         playSound(key);
     }, [playSound]);
 

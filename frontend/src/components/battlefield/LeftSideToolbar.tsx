@@ -9,6 +9,8 @@ interface LeftSideToolbarProps {
     sendAction: (action: string, payload: any) => void;
     isThinkingCooldown: boolean;
     setIsThinkingCooldown: (cooldown: boolean) => void;
+    isPassCooldown: boolean;
+    setIsPassCooldown: (cooldown: boolean) => void;
     showCommanderDamage: boolean;
     setShowCommanderDamage: (show: boolean) => void;
     isArrowMode: boolean;
@@ -23,6 +25,8 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
     sendAction,
     isThinkingCooldown,
     setIsThinkingCooldown,
+    isPassCooldown,
+    setIsPassCooldown,
     showCommanderDamage,
     setShowCommanderDamage,
     isArrowMode,
@@ -175,9 +179,12 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
                         </button>
 
                         <button 
-                            className="w-full h-fit py-0 rounded bg-amber-700/80 hover:bg-amber-600 flex flex-col items-center justify-center gap-0 text-xs font-bold text-gray-200 transition-colors"
+                            className={`w-full h-fit py-0 rounded flex flex-col items-center justify-center gap-0 text-xs font-bold transition-colors ${isPassCooldown ? 'bg-amber-950/60 text-gray-600 cursor-not-allowed' : 'bg-amber-700/80 hover:bg-amber-600 text-gray-200'}`}
                             title="Pass Turn"
+                            disabled={isPassCooldown}
                             onClick={() => {
+                                if (isPassCooldown) return;
+                                setIsPassCooldown(true);
                                 sendAction('PASS_TURN', { seat: mySeat });
                                 setIsInteractionsOpen(false); // Close submenu after action
                             }}

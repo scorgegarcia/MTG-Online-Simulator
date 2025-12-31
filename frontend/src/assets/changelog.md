@@ -1,4 +1,14 @@
 # Magic-TRAE Changelog
+## [25.12.30]
+### New Features
+![](https://i.ibb.co/SXwBPhyS/image.png)
+- **Botón de Arrow**: Se agrega un botón para poder activar y/o desactivar el modo "Arrow" (de flechas) en el campo de batalla. Asi puedes seleccionar cartas y hacer targets a otras cartas, usalo para señalar bloqueadores, etc. (Hotkey: A) pero es configurable en la configuración de la partida.
+![Ejemplo de interacción con el botón de Arrow](https://i.ibb.co/XZtTV37D/image.png)
+
+### Changes
+- **Hotkey para Pass**: Se agregó una hotkey para hacer pass de la partida (Hotkey: P) pero es configurable en la configuración de la partida.
+- **Cooldown a Pass**: Se agrega un cooldown a la hotkey de pass para que no se pueda usar demasiado rápido evitando saturar la red.
+
 ## [25.12.29]
 ### New Features
 - **Modal de Daño de Comandante**: Se crea un modal para poder ver el daño de comandante que ha recibido cada jugador por parte de otros jugadores.

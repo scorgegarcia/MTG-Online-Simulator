@@ -86,6 +86,7 @@ export default function GameTable() {
   const [isArrowMode, setIsArrowMode] = useState(false);
   const [arrowSourceId, setArrowSourceId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const prevArrowModeRef = useRef(isArrowMode);
 
   const sendAction = useCallback((type: string, payload: any, options?: { closeMenu?: boolean }) => {
       if(!gameState) return;
@@ -131,10 +132,15 @@ export default function GameTable() {
   const [lifeModalOpen, setLifeModalOpen] = useState(false);
   const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
+  const [isPassCooldown, setIsPassCooldown] = useState(false);
   const [showCommanderDamage, setShowCommanderDamage] = useState(false);
 
   // Arrow tool effects
   useEffect(() => {
+    if (prevArrowModeRef.current !== isArrowMode) {
+      playUiSound(isArrowMode ? 'ARROW_ON' : 'ARROW_OFF');
+      prevArrowModeRef.current = isArrowMode;
+    }
     if (!isArrowMode) {
       setArrowSourceId(null);
       return;
@@ -211,6 +217,13 @@ export default function GameTable() {
           return () => clearTimeout(timer);
       }
   }, [isThinkingCooldown]);
+
+  useEffect(() => {
+      if (isPassCooldown) {
+          const timer = setTimeout(() => setIsPassCooldown(false), 1000);
+          return () => clearTimeout(timer);
+      }
+  }, [isPassCooldown]);
 
   useEffect(() => {
       if (!equipSelection && !enchantSelection) return;
@@ -335,7 +348,9 @@ export default function GameTable() {
       viewLibrary: 'l',
       untapAll: 'u',
       createToken: 't',
-      tapUntap: ' '
+      tapUntap: ' ',
+      arrowToggle: 'a',
+      passTurn: 'p'
     };
 
     const saved = localStorage.getItem('setting_hotkeys');
@@ -679,6 +694,20 @@ export default function GameTable() {
       } else if (key === hotkeys.createToken) {
         e.preventDefault();
         setCreateTokenModalOpen(true);
+      } else if (key === hotkeys.arrowToggle) {
+        e.preventDefault();
+        setIsArrowMode(prev => {
+          const next = !prev;
+          if (!next) {
+            sendAction('CLEAR_ARROWS', { creatorSeat: mySeatRef.current });
+          }
+          return next;
+        });
+      } else if (key === hotkeys.passTurn) {
+        e.preventDefault();
+        if (isPassCooldown) return;
+        setIsPassCooldown(true);
+        sendAction('PASS_TURN', { seat: mySeatRef.current });
       } else if (key === hotkeys.tapUntap) {
         e.preventDefault();
         if (hoveredCard?.obj && hoveredCard.obj.controller_seat === mySeatRef.current) {
@@ -711,7 +740,7 @@ export default function GameTable() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState, panelHeight, setHoveredCard]);
+  }, [hotkeys, isPassCooldown, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState, panelHeight, setHoveredCard]);
 
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });
@@ -1369,6 +1398,8 @@ export default function GameTable() {
               sendAction={sendAction}
                 isThinkingCooldown={isThinkingCooldown}
                 setIsThinkingCooldown={setIsThinkingCooldown}
+                isPassCooldown={isPassCooldown}
+                setIsPassCooldown={setIsPassCooldown}
                 showCommanderDamage={showCommanderDamage}
                 setShowCommanderDamage={setShowCommanderDamage}
                 isArrowMode={isArrowMode}

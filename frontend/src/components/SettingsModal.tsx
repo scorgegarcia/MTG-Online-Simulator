@@ -15,6 +15,8 @@ interface SettingsModalProps {
         untapAll: string;
         createToken: string;
         tapUntap: string;
+        arrowToggle: string;
+        passTurn: string;
     };
     setHotkeys: (hotkeys: any) => void;
 }
@@ -125,6 +127,16 @@ export const SettingsModal = ({
                                 value={hotkeys.tapUntap} 
                                 onChange={(val) => handleHotkeyChange('tapUntap', val)} 
                             />
+                            <HotkeyInput 
+                                label="Arrow Tool (Toggle)" 
+                                value={hotkeys.arrowToggle} 
+                                onChange={(val) => handleHotkeyChange('arrowToggle', val)} 
+                            />
+                            <HotkeyInput 
+                                label="Pass Turn" 
+                                value={hotkeys.passTurn} 
+                                onChange={(val) => handleHotkeyChange('passTurn', val)} 
+                            />
                         </div>
                         <p className="text-[10px] text-slate-500 mt-4 italic text-center">
                             Haz clic en un recuadro y presiona una tecla para cambiarla.
@@ -197,4 +209,3 @@ const HotkeyInput = ({ label, value, onChange }: HotkeyInputProps) => (
         </div>
     </div>
 );
-
