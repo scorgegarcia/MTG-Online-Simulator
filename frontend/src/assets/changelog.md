@@ -1,7 +1,9 @@
 # Magic-TRAE Changelog
 ## [25.12.30]
+![](https://i.ibb.co/NnW4yKDL/image.png)
 ### New Features
-![](https://i.ibb.co/SXwBPhyS/image.png)
+
+![Nueva Funcion: Arrow](https://i.ibb.co/SXwBPhyS/image.png)
 - **Botón de Arrow**: Se agrega un botón para poder activar y/o desactivar el modo "Arrow" (de flechas) en el campo de batalla. Asi puedes seleccionar cartas y hacer targets a otras cartas, usalo para señalar bloqueadores, etc. (Hotkey: A) pero es configurable en la configuración de la partida.
 ![Ejemplo de interacción con el botón de Arrow](https://i.ibb.co/XZtTV37D/image.png)
 

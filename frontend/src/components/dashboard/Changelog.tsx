@@ -6,6 +6,7 @@ import changelogContent from '../../assets/changelog.md?raw';
 export default function Changelog() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  let imageIndex = 0;
 
   return (
     <div className="w-full mt-12 transition-all duration-500 ease-in-out">
@@ -73,16 +74,36 @@ export default function Changelog() {
                 ">
                   <ReactMarkdown
                     components={{
-                      img: ({ node, ...props }) => (
-                        <div className="my-4">
-                          <img
-                            {...props}
-                            className="w-48 h-auto rounded-lg border-2 border-amber-900/50 cursor-zoom-in hover:border-amber-500/50 transition-all shadow-lg hover:scale-[1.02]"
-                            onClick={() => setZoomedImage(props.src || null)}
-                          />
-                          {props.alt && <p className="text-[10px] text-slate-500 mt-1 italic">{props.alt}</p>}
-                        </div>
-                      )
+                      img: ({ ...props }) => {
+                        const currentIndex = imageIndex;
+                        imageIndex += 1;
+
+                        const isCover = currentIndex === 0;
+
+                        if (isCover) {
+                          return (
+                            <div className="my-4 -mx-6">
+                              <img
+                                {...props}
+                                draggable={false}
+                                className="w-full h-auto rounded-lg border border-amber-900/40 shadow-xl"
+                              />
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="my-4">
+                            <img
+                              {...props}
+                              draggable={false}
+                              className="w-48 h-auto rounded-lg border-2 border-amber-900/50 cursor-zoom-in hover:border-amber-500/50 transition-all shadow-lg hover:scale-[1.02]"
+                              onClick={() => setZoomedImage(props.src || null)}
+                            />
+                            {props.alt && <p className="text-[10px] text-slate-500 mt-1 italic">{props.alt}</p>}
+                          </div>
+                        );
+                      },
                     }}
                   >
                     {changelogContent}
