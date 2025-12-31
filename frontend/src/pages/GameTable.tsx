@@ -46,6 +46,8 @@ const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
 import { useGameSound } from '../hooks/useGameSound';
 
+import { MagicArrows } from '../components/battlefield/MagicArrows';
+
 export default function GameTable() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -79,6 +81,21 @@ export default function GameTable() {
     const saved = localStorage.getItem('setting_bgmVolume');
     return saved ? parseFloat(saved) : 10;
   });
+
+  // Arrow tool state
+  const [isArrowMode, setIsArrowMode] = useState(false);
+  const [arrowSourceId, setArrowSourceId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const sendAction = useCallback((type: string, payload: any, options?: { closeMenu?: boolean }) => {
+      if(!gameState) return;
+      socket?.emit('game:action', {
+          gameId: id,
+          expectedVersion: gameState.version,
+          action: { type, payload }
+      });
+      if (options?.closeMenu !== false) setMenuOpen(null);
+  }, [gameState, id, socket]);
 
   useEffect(() => {
     localStorage.setItem('setting_bgmMuted', bgmMuted.toString());
@@ -115,6 +132,77 @@ export default function GameTable() {
   const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
   const [showCommanderDamage, setShowCommanderDamage] = useState(false);
+
+  // Arrow tool effects
+  useEffect(() => {
+    if (!isArrowMode) {
+      setArrowSourceId(null);
+      return;
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (!isArrowMode) return;
+
+      const target = e.target as HTMLElement;
+      const cardEl = target.closest('[data-card-id]');
+      
+      if (cardEl) {
+        const cardId = cardEl.getAttribute('data-card-id');
+        if (!cardId) return;
+
+        // Cerrar cualquier hover activo al hacer clic en modo flecha
+        setHoveredCard(null);
+        // Bloquear que se vuelva a abrir el hover de esta carta hasta que el mouse salga de ella
+        hoverBlockedRef.current = cardId;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!arrowSourceId) {
+          // First card selected
+          setArrowSourceId(cardId);
+          playUiSound('SELECT');
+        } else {
+          // Second card selected
+          if (cardId !== arrowSourceId) {
+            sendAction('CREATE_ARROW', { 
+              fromId: arrowSourceId, 
+              toId: cardId, 
+              creatorSeat: mySeatRef.current 
+            });
+            playUiSound('SELECT');
+          }
+          setArrowSourceId(null);
+        }
+      } else {
+        // Clicked outside a card
+        if (arrowSourceId) {
+          setArrowSourceId(null);
+        }
+      }
+    };
+
+    const handleGlobalContextMenu = (e: MouseEvent) => {
+      if (isArrowMode) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('click', handleGlobalClick, true); // Capture phase to intercept card clicks
+    window.addEventListener('contextmenu', handleGlobalContextMenu, true);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleGlobalClick, true);
+      window.removeEventListener('contextmenu', handleGlobalContextMenu, true);
+    };
+  }, [isArrowMode, arrowSourceId, sendAction, playUiSound]);
 
   // Cooldown timer
   useEffect(() => {
@@ -569,16 +657,6 @@ export default function GameTable() {
     return () => clearTimeout(t);
   }, [socket, isConnected, gameState, gameInfo?.status, id]);
 
-  const sendAction = useCallback((type: string, payload: any, options?: { closeMenu?: boolean }) => {
-      if(!gameState) return;
-      socket?.emit('game:action', {
-          gameId: id,
-          expectedVersion: gameState.version,
-          action: { type, payload }
-      });
-      if (options?.closeMenu !== false) setMenuOpen(null);
-  }, [gameState, id, socket]);
-
   // Keyboard events for hotkeys
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -936,9 +1014,10 @@ export default function GameTable() {
           sendAction={sendAction}
           hoverBlockedRef={hoverBlockedRef}
           setMenuOpen={setMenuOpen}
+          isArrowMode={isArrowMode}
       />
       <ContextMenu 
-          menuOpen={menuOpen}
+          menuOpen={isArrowMode ? null : menuOpen}
           setMenuOpen={setMenuOpen}
           gameState={gameState}
           mySeat={mySeat}
@@ -947,6 +1026,13 @@ export default function GameTable() {
           sendAction={sendAction}
           startEquipSelection={startEquipSelection}
           startEnchantSelection={startEnchantSelection}
+      />
+      
+      <MagicArrows 
+          arrows={gameState?.arrows || []} 
+          mySeat={mySeat} 
+          previewArrow={arrowSourceId ? { fromId: arrowSourceId, toPos: mousePos } : null}
+          onDeleteArrow={(arrowId) => sendAction('DELETE_ARROW', { arrowId })}
       />
       
       {showRevealModal && (
@@ -1285,6 +1371,8 @@ export default function GameTable() {
                 setIsThinkingCooldown={setIsThinkingCooldown}
                 showCommanderDamage={showCommanderDamage}
                 setShowCommanderDamage={setShowCommanderDamage}
+                isArrowMode={isArrowMode}
+                setIsArrowMode={setIsArrowMode}
               />
 
           {/* Main Area: Battlefields */}

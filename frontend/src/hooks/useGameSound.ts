@@ -62,7 +62,7 @@ export const useGameSound = () => {
         }
     }, []);
 
-    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD') => {
+    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD' | 'SELECT') => {
         playSound(key);
     }, [playSound]);
 

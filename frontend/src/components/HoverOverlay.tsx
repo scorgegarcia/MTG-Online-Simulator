@@ -10,6 +10,7 @@ interface HoverOverlayProps {
     sendAction: (type: string, payload: any) => void;
     hoverBlockedRef: React.MutableRefObject<string | null>;
     setMenuOpen: (menu: any) => void;
+    isArrowMode?: boolean;
 }
 
 export const HoverOverlay = ({
@@ -20,7 +21,8 @@ export const HoverOverlay = ({
     mySeat,
     sendAction,
     hoverBlockedRef,
-    setMenuOpen
+    setMenuOpen,
+    isArrowMode = false
 }: HoverOverlayProps) => {
     const [style, setStyle] = useState<any>(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -93,11 +95,14 @@ export const HoverOverlay = ({
     return (
         <div 
           className="rounded-xl cursor-pointer select-none border border-yellow-500/50 bg-black"
+          data-hover-overlay="true"
+          data-card-id={obj.id}
           style={{
               ...style,
               transition: isExpanded ? 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none'
           }}
           onTouchEnd={(e) => {
+              if (isArrowMode) return;
               const now = Date.now();
               const DOUBLE_TAP_DELAY = 320;
               if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
@@ -122,6 +127,7 @@ export const HoverOverlay = ({
           }}
           onMouseMove={(e) => {
               const elements = document.elementsFromPoint(e.clientX, e.clientY);
+              const overlayEl = e.currentTarget as HTMLElement;
               
               // If hovering over a scroll button (even if behind overlay), close overlay
               if (elements.some(el => el.hasAttribute('data-scroll-button'))) {
@@ -129,7 +135,7 @@ export const HoverOverlay = ({
                   return;
               }
 
-              const topCardEl = elements.find(el => el.hasAttribute('data-card-id'));
+              const topCardEl = elements.find(el => el.hasAttribute('data-card-id') && !overlayEl.contains(el));
 
               // If not hovering over any card (original or new), close overlay
               if (!topCardEl) {
@@ -153,6 +159,11 @@ export const HoverOverlay = ({
               }
           }}
           onContextMenu={(e) => {
+              if (isArrowMode) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+              }
               e.preventDefault();
               e.stopPropagation();
               if(obj.controller_seat === mySeat) {
@@ -169,6 +180,12 @@ export const HoverOverlay = ({
               setHoveredCard(null);
           }}
           onClick={(e) => {
+              if (isArrowMode) {
+                  // Let the global click handler in GameTable handle it
+                  // We don't stop propagation here so it reaches the global listener
+                  setHoveredCard(null);
+                  return;
+              }
               e.stopPropagation();
               if (ignoreClickRef.current) return;
               const x = e.clientX;
@@ -185,6 +202,10 @@ export const HoverOverlay = ({
               }, 320);
           }}
           onDoubleClick={(e) => {
+              if (isArrowMode) {
+                  e.stopPropagation();
+                  return;
+              }
               e.stopPropagation();
               if (clickTimeoutRef.current) {
                   clearTimeout(clickTimeoutRef.current);

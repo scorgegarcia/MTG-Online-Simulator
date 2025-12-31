@@ -13,6 +13,14 @@ interface GameState {
   chat: any[];
   trade?: TradeSession;
   reveal?: RevealSession;
+  arrows: Arrow[];
+}
+
+interface Arrow {
+    id: string;
+    fromId: string; // card id
+    toId: string;   // card id
+    creatorSeat: number;
 }
 
 interface RevealSession {
@@ -150,7 +158,8 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
     objects: {},
     zoneIndex: {},
     battlefieldLayout: {},
-    chat: []
+    chat: [],
+    arrows: []
   };
 
   // Initialize players
@@ -307,7 +316,8 @@ export const restartGame = async (gameId: string) => {
         id: randomUUID(),
         timestamp: Date.now(),
         text: `🔄 La partida ha sido reiniciada por el Host.`
-    }]
+    }],
+    arrows: []
   };
 
   // Initialize players
@@ -1173,6 +1183,36 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
     case 'ROLL_DICE': {
         const { sides, result } = action.payload;
         log(`Tiró un dado de ${sides} caras: **${result}** 🎲`);
+        break;
+    }
+    case 'CREATE_ARROW': {
+        const { fromId, toId } = action.payload;
+        if (actorSeat === undefined) break;
+        if (!state.arrows) state.arrows = [];
+        state.arrows.push({
+            id: randomUUID(),
+            fromId,
+            toId,
+            creatorSeat: actorSeat
+        });
+        break;
+    }
+    case 'DELETE_ARROW': {
+        const { arrowId } = action.payload;
+        if (actorSeat === undefined) break;
+        if (!state.arrows) break;
+        const arrow = state.arrows.find(a => a.id === arrowId);
+        if (!arrow) break;
+        if (arrow.creatorSeat !== actorSeat) break;
+        state.arrows = state.arrows.filter(a => a.id !== arrowId);
+        break;
+    }
+    case 'CLEAR_ARROWS': {
+        const { creatorSeat } = action.payload;
+        if (actorSeat === undefined) break;
+        if (creatorSeat !== actorSeat) break;
+        if (!state.arrows) state.arrows = [];
+        state.arrows = state.arrows.filter(a => a.creatorSeat !== creatorSeat);
         break;
     }
   }

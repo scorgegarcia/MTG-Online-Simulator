@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import arrowIcon from '../../assets/img/arrow_green_icon.png';
 
 interface LeftSideToolbarProps {
     gameState: any;
@@ -10,6 +11,8 @@ interface LeftSideToolbarProps {
     setIsThinkingCooldown: (cooldown: boolean) => void;
     showCommanderDamage: boolean;
     setShowCommanderDamage: (show: boolean) => void;
+    isArrowMode: boolean;
+    setIsArrowMode: (active: boolean) => void;
 }
 
 export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
@@ -21,7 +24,9 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
     isThinkingCooldown,
     setIsThinkingCooldown,
     showCommanderDamage,
-    setShowCommanderDamage
+    setShowCommanderDamage,
+    isArrowMode,
+    setIsArrowMode
 }) => {
     const [isInteractionsOpen, setIsInteractionsOpen] = useState(false);
     const interactionsRef = useRef<HTMLDivElement>(null);
@@ -98,6 +103,51 @@ export const LeftSideToolbar: React.FC<LeftSideToolbarProps> = ({
 
             {/* Fila 2: Nuevos botones (estilo RightSideToolbar) */}
             <div className="flex flex-col gap-1 py-0 items-center bg-gray-800/50 rounded border border-gray-700 shrink-0 relative" ref={interactionsRef}>
+                <style>{`
+                    @keyframes magic-pulse {
+                        0%, 100% { box-shadow: 0 0 5px #fff, 0 0 10px #00d4ff, inset 0 0 5px #fff; }
+                        50% { box-shadow: 0 0 15px #fff, 0 0 25px #00d4ff, inset 0 0 10px #fff; }
+                    }
+                    @keyframes particle-flow {
+                        0% { background-position: 0% 0%; }
+                        100% { background-position: 40px 40px; }
+                    }
+                `}</style>
+                <button 
+                    className={`w-full h-fit py-1 rounded flex flex-col items-center justify-center gap-0 text-xs font-bold transition-all duration-300 relative overflow-hidden ${
+                        isArrowMode 
+                        ? 'bg-cyan-500/80 text-white border-white/50' 
+                        : 'bg-slate-700 hover:bg-slate-600 text-gray-300 border-transparent'
+                    } border`}
+                    style={isArrowMode ? {
+                        animation: 'magic-pulse 2s infinite ease-in-out',
+                        backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)`,
+                        backgroundSize: '10px 10px',
+                    } : {}}
+                    title="Arrow Tool"
+                    onClick={() => {
+                        const newMode = !isArrowMode;
+                        setIsArrowMode(newMode);
+                        if (!newMode) {
+                            sendAction('CLEAR_ARROWS', { creatorSeat: mySeat });
+                        }
+                    }}
+                >
+                    {isArrowMode && (
+                        <div className="absolute inset-0 pointer-events-none opacity-50" style={{
+                            background: 'linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
+                            backgroundSize: '200% 200%',
+                            animation: 'particle-flow 3s linear infinite'
+                        }} />
+                    )}
+                    <img 
+                        src={arrowIcon} 
+                        alt="Arrow" 
+                        className={`w-6 h-6 object-contain mb-1 ${isArrowMode ? 'drop-shadow-[0_0_5px_#fff]' : 'opacity-70'}`}
+                    />
+                    <span className={`writing-vertical-rl text-[10px] tracking-wider uppercase ${isArrowMode ? 'text-white' : 'text-gray-400'}`}>Arrow</span>
+                </button>
+
                 <button 
                     className="w-full h-fit py-1 rounded bg-slate-700 hover:bg-slate-600 flex flex-col items-center justify-center gap-0 text-xs font-bold text-gray-300 transition-colors"
                     title="Interacciones"
