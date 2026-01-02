@@ -16,6 +16,7 @@ interface SettingsModalProps {
         createToken: string;
         tapUntap: string;
         arrowToggle: string;
+        thinking: string;
         passTurn: string;
     };
     setHotkeys: (hotkeys: any) => void;
@@ -131,6 +132,11 @@ export const SettingsModal = ({
                                 label="Arrow Tool (Toggle)" 
                                 value={hotkeys.arrowToggle} 
                                 onChange={(val) => handleHotkeyChange('arrowToggle', val)} 
+                            />
+                            <HotkeyInput 
+                                label="Thinking..." 
+                                value={hotkeys.thinking} 
+                                onChange={(val) => handleHotkeyChange('thinking', val)} 
                             />
                             <HotkeyInput 
                                 label="Pass Turn" 

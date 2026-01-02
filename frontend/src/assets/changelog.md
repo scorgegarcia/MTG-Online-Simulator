@@ -1,4 +1,9 @@
 # Magic-TRAE Changelog
+
+## [26.1.2]
+### New Features
+- **Hotkey de Thinking**: Se agrega una hotkey para poder activar y/o desactivar el modo "Thinking" (de pensar) en el campo de batalla. Asi puedes ver las cartas que tienes en tu mano y los efectos que tienen. (Hotkey: .) pero es configurable en la configuración de la partida.
+
 ## [25.12.30]
 ![](https://i.ibb.co/NnW4yKDL/image.png)
 ### New Features

@@ -350,6 +350,7 @@ export default function GameTable() {
       createToken: 't',
       tapUntap: ' ',
       arrowToggle: 'a',
+      thinking: '.',
       passTurn: 'p'
     };
 
@@ -708,6 +709,11 @@ export default function GameTable() {
         if (isPassCooldown) return;
         setIsPassCooldown(true);
         sendAction('PASS_TURN', { seat: mySeatRef.current });
+      } else if (key === hotkeys.thinking) {
+        e.preventDefault();
+        if (isThinkingCooldown) return;
+        setIsThinkingCooldown(true);
+        sendAction('THINKING', { seat: mySeatRef.current });
       } else if (key === hotkeys.tapUntap) {
         e.preventDefault();
         if (hoveredCard?.obj && hoveredCard.obj.controller_seat === mySeatRef.current) {
@@ -740,7 +746,7 @@ export default function GameTable() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, isPassCooldown, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState, panelHeight, setHoveredCard]);
+  }, [hotkeys, isPassCooldown, isThinkingCooldown, sendAction, setViewLibraryModalOpen, setCreateTokenModalOpen, hoveredCard, gameState, panelHeight, setHoveredCard]);
 
   const startEquipSelection = useCallback((equipmentId: string) => {
       setEquipSelection({ equipmentId });
