@@ -14,23 +14,40 @@ import {
   BookOpen, 
   Dice5,
   Crown,
-  Sparkles
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Changelog from '../components/dashboard/Changelog';
+import { DeleteDeckModal } from '../components/DeleteDeckModal';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [decks, setDecks] = useState<any[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [gameCode, setGameCode] = useState('');
+  const [deckToDelete, setDeckToDelete] = useState<{ id: string; name: string } | null>(null);
   const navigate = useNavigate();
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
   const selectAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    axios.get(`${API_BASE_URL}/decks`).then(res => setDecks(res.data));
+  const fetchDecks = useCallback(async (page: number) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/decks?page=${page}`);
+      setDecks(res.data.decks);
+      setTotalPages(res.data.totalPages);
+      setCurrentPage(res.data.currentPage);
+    } catch (e) {
+      console.error('Error fetching decks:', e);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDecks(currentPage);
+  }, [fetchDecks, currentPage]);
 
   useEffect(() => {
     const hoverAudio = new Audio(uiHoverSfx);
@@ -76,9 +93,9 @@ export default function Dashboard() {
   };
 
   const deleteDeck = async (id: string) => {
-      if(!confirm('Delete deck?')) return;
       await axios.delete(`${API_BASE_URL}/decks/${id}`);
-      setDecks(decks.filter(d => d.id !== id));
+      setDeckToDelete(null);
+      fetchDecks(currentPage);
   };
 
   return (
@@ -100,7 +117,14 @@ export default function Dashboard() {
               <span className="text-xs font-bold tracking-[0.2em] uppercase">Planeswalker Sanctum</span>
             </div>
             <h1 className="text-4xl font-serif font-bold text-slate-100 drop-shadow-md">
-              Welcome, <Link to="/profile" className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 underline decoration-amber-500/30 hover:decoration-amber-500 transition-all underline-offset-4">{user?.username}</Link>
+              Welcome, <Link 
+                to="/profile" 
+                onMouseEnter={playHover}
+                onClick={playSelect}
+                className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 underline decoration-amber-500/30 hover:decoration-amber-500 transition-all underline-offset-4"
+              >
+                {user?.username}
+              </Link>
             </h1>
           </div>
           
@@ -208,39 +232,128 @@ export default function Dashboard() {
                 </Link>
               </div>
 
-              {/* Deck List */}
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                {decks.map(deck => (
-                  <div
-                    key={deck.id}
-                    onMouseEnter={playHover}
-                    className="group/item flex justify-between items-center bg-slate-950 border border-slate-800 hover:border-amber-500/30 p-3 rounded transition-colors relative overflow-hidden"
-                  >
-                    {/* Hover Glow Effect */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-600 opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
-                    
-                    <Link
-                      to={`/decks/${deck.id}`}
-                      onClick={playSelect}
-                      className="flex items-center gap-3 hover:text-amber-400 font-medium truncate flex-1 transition-colors pl-2"
-                    >
-                      <Scroll size={16} className="text-slate-600 group-hover/item:text-amber-500 transition-colors" />
-                      <span className="font-serif tracking-wide text-slate-300 group-hover/item:text-amber-100">{deck.name}</span>
-                    </Link>
-                    
-                    <button 
+              {/* Deck List Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+                {decks.map(deck => {
+                  const commanderImg = deck.cards?.[0]?.image_url_normal;
+                  
+                  return (
+                    <div
+                      key={deck.id}
                       onMouseEnter={playHover}
-                      onClick={() => {
-                        playSelect();
-                        deleteDeck(deck.id);
-                      }}
-                      className="text-slate-600 hover:text-red-400 p-2 rounded hover:bg-red-950/30 transition-all opacity-0 group-hover/item:opacity-100"
-                      title="Burn Grimoire"
+                      className="group/item relative flex flex-col bg-slate-950/40 border border-slate-800 hover:border-amber-500/50 rounded-xl transition-all duration-300 overflow-hidden group"
                     >
-                      <Trash2 size={16} />
-                    </button>
+                      {/* Delete Button - Top Right */}
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          playSelect();
+                          setDeckToDelete({ id: deck.id, name: deck.name });
+                        }}
+                        className="absolute top-2 right-2 z-30 text-slate-500 hover:text-red-400 p-1.5 rounded-full bg-slate-950/80 hover:bg-red-950/50 transition-all opacity-0 group-hover/item:opacity-100 border border-slate-800"
+                        title="Burn Grimoire"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      <Link
+                        to={`/decks/${deck.id}`}
+                        onClick={playSelect}
+                        className="flex flex-col h-full p-3"
+                      >
+                        {/* Visual Representation (Stack) */}
+                        <div className="relative aspect-[3/4] mb-3 perspective-1000">
+                          {/* Background Stack Cards (Visual Only) */}
+                          <div className="absolute inset-0 bg-slate-800 rounded-lg shadow-xl translate-x-2 -translate-y-2 rotate-3 border border-slate-700/50"></div>
+                          <div className="absolute inset-0 bg-slate-800 rounded-lg shadow-xl translate-x-1 -translate-y-1 rotate-1 border border-slate-700/50"></div>
+                          
+                          {/* Main Card (Commander or Placeholder) */}
+                          <div className="absolute inset-0 z-10 bg-slate-900 rounded-lg shadow-2xl border border-slate-700 overflow-hidden transition-transform group-hover/item:scale-[1.02]">
+                            {commanderImg ? (
+                              <img 
+                                src={commanderImg} 
+                                alt={deck.name} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4 text-center">
+                                <Scroll size={32} className={`mb-2 ${deck.format === 'commander' ? 'text-orange-500/50' : 'text-emerald-500/50'}`} />
+                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-serif">No Commander Image</span>
+                              </div>
+                            )}
+                            
+                            {/* Overlay Gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover/item:opacity-40 transition-opacity"></div>
+                          </div>
+                        </div>
+
+                        {/* Deck Info */}
+                        <div className="relative z-20">
+                          <h3 className={`font-serif font-bold text-sm truncate mb-1 transition-colors ${deck.format === 'commander' ? 'text-orange-100 group-hover/item:text-orange-300' : 'text-emerald-100 group-hover/item:text-emerald-300'}`}>
+                            {deck.name}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[9px] font-bold uppercase tracking-tighter px-1.5 py-0.5 rounded border ${deck.format === 'commander' ? 'bg-orange-950/30 border-orange-500/30 text-orange-400' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-400'}`}>
+                              {deck.format || 'standard'}
+                            </span>
+                            <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                              {deck.updated_at ? new Date(deck.updated_at).toLocaleDateString() : 'New'}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-slate-800/50">
+                  <button
+                    onClick={() => {
+                      playSelect();
+                      setCurrentPage(prev => Math.max(1, prev - 1));
+                    }}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-500/50 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-800 transition-all"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          playSelect();
+                          setCurrentPage(i + 1);
+                        }}
+                        className={`w-8 h-8 rounded-lg font-serif text-sm transition-all border ${
+                          currentPage === i + 1
+                            ? 'bg-amber-600/20 border-amber-500 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                            : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
                   </div>
-                ))}
+
+                  <button
+                    onClick={() => {
+                      playSelect();
+                      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                    }}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-amber-500 hover:border-amber-500/50 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-800 transition-all"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              )}
                 
                 {decks.length === 0 && (
                   <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-lg">
@@ -250,7 +363,6 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-          </div>
 
           <div className="group relative bg-slate-900/50 border border-slate-700 hover:border-amber-500/50 rounded-xl p-1 transition-all duration-500 md:col-span-2">
             <div className="bg-slate-900 rounded-lg p-6 h-full relative overflow-hidden">
@@ -306,6 +418,13 @@ export default function Dashboard() {
         {/* --- Section 3: The Chronicles (Changelog) --- */}
         <Changelog />
       </div>
+      {/* Modal de eliminación de deck (Incinerar) */}
+      <DeleteDeckModal 
+        isOpen={!!deckToDelete}
+        onClose={() => setDeckToDelete(null)}
+        onConfirm={() => deckToDelete && deleteDeck(deckToDelete.id)}
+        deckName={deckToDelete?.name || ''}
+      />
     </div>
   );
 }

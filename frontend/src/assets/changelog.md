@@ -10,6 +10,8 @@
 - **Modal de perfil de usuario en la partida**: Se agregó un modal de perfil para ver información de los oponentes en las partidas, información como "Fecha de creacion de la cuenta", su imagen de perfil, y proximamente mas funciones sociales. 
 - **Playmat**: Se agrega la posibilidad de poder ver la playmat de los oponentes en las partidas, puedes editar tu playmat en tu perfil de usuario.
 ## Changes
+- **Rediseño de Decks en el Dashboard**: Se rediseña la sección de decks en el dashboard para que sea más intuitivo y fácil de navegar, tambien se agregó un warning para advertir al usuario que está a punto de eliminar un deck.
+- **Eliminacion de cartas personalizadas**: Se agrega la posibilidad de poder eliminar cartas personalizadas que se hayan agregado a tu colección, pero no sin antes mostrar un modal de confirmación para advertir al usuario que está a punto de eliminar la carta y mas importante mostrar todos los masos en los que esa carta se encuentra, ya que si se elimina la carta, será eliminada de todos los decks en los que se encuentre.
 - **Mejor retroalimentacion al usuario**: Agregados sonidos para interacciones con hover, clics, feedback de audio y visual para diversos menús, botones y acciones como agregar cartas personalizadas desde su modal, donde no se puede ver si realmente se agregó, porque el modal esta encima, pero ahora se escucha y sale un "toast" indicando que la acción se realizó.
 - **Mejorado el Drag and Drop**: Se mejoró el drag and drop para que sea más intuitivo y ahora se pueden acomodar las cartas en el campo de batalla de manera más natural, permitiendo reacomodarlas dentro de la misma zona.
 

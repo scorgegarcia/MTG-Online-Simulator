@@ -34,11 +34,35 @@ const updateDeckCardSchema = z.object({
 
 // Controllers
 export const getDecks = async (req: AuthRequest, res: Response) => {
-  const decks = await prisma.deck.findMany({
-    where: { user_id: req.userId },
-    orderBy: { updated_at: 'desc' },
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = 6;
+  const skip = (page - 1) * limit;
+
+  const [decks, total] = await Promise.all([
+    prisma.deck.findMany({
+      where: { user_id: req.userId },
+      orderBy: { updated_at: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        cards: {
+          where: { board: 'commander' },
+          take: 1,
+          select: {
+            image_url_normal: true
+          }
+        }
+      }
+    }),
+    prisma.deck.count({ where: { user_id: req.userId } })
+  ]);
+
+  res.json({
+    decks,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+    totalDecks: total
   });
-  res.json(decks);
 };
 
 export const createDeck = async (req: AuthRequest, res: Response) => {

@@ -34,7 +34,7 @@ export default function DeckBuilder() {
   const navigate = useNavigate();
   const isNew = id === 'new';
   
-  const [deck, setDeck] = useState<any>({ name: 'New Deck', format: 'standard', cards: [] });
+  const [deck, setDeck] = useState<any>({ name: 'New Deck', format: 'commander', cards: [] });
   console.log('Deck state:', deck); // Debug log
 
   const [search, setSearch] = useState('');
@@ -420,8 +420,8 @@ export default function DeckBuilder() {
         
         {/* Deck Header */}
         <div className="p-6 pb-2">
-          <div className="flex justify-between items-end border-b border-amber-500/20 pb-4 mb-2">
-            <div className="flex-1 mr-4">
+          <div className="flex flex-col border-b border-amber-500/20 pb-4 mb-2">
+            <div className="w-full mb-4">
               <label className="block text-[10px] uppercase tracking-[0.2em] text-amber-500/60 font-bold mb-1">Grimoire Title</label>
               <input 
                 className="w-full bg-transparent text-3xl font-serif font-bold text-amber-100 placeholder-slate-700 focus:outline-none focus:border-b border-amber-500/50 transition-colors" 
@@ -430,60 +430,88 @@ export default function DeckBuilder() {
                 placeholder="Untitled Spellbook"
               />
             </div>
-            {isNew ? (
-              <div className="flex gap-3">
-                <button 
-                  onMouseEnter={playHover}
-                  onClick={() => setShowImportModal(true)} 
-                  className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20"
-                >
-                    <FileText size={18} /> <span className="font-serif">Import</span>
-                </button>
-                <button
-                  onMouseEnter={playHover}
-                  onClick={() => {
-                    playSelect();
-                    setShowCustomCardsModal(true);
+            
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <label className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">Format:</label>
+                <select
+                  value={deck.format || 'commander'}
+                  onChange={(e) => {
+                    const newFormat = e.target.value;
+                    setDeck({ ...deck, format: newFormat });
+                    if (!isNew) {
+                      axios.put(`${API_BASE_URL}/decks/${id}`, { name: deck.name, format: newFormat });
+                    }
                   }}
-                  className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
+                  className="bg-slate-900 border border-slate-700 text-slate-200 px-3 py-1.5 rounded font-serif text-sm focus:outline-none focus:border-amber-500 transition-colors"
                 >
-                  <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
-                </button>
-                <button 
-                  onMouseEnter={playHover}
-                  onClick={() => {
-                    playSelect();
-                    createDeck();
-                  }} 
-                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-slate-950 px-6 py-2 rounded shadow-lg shadow-amber-900/20 font-bold transition-all hover:scale-105 active:scale-95"
-                >
-                    <ScrollIcon size={18} /> <span className="font-serif">Create</span>
-                </button>
+                  <option value="commander">Commander</option>
+                  <option value="standard">Standard</option>
+                </select>
               </div>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onMouseEnter={playHover}
-                  onClick={() => {
-                    playSelect();
-                    setShowCustomCardsModal(true);
-                  }}
-                  className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
-                >
-                  <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
-                </button>
-                <button
-                  onMouseEnter={playHover}
-                  onClick={() => {
-                    playSelect();
-                    saveDeck();
-                  }}
-                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-500 text-slate-200 px-6 py-2 rounded font-bold transition-all"
-                >
-                  <Save size={18} /> <span className="font-serif">Save</span>
-                </button>
-              </div>
-            )}
+
+              {isNew ? (
+                <div className="flex gap-3">
+                  <button 
+                    onMouseEnter={playHover}
+                    onClick={() => setShowImportModal(true)} 
+                    className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20"
+                  >
+                      <FileText size={18} /> <span className="font-serif">Import</span>
+                  </button>
+                  <button
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      setShowCustomCardsModal(true);
+                    }}
+                    className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
+                  >
+                    <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
+                  </button>
+                  <button 
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      createDeck();
+                    }} 
+                    className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-slate-950 px-6 py-2 rounded shadow-lg shadow-amber-900/20 font-bold transition-all hover:scale-105 active:scale-95"
+                  >
+                      <ScrollIcon size={18} /> <span className="font-serif">Create</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button 
+                    onMouseEnter={playHover}
+                    onClick={() => setShowImportModal(true)} 
+                    className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20"
+                  >
+                      <FileText size={18} /> <span className="font-serif">Import</span>
+                  </button>
+                  <button
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      setShowCustomCardsModal(true);
+                    }}
+                    className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
+                  >
+                    <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
+                  </button>
+                  <button
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      saveDeck();
+                    }}
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-500 text-slate-200 px-6 py-2 rounded font-bold transition-all"
+                  >
+                    <Save size={18} /> <span className="font-serif">Save</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -23,6 +23,7 @@ import retryMulliganSfx from '../assets/sfx/retry_mulligan.mp3';
 import arrowOnSfx from '../assets/sfx/woosh_agudo.mp3';
 import arrowOffSfx from '../assets/sfx/woosh_grave.mp3';
 import beepSfx from '../assets/sfx/beep_sfx.mp3';
+import alertDangerSfx from '../assets/sfx/alert_danger.mp3';
 
 export const useGameSound = () => {
     const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
@@ -58,6 +59,7 @@ export const useGameSound = () => {
         loadAudio('ARROW_ON', arrowOnSfx);
         loadAudio('ARROW_OFF', arrowOffSfx);
         loadAudio('BEEP', beepSfx);
+        loadAudio('ALERT_DANGER', alertDangerSfx);
     }, []);
 
     const playSound = useCallback((key: string) => {
@@ -68,7 +70,7 @@ export const useGameSound = () => {
         }
     }, []);
 
-    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD' | 'SELECT' | 'ARROW_ON' | 'ARROW_OFF' | 'BEEP') => {
+    const playUiSound = useCallback((key: 'DRAG_CARD' | 'DROP_CARD' | 'SELECT' | 'ARROW_ON' | 'ARROW_OFF' | 'BEEP' | 'ALERT_DANGER') => {
         playSound(key);
     }, [playSound]);
 
