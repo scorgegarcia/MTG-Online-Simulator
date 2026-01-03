@@ -1,5 +1,9 @@
 # Magic Sandbox TCG
 
+# JUEGALO YA totalmente gratis en http://mtg.bscode.dev
+
+Yo no se programar nada... pero la IA si sabe, y si se lo pido, lo hace
+
 Es increible que toda esta aplicación esta aprovada por mi amigo imaginario: NASLOC (Not A Single Line Of Code) .. jajaja, todo el codigo lo escribió la IA de principio a fin sin ninguna modificación manual. Yo no tengo mucha idea de programación, digamos lo basico nomas, pero la IA me ha ayudado a crear esta aplicación de manera rápida y eficiente.
 
 Una aplicación web Full Stack para jugar Magic: The Gathering en modo Sandbox (sin reglas forzadas), multijugador y en tiempo real. Eso si, abrazate del discord o de algun VOIP porque si no, lo tienes complicado jajajaj
