@@ -13,7 +13,8 @@ import {
   LogOut, 
   BookOpen, 
   Dice5,
-  Crown
+  Crown,
+  Sparkles
 } from 'lucide-react';
 import Changelog from '../components/dashboard/Changelog';
 
@@ -247,6 +248,55 @@ export default function Dashboard() {
                     <p className="text-slate-500 font-serif italic">The library is empty.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative bg-slate-900/50 border border-slate-700 hover:border-amber-500/50 rounded-xl p-1 transition-all duration-500 md:col-span-2">
+            <div className="bg-slate-900 rounded-lg p-6 h-full relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent opacity-60 pointer-events-none"></div>
+              <div className="flex items-center justify-between gap-4 relative z-10 flex-col md:flex-row">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-fuchsia-950/30 rounded-lg border border-fuchsia-500/30">
+                    <Sparkles className="text-fuchsia-300" size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-slate-100">The Spellforge</h2>
+                    <p className="text-xs text-slate-500 uppercase tracking-widest">Card Builder</p>
+                  </div>
+                </div>
+
+                <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                  <button
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      navigate('/card-builder');
+                    }}
+                    className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-fuchsia-950 to-indigo-950 hover:from-fuchsia-900 hover:to-indigo-900 border border-fuchsia-700/50 hover:border-amber-500/40 px-6 py-3 rounded-lg transition-all shadow-[0_0_25px_rgba(217,70,239,0.12)] hover:shadow-[0_0_35px_rgba(245,158,11,0.2)]"
+                  >
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                    <div className="relative z-10 flex items-center justify-center gap-3 text-fuchsia-100 font-serif font-bold tracking-wide">
+                      <Sparkles size={18} />
+                      <span>Open Card Builder</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onMouseEnter={playHover}
+                    onClick={() => {
+                      playSelect();
+                      navigate('/card-manager');
+                    }}
+                    className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-amber-950 to-orange-950 hover:from-amber-900 hover:to-orange-900 border border-amber-700/50 hover:border-amber-500/40 px-6 py-3 rounded-lg transition-all shadow-[0_0_25px_rgba(245,158,11,0.12)] hover:shadow-[0_0_35px_rgba(245,158,11,0.2)]"
+                  >
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                    <div className="relative z-10 flex items-center justify-center gap-3 text-amber-100 font-serif font-bold tracking-wide">
+                      <Scroll size={18} />
+                      <span>Open Card Manager</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import clsx from 'clsx';
 import { useCardData } from '../hooks/useCardData';
 import { CardCounters } from './CardCounters';
+import PersonalizedCard from './PersonalizedCard';
+import type { CardDraft, ManaSymbol } from './cardBuilder/types';
 
 const glowStyles = `
 @keyframes equip_glow {
@@ -91,6 +93,26 @@ export const Card = memo(({
         ? (obj.back_image_url || 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg')
         : imgUrl;
 
+    const custom = obj?.custom_card;
+    // Only use PersonalizedCard template if it's NOT a simple URL card
+    // URL cards (source === 'URLS') should behave like normal cards with an image
+    const customDraft = (custom && custom.source !== 'URLS')
+        ? ({
+              name: String(custom.name || obj.name || ''),
+              kind: (custom.kind || 'Non-creature') as any,
+              typeLine: String(custom.type_line || ''),
+              rulesText: String(custom.rules_text || ''),
+              power: custom.power ? String(custom.power) : '',
+              toughness: custom.toughness ? String(custom.toughness) : '',
+              manaCost: {
+                  generic: Number.isFinite(Number(custom.mana_cost_generic)) ? Number(custom.mana_cost_generic) : 0,
+                  symbols: (Array.isArray(custom.mana_cost_symbols) ? custom.mana_cost_symbols : []) as ManaSymbol[]
+              },
+              artUrl: String(custom.art_url || custom.front_image_url || ''),
+              backUrl: String(custom.back_image_url || '')
+          } satisfies CardDraft)
+        : null;
+
     const counters = obj?.counters ?? {};
 
     const baseWidth = size === 'small' ? 64 : 128; // w-16 : w-32
@@ -141,6 +163,11 @@ export const Card = memo(({
     const getTypeLineForObj = (o: any) => {
         const direct = String(o?.type_line || '');
         if (direct) return direct;
+        
+        // Check custom card kind
+        const customKind = o?.custom_card?.kind;
+        if (customKind) return customKind;
+
         const sid = o?.scryfall_id;
         if (!sid) return '';
         const cached = localStorage.getItem(`card_data_v3_${sid}`);
@@ -332,10 +359,14 @@ export const Card = memo(({
           }}
         >
             <style>{glowStyles}</style>
-            {finalImgUrl ? (
+            {isFacedown ? (
+                <img src={finalImgUrl} className={clsx("w-full h-full object-cover rounded")} draggable={false} />
+            ) : customDraft ? (
+                <PersonalizedCard card={customDraft} className="w-full h-full" />
+            ) : finalImgUrl ? (
                 <img src={finalImgUrl} className={clsx("w-full h-full object-cover rounded")} draggable={false} />
             ) : (
-                <div className="text-xs p-1">{isFacedown ? '???' : obj.scryfall_id}</div>
+                <div className="text-xs p-1">{obj.scryfall_id}</div>
             )}
 
             {equipSelection && inBattlefield && isEquipSource && (

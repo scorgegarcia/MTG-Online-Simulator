@@ -5,6 +5,7 @@ export const categorizeObjects = (objects: any[]) => {
 
     objects.forEach((obj: any) => {
         let type = obj.type_line || '';
+        const customKind = obj.custom_card?.kind;
         
         if (!type && obj.scryfall_id) {
             const cachedV3 = localStorage.getItem(`card_data_v3_${obj.scryfall_id}`);
@@ -15,9 +16,24 @@ export const categorizeObjects = (objects: any[]) => {
             }
         }
         
-        if (type.toLowerCase().includes('land')) lands.push(obj);
-        else if (type.toLowerCase().includes('creature')) creatures.push(obj);
-        else others.push(obj);
+        const lowerType = type.toLowerCase();
+        
+        // Prioridad 1: Si es una carta personalizada, usamos su 'kind' explícito
+        if (customKind === 'Land') {
+            lands.push(obj);
+        } else if (customKind === 'Creature') {
+            creatures.push(obj);
+        } else if (customKind === 'Non-creature') {
+            others.push(obj);
+        }
+        // Prioridad 2: Si no es personalizada (o no tiene kind), usamos el type_line
+        else if (lowerType.includes('land')) {
+            lands.push(obj);
+        } else if (lowerType.includes('creature') && !lowerType.includes('non-creature') && !lowerType.includes('noncreature')) {
+            creatures.push(obj);
+        } else {
+            others.push(obj);
+        }
     });
     return { lands, creatures, others };
 };

@@ -11,9 +11,12 @@ const createDeckSchema = z.object({
 });
 
 const addCardSchema = z.object({
-  scryfall_id: z.string(),
+  scryfall_id: z.string().optional(),
+  custom_card_id: z.string().optional(),
   qty: z.number().min(1),
   board: z.enum(['main', 'side', 'commander']).default('main'),
+}).refine(data => data.scryfall_id || data.custom_card_id, {
+  message: "Either scryfall_id or custom_card_id must be provided"
 });
 
 const importDeckSchema = z.object({
@@ -93,26 +96,57 @@ export const deleteDeck = async (req: AuthRequest, res: Response) => {
 
 export const addCard = async (req: AuthRequest, res: Response) => {
   try {
-    const { scryfall_id, qty, board } = addCardSchema.parse(req.body);
+    const { scryfall_id, custom_card_id, qty, board } = addCardSchema.parse(req.body);
     const deckId = req.params.id;
 
     const deck = await prisma.deck.findUnique({ where: { id: deckId } });
     if (!deck || deck.user_id !== req.userId) return res.status(404).json({ error: 'Deck not found' });
 
-    // Fetch card details from Scryfall to cache
-    const cardData = await scryfallService.getCardById(scryfall_id);
-    if (!cardData) return res.status(404).json({ error: 'Card not found in Scryfall' });
+    let name, type_line, mana_cost, image_url_small, image_url_normal, back_image_url;
+    let is_custom = false;
 
-    const name = cardData.name;
-    const type_line = cardData.type_line;
-    const mana_cost = cardData.mana_cost;
-    const image_url_small = cardData.image_uris?.small || cardData.card_faces?.[0]?.image_uris?.small;
-    const image_url_normal = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
-    const back_image_url = cardData.card_faces?.[1]?.image_uris?.normal || cardData.card_faces?.[1]?.image_uris?.large;
+    if (scryfall_id) {
+      // Fetch card details from Scryfall to cache
+      const cardData = await scryfallService.getCardById(scryfall_id);
+      if (!cardData) return res.status(404).json({ error: 'Card not found in Scryfall' });
+
+      name = cardData.name;
+      type_line = cardData.type_line;
+      mana_cost = cardData.mana_cost;
+      image_url_small = cardData.image_uris?.small || cardData.card_faces?.[0]?.image_uris?.small;
+      image_url_normal = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
+      back_image_url = cardData.card_faces?.[1]?.image_uris?.normal || cardData.card_faces?.[1]?.image_uris?.large;
+    } else if (custom_card_id) {
+      const customCard = await prisma.customCard.findUnique({
+        where: { id: custom_card_id }
+      });
+      if (!customCard || customCard.user_id !== req.userId) {
+        return res.status(404).json({ error: 'Custom card not found' });
+      }
+
+      is_custom = true;
+      name = customCard.name;
+      type_line = customCard.type_line;
+      // Convert JSON symbols back to Mana Cost string format if needed, or just use a placeholder
+      // For custom cards, we might store mana_cost as string too, but let's derive it or keep it simple.
+      mana_cost = customCard.mana_cost_generic > 0 ? `{${customCard.mana_cost_generic}}` : '';
+      if (customCard.mana_cost_symbols) {
+        const symbols = customCard.mana_cost_symbols as string[];
+        mana_cost += symbols.map(s => `{${s}}`).join('');
+      }
+      
+      image_url_small = customCard.front_image_url || customCard.art_url;
+      image_url_normal = customCard.front_image_url || customCard.art_url;
+      back_image_url = customCard.back_image_url;
+    }
 
     // Check if card exists in deck
+    const whereClause: any = { deck_id: deckId, board };
+    if (scryfall_id) whereClause.scryfall_id = scryfall_id;
+    else whereClause.custom_card_id = custom_card_id;
+
     const existingCard = await prisma.deckCard.findFirst({
-        where: { deck_id: deckId, scryfall_id, board }
+        where: whereClause
     });
 
     if (existingCard) {
@@ -124,7 +158,9 @@ export const addCard = async (req: AuthRequest, res: Response) => {
         await prisma.deckCard.create({
             data: {
                 deck_id: deckId,
-                scryfall_id,
+                scryfall_id: scryfall_id || null,
+                custom_card_id: custom_card_id || null,
+                is_custom,
                 qty,
                 board,
                 name,
@@ -139,12 +175,13 @@ export const addCard = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Card added' });
   } catch (error) {
+    console.error('Error adding card:', error);
     res.status(400).json({ error: 'Invalid input' });
   }
 };
 
 export const removeCard = async (req: AuthRequest, res: Response) => {
-    const { id: deckId, cardId: scryfallId } = req.params;
+    const { id: deckId, cardId: cardKey } = req.params;
     
     const deck = await prisma.deck.findUnique({ where: { id: deckId } });
     if (!deck || deck.user_id !== req.userId) return res.status(404).json({ error: 'Deck not found' });
@@ -179,7 +216,7 @@ export const removeCard = async (req: AuthRequest, res: Response) => {
     
     const board = req.query.board as string | undefined;
     
-    const whereClause: any = { deck_id: deckId, scryfall_id: scryfallId };
+    const whereClause: any = { deck_id: deckId, OR: [{ scryfall_id: cardKey }, { custom_card_id: cardKey }] };
     if (board) whereClause.board = board;
 
     const card = await prisma.deckCard.findFirst({

@@ -68,6 +68,21 @@ interface GameObject {
   toughness?: string;
   type_line?: string; // for tokens or manual override
   oracle_text?: string; // for tokens (manual rules/description)
+  custom_card?: {
+    id: string;
+    source: string;
+    name: string;
+    kind: string;
+    front_image_url: string | null;
+    back_image_url: string | null;
+    art_url: string | null;
+    mana_cost_generic: number;
+    mana_cost_symbols: any;
+    type_line: string | null;
+    rules_text: string | null;
+    power: string | null;
+    toughness: string | null;
+  };
   trade_origin_zone?: string; // Where this card came from before joining a trade offer
   attached_to?: string;
   equip_origin_seat?: number;
@@ -151,6 +166,18 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
   const initialLife = initialLifeParam ?? 40;
   console.log('[startGame]', { gameId, initialLife });
 
+  const customCardIds = new Set<string>();
+  for (const p of game.players) {
+    for (const c of (p.deck?.cards || [])) {
+      if (c.custom_card_id) customCardIds.add(c.custom_card_id);
+    }
+  }
+
+  const customCards = customCardIds.size
+    ? await prisma.customCard.findMany({ where: { id: { in: Array.from(customCardIds) } } })
+    : [];
+  const customCardById = new Map(customCards.map((c) => [c.id, c]));
+
   const initialState: GameState = {
     version: 1,
     initialLife,
@@ -194,6 +221,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       
       // Load Mainboard to Library
       for (const card of mainboard) {
+        const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
         for (let i = 0; i < card.qty; i++) {
           const objId = randomUUID();
           const obj: GameObject = {
@@ -208,6 +236,27 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
             counters: {},
             note: '',
             back_image_url: card.back_image_url || undefined,
+            image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+            type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+            custom_card: custom
+              ? {
+                  id: custom.id,
+                  source: custom.source,
+                  name: custom.name,
+                  kind: custom.kind,
+                  front_image_url: custom.front_image_url,
+                  back_image_url: custom.back_image_url,
+                  art_url: custom.art_url,
+                  mana_cost_generic: custom.mana_cost_generic,
+                  mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                  power: custom.power,
+                  toughness: custom.toughness,
+                }
+              : undefined,
           };
           initialState.objects[objId] = obj;
           libraryIds.push(objId);
@@ -216,6 +265,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
 
       // Load Commander(s)
       for (const card of commander) {
+          const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
           for (let i = 0; i < card.qty; i++) {
             const objId = randomUUID();
             const obj: GameObject = {
@@ -230,6 +280,27 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
               counters: {},
               note: '',
               back_image_url: card.back_image_url || undefined,
+              image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+            type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+            custom_card: custom
+              ? {
+                  id: custom.id,
+                  source: custom.source,
+                  name: custom.name,
+                  kind: custom.kind,
+                  front_image_url: custom.front_image_url,
+                  back_image_url: custom.back_image_url,
+                  art_url: custom.art_url,
+                  mana_cost_generic: custom.mana_cost_generic,
+                  mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                  power: custom.power,
+                  toughness: custom.toughness,
+                }
+              : undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].COMMAND.push(objId);
@@ -238,6 +309,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
 
       // Load Sideboard
       for (const card of sideboard) {
+          const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
           for (let i = 0; i < card.qty; i++) {
             const objId = randomUUID();
             const obj: GameObject = {
@@ -252,6 +324,27 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
               counters: {},
               note: '',
               back_image_url: card.back_image_url || undefined,
+              image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+              type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+              custom_card: custom
+                ? {
+                    id: custom.id,
+                    source: custom.source,
+                    name: custom.name,
+                    kind: custom.kind,
+                    front_image_url: custom.front_image_url,
+                    back_image_url: custom.back_image_url,
+                    art_url: custom.art_url,
+                    mana_cost_generic: custom.mana_cost_generic,
+                    mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                    power: custom.power,
+                    toughness: custom.toughness,
+                  }
+                : undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);
@@ -305,6 +398,19 @@ export const restartGame = async (gameId: string) => {
 
   const oldVersion = (game.gameState?.snapshot as any)?.version || 0;
   const initialLife = (game.gameState?.snapshot as any)?.initialLife || 40;
+
+  const customCardIds = new Set<string>();
+  for (const p of game.players) {
+    for (const c of (p.deck?.cards || [])) {
+      if (c.custom_card_id) customCardIds.add(c.custom_card_id);
+    }
+  }
+
+  const customCards = customCardIds.size
+    ? await prisma.customCard.findMany({ where: { id: { in: Array.from(customCardIds) } } })
+    : [];
+  const customCardById = new Map(customCards.map((c) => [c.id, c]));
+
   const initialState: GameState = {
     version: oldVersion + 1,
     initialLife,
@@ -352,6 +458,7 @@ export const restartGame = async (gameId: string) => {
       
       // Load Mainboard to Library
       for (const card of mainboard) {
+        const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
         for (let i = 0; i < card.qty; i++) {
           const objId = randomUUID();
           const obj: GameObject = {
@@ -366,6 +473,27 @@ export const restartGame = async (gameId: string) => {
             counters: {},
             note: '',
             back_image_url: card.back_image_url || undefined,
+            image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+            type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+            custom_card: custom
+              ? {
+                  id: custom.id,
+                  source: custom.source,
+                  name: custom.name,
+                  kind: custom.kind,
+                  front_image_url: custom.front_image_url,
+                  back_image_url: custom.back_image_url,
+                  art_url: custom.art_url,
+                  mana_cost_generic: custom.mana_cost_generic,
+                  mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                  power: custom.power,
+                  toughness: custom.toughness,
+                }
+              : undefined,
           };
           initialState.objects[objId] = obj;
           libraryIds.push(objId);
@@ -374,6 +502,7 @@ export const restartGame = async (gameId: string) => {
 
       // Load Commander(s)
       for (const card of commander) {
+          const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
           for (let i = 0; i < card.qty; i++) {
             const objId = randomUUID();
             const obj: GameObject = {
@@ -388,6 +517,27 @@ export const restartGame = async (gameId: string) => {
               counters: {},
               note: '',
               back_image_url: card.back_image_url || undefined,
+              image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+              type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+              custom_card: custom
+                ? {
+                    id: custom.id,
+                    source: custom.source,
+                    name: custom.name,
+                    kind: custom.kind,
+                    front_image_url: custom.front_image_url,
+                    back_image_url: custom.back_image_url,
+                    art_url: custom.art_url,
+                    mana_cost_generic: custom.mana_cost_generic,
+                    mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                    power: custom.power,
+                    toughness: custom.toughness,
+                  }
+                : undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].COMMAND.push(objId);
@@ -396,6 +546,7 @@ export const restartGame = async (gameId: string) => {
 
       // Load Sideboard
       for (const card of sideboard) {
+          const custom = card.custom_card_id ? customCardById.get(card.custom_card_id) : null;
           for (let i = 0; i < card.qty; i++) {
             const objId = randomUUID();
             const obj: GameObject = {
@@ -410,6 +561,27 @@ export const restartGame = async (gameId: string) => {
               counters: {},
               note: '',
               back_image_url: card.back_image_url || undefined,
+              image_url: custom ? (custom.front_image_url || custom.art_url || undefined) : undefined,
+              type_line: custom ? (custom.type_line || custom.kind || undefined) : undefined,
+            power: custom ? (custom.power || undefined) : undefined,
+            toughness: custom ? (custom.toughness || undefined) : undefined,
+              custom_card: custom
+                ? {
+                    id: custom.id,
+                    source: custom.source,
+                    name: custom.name,
+                    kind: custom.kind,
+                    front_image_url: custom.front_image_url,
+                    back_image_url: custom.back_image_url,
+                    art_url: custom.art_url,
+                    mana_cost_generic: custom.mana_cost_generic,
+                    mana_cost_symbols: custom.mana_cost_symbols as any,
+                  type_line: custom.type_line || custom.kind,
+                  rules_text: custom.rules_text,
+                    power: custom.power,
+                    toughness: custom.toughness,
+                  }
+                : undefined,
             };
             initialState.objects[objId] = obj;
             initialState.zoneIndex[p.seat].SIDEBOARD.push(objId);

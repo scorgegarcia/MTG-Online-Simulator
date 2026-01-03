@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useCardData } from '../hooks/useCardData';
+import PersonalizedCard from './PersonalizedCard';
+import type { CardDraft, ManaSymbol } from './cardBuilder/types';
 
 interface LibraryViewModalProps {
     isOpen: boolean;
@@ -61,6 +63,24 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
 
     const displayId = selectedId || hoveredId;
     const selectedObj = displayId ? gameState?.objects?.[displayId] : null;
+    const customDraft = useMemo(() => {
+        const custom = selectedObj?.custom_card;
+        if (!custom) return null;
+        return {
+            name: String(custom.name || selectedObj?.name || ''),
+            kind: (custom.kind || 'Non-creature') as any,
+            typeLine: String(custom.type_line || ''),
+            rulesText: String(custom.rules_text || ''),
+            power: custom.power ? String(custom.power) : '',
+            toughness: custom.toughness ? String(custom.toughness) : '',
+            manaCost: {
+                generic: Number.isFinite(Number(custom.mana_cost_generic)) ? Number(custom.mana_cost_generic) : 0,
+                symbols: (Array.isArray(custom.mana_cost_symbols) ? custom.mana_cost_symbols : []) as ManaSymbol[]
+            },
+            artUrl: String(custom.art_url || custom.front_image_url || ''),
+            backUrl: String(custom.back_image_url || '')
+        } satisfies CardDraft;
+    }, [selectedObj]);
 
     const { img: imgUrlFromHook } = useCardData(selectedObj?.scryfall_id || null);
 
@@ -179,7 +199,11 @@ export const LibraryViewModal: React.FC<LibraryViewModalProps> = ({
                     <div className="flex flex-col min-h-0">
                         <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-black/20">
                             {selectedObj ? (
-                                finalImgUrl ? (
+                                selectedObj.face_state !== 'FACEDOWN' && customDraft ? (
+                                    <div className="h-full max-h-full max-w-full w-auto aspect-[2.5/3.5] overflow-hidden">
+                                        <PersonalizedCard card={customDraft} className="w-full h-full" />
+                                    </div>
+                                ) : finalImgUrl ? (
                                     <div className="h-full max-h-full max-w-full w-auto aspect-[2.5/3.5] rounded-xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.6)]">
                                         <img src={finalImgUrl} className="w-full h-full object-contain" draggable={false} />
                                     </div>

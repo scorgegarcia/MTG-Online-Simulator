@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useCardData } from '../hooks/useCardData';
 import { ZONE_LABELS } from '../utils/gameUtils';
 import { CardCounters } from './CardCounters';
+import PersonalizedCard from './PersonalizedCard';
+import type { CardDraft, ManaSymbol } from './cardBuilder/types';
 
 const MiniCardPreview = ({ obj, uiScale, variant }: { obj: any; uiScale: number; variant: 'amber' | 'green' }) => {
     const { img: imgUrlFromHook } = useCardData(obj?.scryfall_id ?? null);
@@ -29,7 +31,27 @@ const MiniCardPreview = ({ obj, uiScale, variant }: { obj: any; uiScale: number;
                 boxShadow: frameShadow
             }}
         >
-            {finalImgUrl ? (
+            {(!isFacedown && obj?.custom_card && obj.custom_card.source !== 'URLS') ? (
+                <PersonalizedCard
+                    card={
+                        {
+                            name: String(obj.custom_card.name || obj.name || ''),
+                            kind: (obj.custom_card.kind || 'Non-creature') as any,
+                            typeLine: String(obj.custom_card.type_line || ''),
+                            rulesText: String(obj.custom_card.rules_text || ''),
+                            power: obj.custom_card.power ? String(obj.custom_card.power) : '',
+                            toughness: obj.custom_card.toughness ? String(obj.custom_card.toughness) : '',
+                            manaCost: {
+                                generic: Number.isFinite(Number(obj.custom_card.mana_cost_generic)) ? Number(obj.custom_card.mana_cost_generic) : 0,
+                                symbols: (Array.isArray(obj.custom_card.mana_cost_symbols) ? obj.custom_card.mana_cost_symbols : []) as ManaSymbol[]
+                            },
+                            artUrl: String(obj.custom_card.art_url || obj.custom_card.front_image_url || ''),
+                            backUrl: String(obj.custom_card.back_image_url || '')
+                        } satisfies CardDraft
+                    }
+                    className="w-full h-full"
+                />
+            ) : finalImgUrl ? (
                 <img src={finalImgUrl} className="w-full h-full object-cover" draggable={false} />
             ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/50 text-xs">Sin imagen</div>
@@ -300,7 +322,35 @@ export const ContextMenu = ({
               <div className="flex-1 min-h-0 overflow-auto">
                 <div className="flex items-stretch gap-3 p-3">
                   <div className="shrink-0" style={{ width: `${previewWidth}px`, height: `${previewHeight}px` }}>
-                      {finalImgUrl ? (
+                      {(!isFacedown && obj?.custom_card && obj.custom_card.source !== 'URLS') ? (
+                          <div
+                              className="w-full h-full rounded-lg overflow-hidden border border-white/15 relative"
+                              style={{
+                                  boxShadow: `0 0 ${28 * uiScale}px ${palette.halo}, 0 0 ${70 * uiScale}px rgba(0,0,0,0.5)`,
+                              }}
+                          >
+                              <PersonalizedCard
+                                  card={
+                                      {
+                                          name: String(obj.custom_card.name || obj.name || ''),
+                                          kind: (obj.custom_card.kind || 'Non-creature') as any,
+                                          typeLine: String(obj.custom_card.type_line || ''),
+                                          rulesText: String(obj.custom_card.rules_text || ''),
+                                          power: obj.custom_card.power ? String(obj.custom_card.power) : '',
+                                          toughness: obj.custom_card.toughness ? String(obj.custom_card.toughness) : '',
+                                          manaCost: {
+                                              generic: Number.isFinite(Number(obj.custom_card.mana_cost_generic)) ? Number(obj.custom_card.mana_cost_generic) : 0,
+                                              symbols: (Array.isArray(obj.custom_card.mana_cost_symbols) ? obj.custom_card.mana_cost_symbols : []) as ManaSymbol[]
+                                          },
+                                          artUrl: String(obj.custom_card.art_url || obj.custom_card.front_image_url || ''),
+                                          backUrl: String(obj.custom_card.back_image_url || '')
+                                      } satisfies CardDraft
+                                  }
+                                  className="w-full h-full"
+                              />
+                              <CardCounters counters={obj?.counters} size="normal" className="scale-150 origin-top-left" />
+                          </div>
+                      ) : finalImgUrl ? (
                           <div
                               className="w-full h-full rounded-lg overflow-hidden border border-white/15 relative"
                               style={{

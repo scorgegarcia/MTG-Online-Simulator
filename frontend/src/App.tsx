@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import DeckBuilder from './pages/DeckBuilder';
 import GameTable from './pages/GameTable';
+import CardBuilder from './pages/CardBuilder';
+import CardManager from './pages/CardManager';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -23,6 +25,9 @@ function App() {
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/decks/:id" element={<PrivateRoute><DeckBuilder /></PrivateRoute>} />
+          <Route path="/card-builder" element={<PrivateRoute><CardBuilder /></PrivateRoute>} />
+          <Route path="/card-builder/:id" element={<PrivateRoute><CardBuilder /></PrivateRoute>} />
+          <Route path="/card-manager" element={<PrivateRoute><CardManager /></PrivateRoute>} />
           <Route path="/game" element={<Navigate to="/" />} />
           <Route path="/game/:id" element={<PrivateRoute><GameTable /></PrivateRoute>} />
         </Routes>

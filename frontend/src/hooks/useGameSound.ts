@@ -136,29 +136,42 @@ export const useGameSound = () => {
 
                     // Check card type
                     const obj = gameState.objects[objectId];
-                    if (obj && obj.scryfall_id) {
-                        const cacheKey = `card_data_v2_${obj.scryfall_id}`;
-                        const cached = localStorage.getItem(cacheKey);
-                        let typeLine = '';
-                        
-                        if (cached) {
-                            try {
-                                typeLine = JSON.parse(cached).type || '';
-                            } catch (e) {
-                                console.error('Error parsing cached card data', e);
+                    if (obj) {
+                        let typeLine = obj.type_line || '';
+                        const customKind = obj.custom_card?.kind;
+
+                        if (!typeLine && obj.scryfall_id) {
+                            const cacheKey = `card_data_v2_${obj.scryfall_id}`;
+                            const cached = localStorage.getItem(cacheKey);
+                            if (cached) {
+                                try {
+                                    typeLine = JSON.parse(cached).type || '';
+                                } catch (e) {
+                                    console.error('Error parsing cached card data', e);
+                                }
                             }
                         }
 
                         const lowerType = typeLine.toLowerCase();
-                        if (lowerType.includes('land')) {
+                        
+                        // Prioridad 1: Custom Kind
+                        if (customKind === 'Land') {
                             playSound('LAND');
-                        } else if (lowerType.includes('creature')) {
+                        } else if (customKind === 'Creature') {
+                            playSound('CREATURE');
+                        } else if (customKind === 'Non-creature') {
+                            playSound('NON_CREATURE');
+                        }
+                        // Prioridad 2: Type Line
+                        else if (lowerType.includes('land')) {
+                            playSound('LAND');
+                        } else if (lowerType.includes('creature') && !lowerType.includes('non-creature') && !lowerType.includes('noncreature')) {
                             playSound('CREATURE');
                         } else {
                             playSound('NON_CREATURE');
                         }
                     } else {
-                        // Token or unknown
+                        // Unknown
                         playSound('NON_CREATURE');
                     }
                 } else {

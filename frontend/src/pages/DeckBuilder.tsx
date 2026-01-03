@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -19,6 +19,9 @@ import {
   FileText,
 } from 'lucide-react';
 import ImportDeckModal from '../components/ImportDeckModal';
+import CustomCardsModal from '../components/CustomCardsModal';
+import PersonalizedCard from '../components/PersonalizedCard';
+import type { CardDraft, ManaSymbol } from '../components/cardBuilder/types';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -41,6 +44,8 @@ export default function DeckBuilder() {
 
   // Import State
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showCustomCardsModal, setShowCustomCardsModal] = useState(false);
+  const [customCardById, setCustomCardById] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!isNew && id) {
@@ -114,9 +119,46 @@ export default function DeckBuilder() {
       setDeck(res.data);
   };
 
-  const removeCard = async (scryfall_id: string, board?: 'main' | 'side' | 'commander') => {
+  const addCustomCard = async (customCard: any, board = 'main') => {
+      if(isNew) {
+          alert('Save deck first');
+          return;
+      }
+      await axios.post(`${API_BASE_URL}/decks/${id}/cards`, {
+          custom_card_id: customCard.id,
+          qty: 1,
+          board
+      });
+      // Refresh
+      const res = await axios.get(`${API_BASE_URL}/decks/${id}`);
+      setDeck(res.data);
+  };
+
+  const getDeckCardKey = (deckCard: any) => {
+      return deckCard?.is_custom ? deckCard?.custom_card_id : deckCard?.scryfall_id;
+  };
+
+  const incrementDeckCard = async (deckCard: any) => {
+      if (isNew) {
+          alert('Save deck first');
+          return;
+      }
+      const cardKey = getDeckCardKey(deckCard);
+      if (!cardKey) return;
+
+      await axios.post(`${API_BASE_URL}/decks/${id}/cards`, {
+          ...(deckCard?.is_custom ? { custom_card_id: cardKey } : { scryfall_id: cardKey }),
+          qty: 1,
+          board: deckCard.board
+      });
+
+      const res = await axios.get(`${API_BASE_URL}/decks/${id}`);
+      setDeck(res.data);
+  };
+
+  const removeCard = async (cardKey: string, board?: 'main' | 'side' | 'commander') => {
       const qs = board ? `?board=${board}` : '';
-      await axios.delete(`${API_BASE_URL}/decks/${id}/cards/${scryfall_id}${qs}`);
+      await axios.delete(`${API_BASE_URL}/decks/${id}/cards/${cardKey}${qs}`);
       const res = await axios.get(`${API_BASE_URL}/decks/${id}`);
       setDeck(res.data);
   };
@@ -139,6 +181,39 @@ export default function DeckBuilder() {
   const hoveredCard = hoveredCardId ? deck.cards?.find((c: any) => c.id === hoveredCardId) : null;
   const selectedCard = selectedCardId ? deck.cards?.find((c: any) => c.id === selectedCardId) : null;
   const activeCard = hoveredCard || selectedCard;
+
+  const activeCustomCardId = activeCard?.is_custom ? activeCard?.custom_card_id : null;
+  const activeCustomCard = activeCustomCardId ? customCardById[activeCustomCardId] : null;
+
+  useEffect(() => {
+    if (!activeCustomCardId) return;
+    if (customCardById[activeCustomCardId]) return;
+    axios
+      .get(`${API_BASE_URL}/custom-cards/${activeCustomCardId}`)
+      .then((res) => {
+        setCustomCardById((prev) => ({ ...prev, [activeCustomCardId]: res.data }));
+      })
+      .catch(() => {});
+  }, [activeCustomCardId, customCardById]);
+
+  const activeCustomDraft = useMemo((): CardDraft | null => {
+    if (!activeCustomCard) return null;
+    if (activeCustomCard.source !== 'EDITOR') return null;
+    return {
+      name: String(activeCustomCard.name || activeCard?.name || ''),
+      kind: (activeCustomCard.kind || 'Non-creature') as any,
+      typeLine: String(activeCustomCard.type_line || ''),
+      rulesText: String(activeCustomCard.rules_text || ''),
+      power: activeCustomCard.power ? String(activeCustomCard.power) : '',
+      toughness: activeCustomCard.toughness ? String(activeCustomCard.toughness) : '',
+      manaCost: {
+        generic: Number.isFinite(Number(activeCustomCard.mana_cost_generic)) ? Number(activeCustomCard.mana_cost_generic) : 0,
+        symbols: (Array.isArray(activeCustomCard.mana_cost_symbols) ? activeCustomCard.mana_cost_symbols : []) as ManaSymbol[],
+      },
+      artUrl: String(activeCustomCard.art_url || ''),
+      backUrl: String(activeCard?.back_image_url || activeCustomCard.back_image_url || ''),
+    } satisfies CardDraft;
+  }, [activeCard?.back_image_url, activeCard?.name, activeCustomCard]);
 
   // Helper component for card buttons (purely visual wrapper)
   const ActionButton = ({ onClick, color, label }: any) => (
@@ -287,14 +362,31 @@ export default function DeckBuilder() {
                 <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20">
                     <FileText size={18} /> <span className="font-serif">Import</span>
                 </button>
+                <button
+                  onClick={() => setShowCustomCardsModal(true)}
+                  className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
+                >
+                  <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
+                </button>
                 <button onClick={createDeck} className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-slate-950 px-6 py-2 rounded shadow-lg shadow-amber-900/20 font-bold transition-all hover:scale-105 active:scale-95">
                     <ScrollIcon size={18} /> <span className="font-serif">Create</span>
                 </button>
               </div>
             ) : (
-              <button onClick={saveDeck} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-500 text-slate-200 px-6 py-2 rounded font-bold transition-all">
-                <Save size={18} /> <span className="font-serif">Save</span>
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCustomCardsModal(true)}
+                  className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
+                >
+                  <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
+                </button>
+                <button
+                  onClick={saveDeck}
+                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-500 text-slate-200 px-6 py-2 rounded font-bold transition-all"
+                >
+                  <Save size={18} /> <span className="font-serif">Save</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -326,8 +418,8 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-amber-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); addCard({id: c.scryfall_id}, 'commander')}} className="p-1 hover:bg-amber-900/50 rounded text-amber-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); removeCard(c.scryfall_id, 'commander')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-amber-900/50 rounded text-amber-400"><Plus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'commander')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
                     </div>
                   </div>
                 ))}
@@ -362,8 +454,8 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-emerald-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); addCard({id: c.scryfall_id}, 'main')}} className="p-1 hover:bg-emerald-900/50 rounded text-emerald-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); removeCard(c.scryfall_id, 'main')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-emerald-900/50 rounded text-emerald-400"><Plus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'main')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
                     </div>
                   </div>
                 ))}
@@ -396,8 +488,8 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-indigo-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); addCard({id: c.scryfall_id}, 'side')}} className="p-1 hover:bg-indigo-900/50 rounded text-indigo-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); removeCard(c.scryfall_id, 'side')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-indigo-900/50 rounded text-indigo-400"><Plus size={14}/></button>
+                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'side')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
                     </div>
                   </div>
                 ))}
@@ -419,7 +511,30 @@ export default function DeckBuilder() {
                       {/* Magical Glow behind card */}
                       <div className="absolute inset-2 bg-indigo-500/20 blur-xl rounded-full animate-pulse"></div>
                       
-                      {typeof activeCard.image_url_small === 'string' ? (
+                      {activeCard.is_custom ? (
+                        activeCustomDraft ? (
+                          <div className="relative h-full py-1 z-10 transform hover:scale-105 transition-transform duration-300">
+                            <PersonalizedCard card={activeCustomDraft} className="h-full w-auto aspect-[2.5/3.5] shadow-2xl" />
+                          </div>
+                        ) : activeCustomCard?.source === 'URLS' && typeof activeCustomCard.front_image_url === 'string' ? (
+                          <img
+                            src={activeCustomCard.front_image_url}
+                            className="relative h-full rounded-xl border border-slate-700 shadow-2xl object-contain z-10 transform hover:scale-105 transition-transform duration-300"
+                            alt={activeCard.name}
+                          />
+                        ) : typeof activeCard.image_url_small === 'string' ? (
+                          <img
+                            src={activeCard.image_url_small.replace('small', 'normal')}
+                            className="relative h-full rounded-xl border border-slate-700 shadow-2xl object-contain z-10 transform hover:scale-105 transition-transform duration-300"
+                            alt={activeCard.name}
+                          />
+                        ) : (
+                          <div className="relative h-full w-[170px] bg-slate-900 border border-slate-700 flex flex-col items-center justify-center rounded-xl z-10">
+                            <Layers size={32} className="text-slate-700 mb-2" />
+                            <span className="text-slate-500 text-xs font-serif">No Image Manifested</span>
+                          </div>
+                        )
+                      ) : typeof activeCard.image_url_small === 'string' ? (
                           <img 
                               src={activeCard.image_url_small.replace('small', 'normal')} 
                               className="relative h-full rounded-xl border border-slate-700 shadow-2xl object-contain z-10 transform hover:scale-105 transition-transform duration-300" 
@@ -485,6 +600,15 @@ export default function DeckBuilder() {
       <ImportDeckModal 
         isOpen={showImportModal} 
         onClose={() => setShowImportModal(false)} 
+        onImported={(newDeck: any) => {
+          setDeck(newDeck);
+          navigate(`/decks/${newDeck.id}`);
+        }}
+      />
+      <CustomCardsModal 
+        isOpen={showCustomCardsModal} 
+        onClose={() => setShowCustomCardsModal(false)} 
+        onAddCard={addCustomCard}
       />
     </div>
   );

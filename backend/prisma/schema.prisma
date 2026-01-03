@@ -17,6 +17,7 @@ model User {
   
   refreshTokens RefreshToken[]
   decks         Deck[]
+  customCards   CustomCard[]
   hostedGames   Game[]         @relation("HostUser")
   gamePlayers   GamePlayer[]
   gameEvents    GameEvent[]
@@ -55,9 +56,11 @@ model Deck {
 model DeckCard {
   id              String  @id @default(uuid())
   deck_id         String
-  scryfall_id     String
+  scryfall_id     String?
+  custom_card_id  String?
+  is_custom       Boolean @default(false)
   qty             Int
-  board           String  @default("main") // main, side
+  board           String  @default("main") // main, side, commander
   
   // Cache fields
   name            String?
@@ -137,6 +140,40 @@ model GameEvent {
 enum GameOutcome {
   WON
   LOST
+}
+
+enum CustomCardSource {
+  EDITOR
+  URLS
+}
+
+model CustomCard {
+  id               String            @id @default(uuid())
+  user_id          String
+  source           CustomCardSource  @default(EDITOR)
+
+  name             String
+  kind             String
+
+  front_image_url  String?           @db.VarChar(512)
+  back_image_url   String?           @db.VarChar(512)
+  art_url          String?           @db.VarChar(512)
+
+  mana_cost_generic Int              @default(0)
+  mana_cost_symbols Json?
+
+  type_line        String?
+  rules_text       String?           @db.Text
+  power            String?
+  toughness        String?
+
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("custom_cards")
 }
 
 model GameResult {

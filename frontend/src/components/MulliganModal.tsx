@@ -3,9 +3,16 @@ import { useCardData } from '../hooks/useCardData';
 import { useGameSound } from '../hooks/useGameSound';
 import { RefreshCw, Check, Layers } from 'lucide-react';
 import clsx from 'clsx';
+import PersonalizedCard from './PersonalizedCard';
+import type { CardDraft, ManaSymbol } from './cardBuilder/types';
 
-const MULLIGAN_HOVER_SCALE_CLASS = 'group-hover:scale-[1.2]';
-const MULLIGAN_CARD_WIDTH = 'clamp(8rem, 12vw, 13rem)'; // Ajusta este valor para cambiar el tamaño de las cartas
+// --- CONFIGURACIÓN DE TAMAÑO Y APARIENCIA ---
+const MULLIGAN_CARD_WIDTH = 'clamp(8rem, 12vw, 13rem)'; // Ancho base de las cartas
+const MULLIGAN_HOVER_SCALE = '1.3';                    // Escala al pasar el ratón (1.2 = 120%)
+const MULLIGAN_ANIMATION_DELAY = 100;                  // Milisegundos entre cada carta al aparecer
+// --------------------------------------------
+
+const MULLIGAN_HOVER_SCALE_CLASS = `group-hover:scale-[${MULLIGAN_HOVER_SCALE}]`;
 
 interface MulliganModalProps {
     isOpen: boolean;
@@ -33,18 +40,40 @@ const MulliganCard = ({ obj }: { obj: any }) => {
     const { img, colors } = useCardData(obj.scryfall_id);
     const glowClass = getColorGlow(colors);
 
+    const custom = obj?.custom_card;
+    const customDraft = (custom && custom.source !== 'URLS')
+        ? ({
+              name: String(custom.name || obj.name || ''),
+              kind: (custom.kind || 'Non-creature') as any,
+              typeLine: String(custom.type_line || ''),
+              rulesText: String(custom.rules_text || ''),
+              power: custom.power ? String(custom.power) : '',
+              toughness: custom.toughness ? String(custom.toughness) : '',
+              manaCost: {
+                  generic: Number.isFinite(Number(custom.mana_cost_generic)) ? Number(custom.mana_cost_generic) : 0,
+                  symbols: (Array.isArray(custom.mana_cost_symbols) ? custom.mana_cost_symbols : []) as ManaSymbol[]
+              },
+              artUrl: String(custom.art_url || custom.front_image_url || ''),
+              backUrl: String(custom.back_image_url || '')
+          } satisfies CardDraft)
+        : null;
+
+    const finalImg = obj.scryfall_id ? img : (obj.image_url || img);
+
     return (
         <div 
             className={clsx(
                 "relative rounded-xl overflow-hidden transition-all duration-500 transform",
-                "bg-black",
+                "bg-black shadow-2xl",
                 "border-2",
                 glowClass
             )}
             style={{ width: MULLIGAN_CARD_WIDTH, aspectRatio: '2.5/3.5' }}
         >
-            {img ? (
-                <img src={img} alt="Card" className="w-full h-full object-cover" />
+            {customDraft ? (
+                <PersonalizedCard card={customDraft} className="w-full h-full" />
+            ) : finalImg ? (
+                <img src={finalImg} alt="Card" className="w-full h-full object-cover" />
             ) : (
                 <div className="flex items-center justify-center h-full text-slate-500 animate-pulse">
                     <Layers size={32} />
@@ -95,7 +124,7 @@ export const MulliganModal = ({ isOpen, hand, onMulligan, onKeep, initialMulliga
                         <div 
                             key={card.id} 
                             style={{ 
-                                animationDelay: `${idx * 100}ms`,
+                                animationDelay: `${idx * MULLIGAN_ANIMATION_DELAY}ms`,
                                 transform: `rotate(${(idx - (hand.length-1)/2) * 2}deg) translateY(${Math.abs(idx - (hand.length-1)/2) * 5}px)`
                             }}
                             className="group relative z-[1] hover:z-[50] animate-in slide-in-from-bottom-20 fade-in duration-700 fill-mode-backwards"

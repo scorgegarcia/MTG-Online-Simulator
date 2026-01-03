@@ -8,9 +8,10 @@ const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 interface ImportDeckModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onImported?: (newDeck: any) => void;
 }
 
-const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClose }) => {
+const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClose, onImported }) => {
   const navigate = useNavigate();
   const [importText, setImportText] = useState('');
   const [importMode, setImportMode] = useState<'arena' | 'flat'>('flat');
@@ -126,7 +127,13 @@ const ImportDeckModal: React.FC<ImportDeckModalProps> = ({ isOpen, onClose }) =>
               name: importName,
               cards: parsedCards
           });
-          navigate(`/decks/${res.data.id}`);
+          
+          if (onImported) {
+              onImported(res.data);
+          } else {
+              navigate(`/decks/${res.data.id}`);
+          }
+          
           setShowNameModal(false);
           setImportText('');
           setParsedCards([]);

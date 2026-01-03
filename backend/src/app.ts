@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import authRoutes from './routes/auth';
 import deckRoutes from './routes/deck';
 import gameRoutes from './routes/game';
+import customCardRoutes from './routes/customCard';
 import { setupSocket } from './socket';
 
 const app = express();
@@ -66,5 +67,6 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/decks', deckRoutes);
 app.use('/games', gameRoutes);
+app.use('/custom-cards', customCardRoutes);
 
 export { app, httpServer };

@@ -1,5 +1,7 @@
 import React, { useState, useLayoutEffect } from 'react';
 import { CardCounters } from './CardCounters';
+import PersonalizedCard from './PersonalizedCard';
+import type { CardDraft, ManaSymbol } from './cardBuilder/types';
 
 interface HoverOverlayProps {
     hoveredCard: {obj: any, rect: DOMRect, img: string, isPlayerPanel?: boolean} | null;
@@ -91,6 +93,26 @@ export const HoverOverlay = ({
     
     const { obj, img } = hoveredCard;
     const counters = obj?.counters ?? {};
+    const isFacedown = obj?.face_state === 'FACEDOWN';
+    const custom = obj?.custom_card;
+    
+    // Solo usamos PersonalizedCard si NO es una carta de URL simple
+    const customDraft = (custom && custom.source !== 'URLS')
+        ? ({
+              name: String(custom.name || obj.name || ''),
+              kind: (custom.kind || 'Non-creature') as any,
+              typeLine: String(custom.type_line || ''),
+              rulesText: String(custom.rules_text || ''),
+              power: custom.power ? String(custom.power) : '',
+              toughness: custom.toughness ? String(custom.toughness) : '',
+              manaCost: {
+                  generic: Number.isFinite(Number(custom.mana_cost_generic)) ? Number(custom.mana_cost_generic) : 0,
+                  symbols: (Array.isArray(custom.mana_cost_symbols) ? custom.mana_cost_symbols : []) as ManaSymbol[]
+              },
+              artUrl: String(custom.art_url || custom.front_image_url || ''),
+              backUrl: String(custom.back_image_url || '')
+          } satisfies CardDraft)
+        : null;
 
     return (
         <div 
@@ -250,7 +272,15 @@ export const HoverOverlay = ({
               window.dispatchEvent(new CustomEvent('ui:card-drag-end'));
           }}
         >
-            {img ? <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} /> : <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>}
+            {isFacedown && img ? (
+                <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} />
+            ) : !isFacedown && customDraft ? (
+                <PersonalizedCard card={customDraft} className="w-full h-full" />
+            ) : img ? (
+                <img src={img} className="w-full h-full object-cover rounded-xl" draggable={false} />
+            ) : (
+                <div className="text-xs p-1 bg-black text-white w-full h-full">{obj.scryfall_id}</div>
+            )}
             <CardCounters counters={counters} className="scale-150 origin-top-left" />
         </div>
     );
