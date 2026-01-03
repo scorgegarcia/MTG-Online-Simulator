@@ -1,4 +1,4 @@
-import { Sparkles, Wand2, X } from 'lucide-react';
+import { Sparkles, Wand2, X, Youtube } from 'lucide-react';
 import MagicParticles from './MagicParticles';
 
 type EntryModalProps = {
@@ -42,7 +42,7 @@ export default function EntryModal({ isOpen, onClose, onSelect }: EntryModalProp
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
             <button
               type="button"
               onClick={() => onSelect('editor')}
@@ -60,22 +60,36 @@ export default function EntryModal({ isOpen, onClose, onSelect }: EntryModalProp
               </div>
             </button>
 
-            <button
-              type="button"
-              onClick={() => onSelect('urls')}
-              className="group relative overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 to-slate-950 p-5 text-left transition-all hover:border-amber-500/40 hover:shadow-[0_0_35px_rgba(99,102,241,0.12)]"
-            >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 text-indigo-200 font-serif font-bold text-lg">
-                  <Sparkles size={18} />
-                  <span>Desde URLs</span>
+            <div className="relative group/url">
+              <button
+                type="button"
+                onClick={() => onSelect('urls')}
+                className="w-full group relative overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 to-slate-950 p-5 text-left transition-all hover:border-amber-500/40 hover:shadow-[0_0_35px_rgba(99,102,241,0.12)]"
+              >
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 text-indigo-200 font-serif font-bold text-lg">
+                    <Sparkles size={18} />
+                    <span>Desde URLs</span>
+                  </div>
+                  <div className="mt-2 text-sm text-slate-300">
+                    Proporciona imágenes (frente y reverso opcional), nombre y tipo de carta.
+                  </div>
                 </div>
-                <div className="mt-2 text-sm text-slate-300">
-                  Proporciona imágenes (frente y reverso opcional), nombre y tipo de carta.
-                </div>
+              </button>
+
+              <div className="absolute left-0 right-0 -bottom-10 flex justify-center">
+                <a
+                  href="https://www.youtube.com/watch?v=HmtAUtLakPw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-white border border-red-500/30 rounded-full transition-all duration-300 text-[10px] uppercase tracking-widest font-bold backdrop-blur-sm group/btn shadow-lg shadow-black/20"
+                >
+                  <Youtube size={12} className="group-hover/btn:scale-110 transition-transform" />
+                  <span>Tutorial URL</span>
+                </a>
               </div>
-            </button>
+            </div>
           </div>
 
           <div className="mt-5 text-xs text-slate-400 font-serif">
