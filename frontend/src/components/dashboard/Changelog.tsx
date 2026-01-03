@@ -4,7 +4,7 @@ import { ScrollText, ChevronDown, X } from 'lucide-react';
 import changelogContent from '../../assets/changelog.md?raw';
 
 export default function Changelog() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   let imageIndex = 0;
 
@@ -53,10 +53,10 @@ export default function Changelog() {
         </button>
 
         {/* Expandable Content */}
-        <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="p-6 pt-0">
             {/* Scroll Content Container */}
-            <div className="relative bg-[#1a1612] rounded-lg border border-[#3d2b1f] overflow-hidden shadow-inner max-h-[400px] flex flex-col">
+            <div className="relative bg-[#1a1612] rounded-lg border border-[#3d2b1f] overflow-hidden shadow-inner h-[800px] flex flex-col">
               {/* Scroll Background Texture */}
               <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/old-map.png')] pointer-events-none"></div>
               
@@ -71,6 +71,7 @@ export default function Changelog() {
                   prose-p:text-slate-300 prose-p:leading-relaxed
                   prose-li:text-slate-400 prose-strong:text-amber-500
                   prose-ul:list-disc prose-ul:pl-4
+                  [&_p]:flex [&_p]:flex-wrap [&_p]:gap-2 [&_p]:items-start
                 ">
                   <ReactMarkdown
                     components={{
@@ -82,7 +83,7 @@ export default function Changelog() {
 
                         if (isCover) {
                           return (
-                            <div className="my-4 -mx-6">
+                            <div className="w-full my-4 -mx-6">
                               <img
                                 {...props}
                                 draggable={false}
@@ -93,14 +94,17 @@ export default function Changelog() {
                         }
 
                         return (
-                          <div className="my-4">
+                          <div className="inline-block my-2">
                             <img
                               {...props}
                               draggable={false}
                               className="w-48 h-auto rounded-lg border-2 border-amber-900/50 cursor-zoom-in hover:border-amber-500/50 transition-all shadow-lg hover:scale-[1.02]"
-                              onClick={() => setZoomedImage(props.src || null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setZoomedImage(props.src || null);
+                              }}
                             />
-                            {props.alt && <p className="text-[10px] text-slate-500 mt-1 italic">{props.alt}</p>}
+                            {props.alt && <p className="text-[10px] text-slate-500 mt-1 italic block">{props.alt}</p>}
                           </div>
                         );
                       },

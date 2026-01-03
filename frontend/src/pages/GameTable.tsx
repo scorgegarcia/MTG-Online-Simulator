@@ -48,6 +48,8 @@ import { useGameSound } from '../hooks/useGameSound';
 
 import { MagicArrows } from '../components/battlefield/MagicArrows';
 
+import { UserProfileModal } from '../components/UserProfileModal';
+
 export default function GameTable() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -131,6 +133,8 @@ export default function GameTable() {
   const [viewLibraryModalOpen, setViewLibraryModalOpen] = useState(false);
   const [lifeModalOpen, setLifeModalOpen] = useState(false);
   const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
+  const [userProfileModalOpen, setUserProfileModalOpen] = useState(false);
+  const [userProfileModalPlayer, setUserProfileModalPlayer] = useState<any>(null);
   const [isThinkingCooldown, setIsThinkingCooldown] = useState(false);
   const [isPassCooldown, setIsPassCooldown] = useState(false);
   const [showCommanderDamage, setShowCommanderDamage] = useState(false);
@@ -1278,6 +1282,12 @@ export default function GameTable() {
           </p>
       </ConfirmationModal>
 
+      <UserProfileModal 
+          isOpen={userProfileModalOpen}
+          onClose={() => setUserProfileModalOpen(false)}
+          player={userProfileModalPlayer}
+      />
+
       <MulliganModal 
           isOpen={showMulliganModal}
           hand={gameState?.zoneIndex?.[mySeat]?.HAND?.map((id: string) => gameState.objects[id]) || []}
@@ -1301,8 +1311,14 @@ export default function GameTable() {
                             : "bg-slate-800/50 border-slate-700"
                     )}
                   >
-                      <div className="flex items-center gap-2 mb-1">
-                          <div className="w-6 h-6 rounded-full border border-slate-700 overflow-hidden bg-slate-900 flex-shrink-0">
+                      <div 
+                        className="flex items-center gap-2 mb-1 cursor-pointer hover:opacity-80 transition-opacity group/user"
+                        onClick={() => {
+                            setUserProfileModalPlayer(p);
+                            setUserProfileModalOpen(true);
+                        }}
+                      >
+                          <div className="w-6 h-6 rounded-full border border-slate-700 overflow-hidden bg-slate-900 flex-shrink-0 group-hover/user:border-indigo-500/50 transition-colors">
                               {p.avatar_url ? (
                                   <img src={p.avatar_url} alt={p.username} className="w-full h-full object-cover" />
                               ) : (
@@ -1311,7 +1327,7 @@ export default function GameTable() {
                                   </div>
                               )}
                           </div>
-                          <span className={clsx("font-serif font-bold text-sm tracking-wide truncate max-w-[80px]", p.seat === mySeat ? "text-indigo-200" : "text-slate-400")}>
+                          <span className={clsx("font-serif font-bold text-sm tracking-wide truncate max-w-[80px] group-hover/user:text-white transition-colors", p.seat === mySeat ? "text-indigo-200" : "text-slate-400")}>
                             {p.username}
                           </span>
                       </div>
