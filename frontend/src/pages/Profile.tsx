@@ -87,7 +87,8 @@ export default function Profile() {
         // Sort games by created_at descending
         nextGames.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setGames(nextGames);
-        setDeckCount(Array.isArray(decksRes.data) ? decksRes.data.length : 0);
+        const deckCount = Array.isArray(decksRes.data) ? decksRes.data.length : (decksRes.data.totalDecks || 0);
+        setDeckCount(deckCount);
         setOutcomesByGameId(() => {
           const next: Record<string, 'WON' | 'LOST' | undefined> = {};
           for (const g of nextGames) {

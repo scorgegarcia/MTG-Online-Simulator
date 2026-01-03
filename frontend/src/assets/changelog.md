@@ -16,6 +16,11 @@
 - **Mejorado el Drag and Drop**: Se mejoró el drag and drop para que sea más intuitivo y ahora se pueden acomodar las cartas en el campo de batalla de manera más natural, permitiendo reacomodarlas dentro de la misma zona.
 
 ![](https://i.ibb.co/MDpBPkqd/image.png)
+
+### Bug/Fix
+- **Fix de Deck Count**: Revolviamos Arrays con Objetos y... sorpresa, no existe funcion map para objetos, solo para arrays. Se corrigió el conteo de decks en el dashboard, en profile, y ahora muestra el número correcto de decks que tiene el usuario y los carga correctamente al manifestar una batalla.
+
+
 ## [25.12.30]
 ![](https://i.ibb.co/NnW4yKDL/image.png)
 ### New Features

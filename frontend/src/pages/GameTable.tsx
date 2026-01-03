@@ -579,7 +579,11 @@ export default function GameTable() {
   useEffect(() => {
     console.log('[GameTable] mount', { id });
     fetchGameInfo().then(() => console.log('[GameTable] gameInfo fetched')).catch(() => console.log('[GameTable] gameInfo fetch failed'));
-    axios.get(`${API_BASE_URL}/decks`).then(res => { setMyDecks(res.data); console.log('[GameTable] decks fetched', { count: res.data.length }); });
+    axios.get(`${API_BASE_URL}/decks`).then(res => { 
+      const decks = Array.isArray(res.data) ? res.data : (res.data.decks || []);
+      setMyDecks(decks); 
+      console.log('[GameTable] decks fetched', { count: decks.length }); 
+    });
   }, [id]);
 
   // Socket Listeners
