@@ -5,12 +5,14 @@ interface AutoStackingRowProps {
     objects: any[];
     cardProps: any;
     className?: string;
+    onCardDrop?: (e: React.DragEvent, targetId: string, side: 'left' | 'right') => void;
 }
 
 export const AutoStackingRow: React.FC<AutoStackingRowProps> = ({
     objects,
     cardProps,
-    className
+    className,
+    onCardDrop
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [overlap, setOverlap] = useState(0);
@@ -63,6 +65,18 @@ export const AutoStackingRow: React.FC<AutoStackingRowProps> = ({
         }
     };
 
+    const handleDropOnCard = (e: React.DragEvent, targetId: string) => {
+        if (!onCardDrop) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const side = x < rect.width / 2 ? 'left' : 'right';
+        
+        onCardDrop(e, targetId, side);
+    };
+
     // Deep check for objects changes (ids, zone changes, etc)
     const objectsHash = objects.map(o => `${o.id}-${o.zone}-${o.tapped}`).join('|');
 
@@ -87,12 +101,26 @@ export const AutoStackingRow: React.FC<AutoStackingRowProps> = ({
             window.removeEventListener('resize', updateOverlap);
             if (resizeObserver) resizeObserver.disconnect();
         };
-    }, [objects.length, cardProps.cardScale, objectsHash]); // Recalculate when objects change deeply
+    }, [objects.length, cardProps.cardScale, objectsHash]);
 
     return (
         <div 
             ref={containerRef} 
             className={`flex items-center h-full w-full px-2 overflow-hidden ${className || ''}`}
+            onDragOver={(e) => {
+                if (onCardDrop) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                }
+            }}
+            onDrop={(e) => {
+                if (onCardDrop) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Drop at the end if not dropped on a specific card
+                    onCardDrop(e, '', 'right');
+                }
+            }}
         >
             {objects.map((obj, index) => (
                 <div 
@@ -103,6 +131,13 @@ export const AutoStackingRow: React.FC<AutoStackingRowProps> = ({
                         transition: 'margin-left 0.3s ease'
                     }}
                     className="flex-shrink-0 h-full flex items-center"
+                    onDragOver={(e) => {
+                        if (onCardDrop) {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                        }
+                    }}
+                    onDrop={(e) => handleDropOnCard(e, obj.id)}
                 >
                     <Card
                         obj={obj}

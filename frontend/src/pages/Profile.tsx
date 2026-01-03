@@ -14,7 +14,8 @@ import {
   Camera,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
@@ -48,6 +49,10 @@ export default function Profile() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newAvatarUrl, setNewAvatarUrl] = useState(user?.avatar_url || '');
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+
+  const [isPlaymatModalOpen, setIsPlaymatModalOpen] = useState(false);
+  const [newPlaymatUrl, setNewPlaymatUrl] = useState(user?.playmat_url || '');
+  const [isUpdatingPlaymat, setIsUpdatingPlaymat] = useState(false);
 
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit' }), []);
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }), []);
@@ -167,6 +172,19 @@ export default function Profile() {
     }
   };
 
+  const handleUpdatePlaymat = async () => {
+    setIsUpdatingPlaymat(true);
+    try {
+      const res = await axios.put(`${API_BASE_URL}/auth/playmat`, { playmat_url: newPlaymatUrl || null });
+      updateUser(res.data.user);
+      setIsPlaymatModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update playmat:', error);
+    } finally {
+      setIsUpdatingPlaymat(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 relative overflow-hidden">
       
@@ -223,6 +241,42 @@ export default function Profile() {
                 </div>
                 <h1 className="text-2xl font-serif font-bold text-slate-100 mb-1">{user?.username}</h1>
                 <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Master Summoner</p>
+              </div>
+            </div>
+
+            {/* Playmat Section */}
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-serif font-bold text-slate-300 uppercase tracking-widest">Your Playmat</h2>
+                  <button 
+                    onClick={() => {
+                      playSelect();
+                      setIsPlaymatModalOpen(true);
+                    }}
+                    onMouseEnter={playHover}
+                    className="p-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-lg transition-all border border-indigo-500/30"
+                    title="Change Playmat"
+                  >
+                    <ImageIcon size={18} />
+                  </button>
+                </div>
+
+                <div className="aspect-[16/9] w-full bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner group/playmat relative">
+                  {user?.playmat_url ? (
+                    <img src={user.playmat_url} alt="Playmat Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover/playmat:scale-110" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                      <ImageIcon size={32} className="opacity-20" />
+                      <span className="text-[10px] uppercase tracking-tighter opacity-40 font-bold">No Playmat Selected</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover/playmat:opacity-100 transition-opacity flex items-end p-3">
+                    <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">Click icon to update</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -496,6 +550,86 @@ export default function Profile() {
                 className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-lg transition-all shadow-lg shadow-amber-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUpdatingAvatar ? 'Aplicando...' : 'Aplicar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Playmat Modal */}
+      {isPlaymatModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsPlaymatModalOpen(false)}
+          ></div>
+          
+          <div className="relative bg-slate-900 border-2 border-indigo-500/50 rounded-2xl w-full max-w-lg overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)] animate-in fade-in zoom-in duration-300">
+            <div className="bg-gradient-to-r from-indigo-900/40 to-slate-900 p-6 border-b border-indigo-500/20 flex justify-between items-center">
+              <h3 className="text-xl font-serif font-bold text-indigo-400 flex items-center gap-2">
+                <ImageIcon size={24} />
+                Conjure Playmat
+              </h3>
+              <button 
+                onClick={() => setIsPlaymatModalOpen(false)}
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Battleground Image URL
+                </label>
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={newPlaymatUrl}
+                    onChange={(e) => setNewPlaymatUrl(e.target.value)}
+                    placeholder="https://example.com/playmat.jpg"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500/50 rounded-lg px-4 py-3 text-slate-200 outline-none transition-all placeholder:text-slate-700 font-mono text-sm"
+                  />
+                  <div className="absolute inset-0 rounded-lg bg-indigo-500/5 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity"></div>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">
+                  Choose an image that will define your territory in the battlefield. 16:9 ratio recommended.
+                </p>
+              </div>
+
+              {newPlaymatUrl && (
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block text-center">
+                    Glimpse of your Realm
+                  </label>
+                  <div className="aspect-[16/9] w-full mx-auto rounded-xl border border-indigo-500/30 overflow-hidden bg-slate-950 shadow-2xl relative group/preview">
+                    <img 
+                      src={newPlaymatUrl} 
+                      alt="Playmat Preview" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/preview:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://www.transparenttextures.com/patterns/dark-matter.png';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-indigo-500/10 mix-blend-overlay"></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-900/80 p-6 border-t border-slate-800 flex gap-4">
+              <button 
+                onClick={() => setIsPlaymatModalOpen(false)}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition-all border border-slate-700"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleUpdatePlaymat}
+                disabled={isUpdatingPlaymat}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
+              >
+                {isUpdatingPlaymat ? 'Conjuring...' : 'Set Playmat'}
               </button>
             </div>
           </div>

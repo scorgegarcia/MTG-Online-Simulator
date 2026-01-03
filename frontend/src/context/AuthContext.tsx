@@ -8,6 +8,7 @@ interface User {
   username: string;
   email: string;
   avatar_url?: string | null;
+  playmat_url?: string | null;
 }
 
 interface AuthContextType {

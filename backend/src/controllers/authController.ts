@@ -65,7 +65,7 @@ export const login = async (req: Request, res: Response) => {
     // Explicitly send user data and a flag that cookie was set
     res.json({ 
         accessToken, 
-        user: { id: user.id, username: user.username, email: user.email, avatar_url: user.avatar_url },
+        user: { id: user.id, username: user.username, email: user.email, avatar_url: user.avatar_url, playmat_url: user.playmat_url },
         cookieSet: true 
     });
   } catch (error) {
@@ -153,7 +153,7 @@ export const logout = async (req: Request, res: Response) => {
 export const me = async (req: AuthRequest, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: { id: true, username: true, email: true, avatar_url: true },
+    select: { id: true, username: true, email: true, avatar_url: true, playmat_url: true },
   });
   res.json({ user });
 };
@@ -164,7 +164,21 @@ export const updateAvatar = async (req: AuthRequest, res: Response) => {
     const user = await prisma.user.update({
       where: { id: req.userId },
       data: { avatar_url },
-      select: { id: true, username: true, email: true, avatar_url: true },
+      select: { id: true, username: true, email: true, avatar_url: true, playmat_url: true },
+    });
+    res.json({ user });
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid URL or server error' });
+  }
+};
+
+export const updatePlaymat = async (req: AuthRequest, res: Response) => {
+  try {
+    const { playmat_url } = z.object({ playmat_url: z.string().url().nullable() }).parse(req.body);
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: { playmat_url },
+      select: { id: true, username: true, email: true, avatar_url: true, playmat_url: true },
     });
     res.json({ user });
   } catch (error) {

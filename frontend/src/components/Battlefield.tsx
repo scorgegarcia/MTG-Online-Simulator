@@ -23,6 +23,7 @@ interface BattlefieldSharedProps {
     thinkingSeats?: number[];
     passingSeats?: number[];
     showCommanderDamage?: boolean;
+    showOriginalPlaymats?: boolean;
 }
 
 export const MyBattlefield = memo(({
@@ -42,7 +43,8 @@ export const MyBattlefield = memo(({
     setEnchantSelection,
     thinkingSeats,
     passingSeats,
-    showCommanderDamage
+    showCommanderDamage,
+    showOriginalPlaymats
 }: BattlefieldSharedProps & { seat: number }) => {
     const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -81,6 +83,27 @@ export const MyBattlefield = memo(({
     const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDraggingOver(false);
+    };
+
+    const handleReorder = (cardId: string, targetId?: string, side?: 'left' | 'right') => {
+        const battlefieldIds = gameState.zoneIndex[seat]?.['BATTLEFIELD'] || [];
+        let targetIndex = battlefieldIds.length;
+        
+        if (targetId) {
+            targetIndex = battlefieldIds.indexOf(targetId);
+            // If dropping on the right side of a card, we want to insert AFTER it
+            if (side === 'right') {
+                targetIndex++;
+            }
+        }
+        
+        sendAction('MOVE', { 
+            objectId: cardId, 
+            fromZone: 'BATTLEFIELD', 
+            toZone: 'BATTLEFIELD', 
+            toOwner: mySeat,
+            index: targetIndex 
+        });
     };
     
     const cardProps = { mySeat, cardScale, hoverBlockedRef, isDraggingRef, setHoveredCard, menuOpen, setMenuOpen, sendAction, inBattlefield: true, attachmentsByHost, equipSelection, setEquipSelection, enchantSelection, setEnchantSelection };
@@ -121,6 +144,8 @@ export const MyBattlefield = memo(({
             others={others}
             lands={lands}
             cardProps={cardProps}
+            showOriginalPlaymat={showOriginalPlaymats}
+            onReorder={handleReorder}
           />
         </div>
     );
@@ -143,7 +168,8 @@ export const OpponentBattlefield = memo(({
     setEnchantSelection,
     thinkingSeats,
     passingSeats,
-    showCommanderDamage
+    showCommanderDamage,
+    showOriginalPlaymats
 }: { player: any } & BattlefieldSharedProps) => {
     const battlefieldIds = gameState.zoneIndex[player.seat]?.['BATTLEFIELD'] || [];
     const battlefield = battlefieldIds.map((oid: string) => gameState.objects[oid]).filter(Boolean);
@@ -238,6 +264,8 @@ export const OpponentBattlefield = memo(({
                 others={others}
                 lands={lands}
                 cardProps={cardProps}
+                opponentPlaymatUrl={player.playmat_url}
+                showOriginalPlaymat={showOriginalPlaymats}
             />
 
             {viewZone && (

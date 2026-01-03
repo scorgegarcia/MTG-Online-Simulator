@@ -344,6 +344,11 @@ export default function GameTable() {
       return val < 10 ? 300 : val;
   });
   const [uiScale, setUiScale] = useState(() => parseFloat(localStorage.getItem('setting_uiScale') || '1'));
+  const [showOriginalPlaymats, setShowOriginalPlaymats] = useState(() => localStorage.getItem('setting_showOriginalPlaymats') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('setting_showOriginalPlaymats', showOriginalPlaymats.toString());
+  }, [showOriginalPlaymats]);
 
   // Hotkeys state
   const [hotkeys, setHotkeys] = useState(() => {
@@ -794,8 +799,9 @@ export default function GameTable() {
       setEnchantSelection,
       thinkingSeats,
       passingSeats,
-      showCommanderDamage
-  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection, enchantSelection, showCommanderDamage]);
+      showCommanderDamage,
+      showOriginalPlaymats
+  }), [mySeat, cardScale, menuOpen, sendAction, thinkingSeats, passingSeats, equipSelection, enchantSelection, showCommanderDamage, showOriginalPlaymats]);
 
   const selectDeck = async () => {
       await axios.post(`${API_BASE_URL}/games/${id}/select-deck`, { deckId: selectedDeck });
@@ -1033,6 +1039,7 @@ export default function GameTable() {
           hoverScale={hoverScale} setHoverScale={setHoverScale}
           uiScale={uiScale} setUiScale={setUiScale}
           hotkeys={hotkeys} setHotkeys={setHotkeys}
+          showOriginalPlaymats={showOriginalPlaymats} setShowOriginalPlaymats={setShowOriginalPlaymats}
       />
       {/* Damage Vignette */}
       <div 

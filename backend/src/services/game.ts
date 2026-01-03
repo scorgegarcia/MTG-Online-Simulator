@@ -45,6 +45,7 @@ interface PlayerState {
   userId: string;
   username: string;
   avatar_url?: string | null;
+  playmat_url?: string | null;
   life: number;
   counters: Record<string, number>;
   commanderDamageReceived: Record<number, number>; // sourceSeat -> damage
@@ -196,6 +197,7 @@ export const startGame = async (gameId: string, initialLifeParam?: number) => {
       userId: p.user_id,
       username: p.user.username,
       avatar_url: p.user.avatar_url,
+      playmat_url: p.user.playmat_url,
       life: initialLife,
       counters: {},
       commanderDamageReceived: {},
@@ -433,6 +435,7 @@ export const restartGame = async (gameId: string) => {
       userId: p.user_id,
       username: p.user.username,
       avatar_url: p.user.avatar_url,
+      playmat_url: p.user.playmat_url,
       life: initialLife,
       counters: {},
       commanderDamageReceived: {},
@@ -814,6 +817,8 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
             });
         }
 
+        const oldList = state.zoneIndex[oldControllerSeat]?.[oldZone] || [];
+        const oldIndex = oldList.indexOf(objectId);
         removeFromZoneIndex(obj.controller_seat, obj.zone, objectId);
 
         // Update object
@@ -832,14 +837,19 @@ const applyAction = (state: GameState, action: any, userId: string): GameState =
         // Add to new
         const destSeat = obj.controller_seat;
         if (!state.zoneIndex[destSeat][toZone]) state.zoneIndex[destSeat][toZone] = [];
-        const destList = state.zoneIndex[destSeat][toZone];
+        const newDestList = state.zoneIndex[destSeat][toZone];
 
-        if (typeof index === 'number' && index >= 0 && index <= destList.length) {
-             destList.splice(index, 0, objectId);
+        let targetIndex = index;
+        if (typeof targetIndex === 'number') {
+            if (targetIndex >= 0 && targetIndex <= newDestList.length) {
+                newDestList.splice(targetIndex, 0, objectId);
+            } else {
+                newDestList.push(objectId);
+            }
         } else if (toZone === 'LIBRARY' && position === 'top') {
-            destList.unshift(objectId);
+            newDestList.unshift(objectId);
         } else {
-            destList.push(objectId);
+            newDestList.push(objectId);
         }
 
         if (shouldRemoveFromLibraryReveal) {

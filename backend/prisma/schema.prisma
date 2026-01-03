@@ -12,7 +12,8 @@ model User {
   email         String         @unique
   username      String         @unique
   password_hash String
-  avatar_url    String?
+  avatar_url    String?        @db.VarChar(512)
+  playmat_url   String?        @db.VarChar(512)
   created_at    DateTime       @default(now())
   
   refreshTokens RefreshToken[]
