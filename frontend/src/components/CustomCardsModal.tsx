@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MagicParticles from './cardBuilder/MagicParticles';
 import PersonalizedCard from './PersonalizedCard';
 import type { CardDraft, ManaSymbol } from './cardBuilder/types';
+import selectSfx from '../assets/sfx/select.mp3';
+import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 const DEFAULT_BACK_URL = 'https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/f/f8/Magic_card_back.jpg';
@@ -32,12 +34,65 @@ type Props = {
   onAddCard: (card: CustomCard, board: 'main' | 'side' | 'commander') => void;
 };
 
+type Toast = {
+  id: number;
+  message: string;
+};
+
 export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) {
   const [cards, setCards] = useState<CustomCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showBack, setShowBack] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  const selectAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(selectSfx);
+    audio.volume = 0.45;
+    selectAudioRef.current = audio;
+
+    const hoverAudio = new Audio(uiHoverSfx);
+    hoverAudio.volume = 0.35;
+    hoverAudioRef.current = hoverAudio;
+
+    return () => { 
+      selectAudioRef.current = null; 
+      hoverAudioRef.current = null;
+    };
+  }, []);
+
+  const playSelect = useCallback(() => {
+    if (selectAudioRef.current) {
+      selectAudioRef.current.currentTime = 0;
+      selectAudioRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const playHover = useCallback(() => {
+    if (hoverAudioRef.current) {
+      hoverAudioRef.current.currentTime = 0;
+      hoverAudioRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const addToast = useCallback((message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 500);
+  }, []);
+
+  const handleAddCardWithFeedback = (card: CustomCard, board: 'main' | 'side' | 'commander') => {
+    onAddCard(card, board);
+    playSelect();
+    const boardNames = { main: 'Main', side: 'Side', commander: 'Commander' };
+    addToast(`Añadida al ${boardNames[board]}`);
+  };
 
   const selected = useMemo(() => cards.find((c) => c.id === selectedId) || null, [cards, selectedId]);
 
@@ -106,7 +161,11 @@ export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) 
 
           <button
             type="button"
-            onClick={onClose}
+            onMouseEnter={playHover}
+            onClick={() => {
+              playSelect();
+              onClose();
+            }}
             className="text-slate-400 hover:text-slate-200 transition-colors rounded-lg p-2 hover:bg-slate-900/50 border border-transparent hover:border-slate-700/60"
           >
             <X size={20} />
@@ -162,36 +221,75 @@ export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) 
                         }
                       : null;
                   return (
-                    <button
+                    <div
                       key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedId(c.id);
-                        setShowBack(false);
-                      }}
-                      className={`group text-left rounded-xl border transition-all overflow-hidden bg-slate-950/70 hover:bg-slate-900/60 ${
+                      className={`group flex flex-col rounded-xl border transition-all overflow-hidden bg-slate-950/70 hover:bg-slate-900/60 ${
                         isSelected ? 'border-amber-500/50 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]' : 'border-slate-800/70 hover:border-amber-500/30'
                       }`}
                     >
-                      <div className="relative">
-                        <div className="p-2">
-                          <div className="relative">
-                            <div className="absolute -inset-3 bg-gradient-to-br from-fuchsia-500/10 via-indigo-500/10 to-amber-500/10 blur-xl opacity-0 group-hover:opacity-80 transition-opacity" />
-                            {draft ? (
-                              <PersonalizedCard card={draft} className="w-full" />
-                            ) : c.front_image_url ? (
-                              <div className="w-full aspect-[2.5/3.5] rounded-[16px] overflow-hidden border border-slate-700 bg-black">
-                                <img src={c.front_image_url} className="w-full h-full object-contain" draggable={false} />
-                              </div>
-                            ) : (
-                              <div className="w-full aspect-[2.5/3.5] rounded-[16px] grid place-items-center border border-slate-700 bg-slate-900 text-slate-500 font-serif italic">
-                                Sin imagen
-                              </div>
-                            )}
-                          </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(c.id);
+                          setShowBack(false);
+                        }}
+                        className="p-2 text-left relative"
+                      >
+                        <div className="relative">
+                          <div className="absolute -inset-3 bg-gradient-to-br from-fuchsia-500/10 via-indigo-500/10 to-amber-500/10 blur-xl opacity-0 group-hover:opacity-80 transition-opacity" />
+                          {draft ? (
+                            <PersonalizedCard card={draft} className="w-full" />
+                          ) : c.front_image_url ? (
+                            <div className="w-full aspect-[2.5/3.5] rounded-[16px] overflow-hidden border border-slate-700 bg-black">
+                              <img src={c.front_image_url} className="w-full h-full object-contain" draggable={false} />
+                            </div>
+                          ) : (
+                            <div className="w-full aspect-[2.5/3.5] rounded-[16px] grid place-items-center border border-slate-700 bg-slate-900 text-slate-500 font-serif italic">
+                              Sin imagen
+                            </div>
+                          )}
                         </div>
+                      </button>
+
+                      <div className="flex border-t border-slate-800/50 bg-black/20">
+                        <button
+                          type="button"
+                          onMouseEnter={playHover}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddCardWithFeedback(c, 'main');
+                          }}
+                          className="flex-1 py-1.5 text-[10px] font-bold text-emerald-500 hover:bg-emerald-500/10 transition-colors border-r border-slate-800/50"
+                          title="Añadir al Main"
+                        >
+                          Main
+                        </button>
+                        <button
+                          type="button"
+                          onMouseEnter={playHover}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddCardWithFeedback(c, 'side');
+                          }}
+                          className="flex-1 py-1.5 text-[10px] font-bold text-indigo-400 hover:bg-indigo-500/10 transition-colors border-r border-slate-800/50"
+                          title="Añadir al Side"
+                        >
+                          Side
+                        </button>
+                        <button
+                          type="button"
+                          onMouseEnter={playHover}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddCardWithFeedback(c, 'commander');
+                          }}
+                          className="flex-1 py-1.5 text-[10px] font-bold text-amber-500 hover:bg-amber-500/10 transition-colors"
+                          title="Añadir como Comandante"
+                        >
+                          Cmd
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -206,7 +304,11 @@ export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) 
                   {selected.back_image_url && (
                     <button
                       type="button"
-                      onClick={() => setShowBack((v) => !v)}
+                      onMouseEnter={playHover}
+                      onClick={() => {
+                        playSelect();
+                        setShowBack((v) => !v);
+                      }}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700/60 text-slate-200 bg-slate-900/40 hover:bg-slate-800/60 hover:border-amber-500/40 transition-all"
                     >
                       {showBack ? 'Ver frente' : 'Ver reverso'}
@@ -246,28 +348,6 @@ export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) 
                         <PersonalizedCard card={selectedDraft} showBack={showBack} />
                       </div>
                     ) : null}
-                  </div>
-                  
-                  {/* Quick Actions overlay */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-                    <button 
-                      onClick={() => onAddCard(selected, 'main')}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold rounded-lg shadow-lg transition-all hover:scale-105"
-                    >
-                      + Main
-                    </button>
-                    <button 
-                      onClick={() => onAddCard(selected, 'side')}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-xs font-bold rounded-lg shadow-lg transition-all hover:scale-105"
-                    >
-                      + Side
-                    </button>
-                    <button 
-                      onClick={() => onAddCard(selected, 'commander')}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-lg transition-all hover:scale-105"
-                    >
-                      + Cmd
-                    </button>
                   </div>
                 </div>
 
@@ -311,6 +391,19 @@ export default function CustomCardsModal({ isOpen, onClose, onAddCard }: Props) 
             )}
           </div>
         </div>
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div 
+            key={toast.id}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900/90 border border-emerald-500/30 text-emerald-400 rounded-full shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-300"
+          >
+            <CheckCircle2 size={16} />
+            <span className="text-xs font-bold tracking-wide">{toast.message}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

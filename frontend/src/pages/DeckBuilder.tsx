@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -22,6 +22,9 @@ import ImportDeckModal from '../components/ImportDeckModal';
 import CustomCardsModal from '../components/CustomCardsModal';
 import PersonalizedCard from '../components/PersonalizedCard';
 import type { CardDraft, ManaSymbol } from '../components/cardBuilder/types';
+import selectSfx from '../assets/sfx/select.mp3';
+import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
+import { useGameSound } from '../hooks/useGameSound';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -46,6 +49,40 @@ export default function DeckBuilder() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCustomCardsModal, setShowCustomCardsModal] = useState(false);
   const [customCardById, setCustomCardById] = useState<Record<string, any>>({});
+
+  const { playUiSound } = useGameSound();
+
+  const selectAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(selectSfx);
+    audio.volume = 0.45;
+    selectAudioRef.current = audio;
+
+    const hoverAudio = new Audio(uiHoverSfx);
+    hoverAudio.volume = 0.35;
+    hoverAudioRef.current = hoverAudio;
+
+    return () => { 
+      selectAudioRef.current = null; 
+      hoverAudioRef.current = null;
+    };
+  }, []);
+
+  const playSelect = useCallback(() => {
+    if (selectAudioRef.current) {
+      selectAudioRef.current.currentTime = 0;
+      selectAudioRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  const playHover = useCallback(() => {
+    if (hoverAudioRef.current) {
+      hoverAudioRef.current.currentTime = 0;
+      hoverAudioRef.current.play().catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (!isNew && id) {
@@ -218,7 +255,12 @@ export default function DeckBuilder() {
   // Helper component for card buttons (purely visual wrapper)
   const ActionButton = ({ onClick, color, label }: any) => (
     <button 
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onMouseEnter={playHover}
+      onClick={(e) => {
+        e.stopPropagation();
+        playSelect();
+        onClick();
+      }}
       className={`px-2 py-1 text-[10px] font-bold rounded border uppercase tracking-wider transition-all
         ${color === 'green' 
           ? 'bg-emerald-950 border-emerald-700 text-emerald-400 hover:bg-emerald-900 hover:border-emerald-500' 
@@ -304,7 +346,11 @@ export default function DeckBuilder() {
               </div>
 
               <button 
-                onClick={() => fetchVersions(card)}
+                onMouseEnter={playHover}
+                onClick={() => {
+                  playSelect();
+                  fetchVersions(card);
+                }}
                 className="w-full mt-3 flex items-center justify-between text-[10px] bg-slate-900/50 hover:bg-slate-900 p-1.5 rounded border border-transparent hover:border-slate-700 text-slate-400 hover:text-amber-400 transition-all uppercase tracking-wider"
               >
                 <span>{viewingVersionsFor === card.id ? 'Hide Prints' : 'Show Prints / Versions'}</span>
@@ -329,9 +375,36 @@ export default function DeckBuilder() {
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-1 mt-2">
-                        <button onClick={() => addCard(v, 'main')} className="w-full px-1.5 py-1 bg-emerald-950/50 hover:bg-emerald-900 text-emerald-500 text-[10px] rounded border border-emerald-900/50 hover:border-emerald-500 transition-colors">+M</button>
-                        <button onClick={() => addCard(v, 'side')} className="w-full px-1.5 py-1 bg-indigo-950/50 hover:bg-indigo-900 text-indigo-500 text-[10px] rounded border border-indigo-900/50 hover:border-indigo-500 transition-colors">+S</button>
-                        <button onClick={() => addCard(v, 'commander')} className="w-full px-1.5 py-1 bg-amber-950/50 hover:bg-amber-900 text-amber-500 text-[10px] rounded border border-amber-900/50 hover:border-amber-500 transition-colors">+C</button>
+                        <button 
+                          onMouseEnter={playHover}
+                          onClick={() => {
+                            playSelect();
+                            addCard(v, 'main');
+                          }} 
+                          className="w-full px-1.5 py-1 bg-emerald-950/50 hover:bg-emerald-900 text-emerald-500 text-[10px] rounded border border-emerald-900/50 hover:border-emerald-500 transition-colors"
+                        >
+                          +M
+                        </button>
+                        <button 
+                          onMouseEnter={playHover}
+                          onClick={() => {
+                            playSelect();
+                            addCard(v, 'side');
+                          }} 
+                          className="w-full px-1.5 py-1 bg-indigo-950/50 hover:bg-indigo-900 text-indigo-500 text-[10px] rounded border border-indigo-900/50 hover:border-indigo-500 transition-colors"
+                        >
+                          +S
+                        </button>
+                        <button 
+                          onMouseEnter={playHover}
+                          onClick={() => {
+                            playSelect();
+                            addCard(v, 'commander');
+                          }} 
+                          className="w-full px-1.5 py-1 bg-amber-950/50 hover:bg-amber-900 text-amber-500 text-[10px] rounded border border-amber-900/50 hover:border-amber-500 transition-colors"
+                        >
+                          +C
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -359,29 +432,52 @@ export default function DeckBuilder() {
             </div>
             {isNew ? (
               <div className="flex gap-3">
-                <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20">
+                <button 
+                  onMouseEnter={playHover}
+                  onClick={() => setShowImportModal(true)} 
+                  className="flex items-center gap-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-700/50 hover:border-indigo-500 text-indigo-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-indigo-900/20"
+                >
                     <FileText size={18} /> <span className="font-serif">Import</span>
                 </button>
                 <button
-                  onClick={() => setShowCustomCardsModal(true)}
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playSelect();
+                    setShowCustomCardsModal(true);
+                  }}
                   className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
                 >
                   <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
                 </button>
-                <button onClick={createDeck} className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-slate-950 px-6 py-2 rounded shadow-lg shadow-amber-900/20 font-bold transition-all hover:scale-105 active:scale-95">
+                <button 
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playSelect();
+                    createDeck();
+                  }} 
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-slate-950 px-6 py-2 rounded shadow-lg shadow-amber-900/20 font-bold transition-all hover:scale-105 active:scale-95"
+                >
                     <ScrollIcon size={18} /> <span className="font-serif">Create</span>
                 </button>
               </div>
             ) : (
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowCustomCardsModal(true)}
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playSelect();
+                    setShowCustomCardsModal(true);
+                  }}
                   className="flex items-center gap-2 bg-fuchsia-900/60 hover:bg-fuchsia-800 border border-fuchsia-700/40 hover:border-amber-500/40 text-fuchsia-100 px-4 py-2 rounded font-bold transition-all shadow-lg shadow-fuchsia-900/20"
                 >
                   <Sparkles size={18} /> <span className="font-serif">Mis cartas</span>
                 </button>
                 <button
-                  onClick={saveDeck}
+                  onMouseEnter={playHover}
+                  onClick={() => {
+                    playSelect();
+                    saveDeck();
+                  }}
                   className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-amber-500 text-slate-200 px-6 py-2 rounded font-bold transition-all"
                 >
                   <Save size={18} /> <span className="font-serif">Save</span>
@@ -418,8 +514,30 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-amber-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-amber-900/50 rounded text-amber-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'commander')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          incrementDeckCard(c);
+                        }} 
+                        className="p-1 hover:bg-amber-900/50 rounded text-amber-400"
+                      >
+                        <Plus size={14}/>
+                      </button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          const key = getDeckCardKey(c); 
+                          if (!key) return; 
+                          removeCard(key, 'commander');
+                        }} 
+                        className="p-1 hover:bg-red-900/50 rounded text-red-400"
+                      >
+                        <Minus size={14}/>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -454,8 +572,30 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-emerald-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-emerald-900/50 rounded text-emerald-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'main')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          incrementDeckCard(c);
+                        }} 
+                        className="p-1 hover:bg-emerald-900/50 rounded text-emerald-400"
+                      >
+                        <Plus size={14}/>
+                      </button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          const key = getDeckCardKey(c); 
+                          if (!key) return; 
+                          removeCard(key, 'main');
+                        }} 
+                        className="p-1 hover:bg-red-900/50 rounded text-red-400"
+                      >
+                        <Minus size={14}/>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -488,8 +628,30 @@ export default function DeckBuilder() {
                       <span className="truncate text-slate-300 font-medium group-hover:text-indigo-100 transition-colors">{c.name}</span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {e.stopPropagation(); incrementDeckCard(c)}} className="p-1 hover:bg-indigo-900/50 rounded text-indigo-400"><Plus size={14}/></button>
-                      <button onClick={(e) => {e.stopPropagation(); const key = getDeckCardKey(c); if (!key) return; removeCard(key, 'side')}} className="p-1 hover:bg-red-900/50 rounded text-red-400"><Minus size={14}/></button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          incrementDeckCard(c);
+                        }} 
+                        className="p-1 hover:bg-indigo-900/50 rounded text-indigo-400"
+                      >
+                        <Plus size={14}/>
+                      </button>
+                      <button 
+                        onMouseEnter={playHover}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          playUiSound('BEEP');
+                          const key = getDeckCardKey(c); 
+                          if (!key) return; 
+                          removeCard(key, 'side');
+                        }} 
+                        className="p-1 hover:bg-red-900/50 rounded text-red-400"
+                      >
+                        <Minus size={14}/>
+                      </button>
                     </div>
                   </div>
                 ))}
