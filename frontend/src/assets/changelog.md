@@ -3,8 +3,9 @@
 ![](https://i.ibb.co/rRTbTjcH/image.png)
 ### New Features
 - **Nuevo Editor y Visualizador de Cartas Personalizadas**: Se agrega la posibilidad de poder crear cartas a partir de un editor completo de cartas, o tambien poder traer tu carta creada por fuera, solo proporcionarías la URL de la imagen de la carta completa. o si usas el editor completo, puedes traer la imagen del arte de tu carta a la imagen de la carta.
+
 ![](https://i.ibb.co/F4tJtvjB/image.png)
-[![Tutorial en video para como subir una carta personalizada](https://img.youtube.com/vi/HmtAUtLakPw/0.jpg)](https://youtu.be/HmtAUtLakPw)
+[![](https://img.youtube.com/vi/HmtAUtLakPw/0.jpg)](https://youtu.be/HmtAUtLakPw)
 - **Hotkey de Thinking**: Se agrega una hotkey para poder activar y/o desactivar el modo "Thinking" (de pensar) en el campo de batalla. Asi puedes ver las cartas que tienes en tu mano y los efectos que tienen. (Hotkey: .) pero es configurable en la configuración de la partida.
 - **Modal de perfil de usuario en la partida**: Se agregó un modal de perfil para ver información de los oponentes en las partidas, información como "Fecha de creacion de la cuenta", su imagen de perfil, y proximamente mas funciones sociales. 
 - **Playmat**: Se agrega la posibilidad de poder ver la playmat de los oponentes en las partidas, puedes editar tu playmat en tu perfil de usuario.
