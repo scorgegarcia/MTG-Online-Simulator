@@ -70,7 +70,8 @@ model DeckCard {
   image_url_normal String?
   back_image_url  String?
 
-  deck            Deck    @relation(fields: [deck_id], references: [id], onDelete: Cascade)
+  deck            Deck        @relation(fields: [deck_id], references: [id], onDelete: Cascade)
+  customCard      CustomCard? @relation(fields: [custom_card_id], references: [id], onDelete: Cascade)
 
   @@map("deck_cards")
 }
@@ -171,6 +172,7 @@ model CustomCard {
   updated_at       DateTime          @updatedAt
 
   user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  deckCards        DeckCard[]
 
   @@index([user_id, created_at])
   @@map("custom_cards")

@@ -6,6 +6,7 @@ import selectSfx from '../assets/sfx/select.mp3';
 import { ArrowLeft, FileText, Sparkles, Trash2 } from 'lucide-react';
 import PersonalizedCard from '../components/PersonalizedCard';
 import type { CardDraft, ManaSymbol } from '../components/cardBuilder/types';
+import { DeleteCustomCardModal } from '../components/DeleteCustomCardModal';
 
 const API_BASE_URL = (import.meta.env as any).VITE_API_URL || '/api';
 
@@ -33,6 +34,9 @@ export default function CardManager() {
 
   const [cards, setCards] = useState<CustomCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<CustomCard | null>(null);
 
   useEffect(() => {
     const hoverAudio = new Audio(uiHoverSfx);
@@ -101,13 +105,20 @@ export default function CardManager() {
 
   const deleteCard = useCallback(
     async (c: CustomCard) => {
-      if (!confirm(`¿Eliminar "${c.name}"?`)) return;
-      playSelect();
-      await axios.delete(`${API_BASE_URL}/custom-cards/${c.id}`);
-      setCards((prev) => prev.filter((x) => x.id !== c.id));
+      setCardToDelete(c);
+      setDeleteModalOpen(true);
     },
-    [playSelect]
+    []
   );
+
+  const confirmDelete = useCallback(async () => {
+    if (!cardToDelete) return;
+    playSelect();
+    await axios.delete(`${API_BASE_URL}/custom-cards/${cardToDelete.id}`);
+    setCards((prev) => prev.filter((x) => x.id !== cardToDelete.id));
+    setDeleteModalOpen(false);
+    setCardToDelete(null);
+  }, [cardToDelete, playSelect]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 relative overflow-hidden">
@@ -222,6 +233,17 @@ export default function CardManager() {
           </div>
         </div>
       </div>
+
+      <DeleteCustomCardModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setCardToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        cardId={cardToDelete?.id || ''}
+        cardName={cardToDelete?.name || ''}
+      />
     </div>
   );
 }

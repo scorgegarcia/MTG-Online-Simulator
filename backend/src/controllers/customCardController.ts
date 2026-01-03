@@ -109,6 +109,37 @@ export const updateCustomCard = async (req: AuthRequest, res: Response) => {
 export const deleteCustomCard = async (req: AuthRequest, res: Response) => {
   const card = await prisma.customCard.findUnique({ where: { id: req.params.id } });
   if (!card || card.user_id !== req.userId) return res.status(404).json({ error: 'Not found' });
+  
+  // Also remove this card from any decks it's in
+  await prisma.deckCard.deleteMany({
+    where: { custom_card_id: card.id }
+  });
+
   await prisma.customCard.delete({ where: { id: card.id } });
   res.json({ message: 'Deleted' });
+};
+
+export const getCustomCardUsage = async (req: AuthRequest, res: Response) => {
+  const card = await prisma.customCard.findUnique({ where: { id: req.params.id } });
+  if (!card || card.user_id !== req.userId) return res.status(404).json({ error: 'Not found' });
+
+  const usages = await prisma.deckCard.findMany({
+    where: { custom_card_id: card.id },
+    include: {
+      deck: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  // Unique decks only
+  const uniqueDecks = Array.from(new Map(usages.map(u => [u.deck.id, u.deck])).values());
+
+  res.json({
+    cardName: card.name,
+    decks: uniqueDecks
+  });
 };
