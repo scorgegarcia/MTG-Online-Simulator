@@ -1,4 +1,9 @@
 # Magic-TRAE Changelog
+## [26.1.3.1]
+![](https://i.postimg.cc/9ffT9nTW/image.png)
+### New Features
+- **Glosario**: Se agrega un glosario con definiciones de terminos de Magic: The Gathering, para poder hacer mas facil la comprensión de los terminos usados en la partida.
+
 ## [26.1.2.2]
 ![](https://i.ibb.co/rRTbTjcH/image.png)
 ### New Features

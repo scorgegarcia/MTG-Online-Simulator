@@ -23,6 +23,7 @@ import { GameLog } from '../components/GameLog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { MulliganModal } from '../components/MulliganModal';
 import { DiceRollModal } from '../components/DiceRollModal';
+import { GlossaryModal } from '../components/GlossaryModal';
 import uiHoverSfx from '../assets/sfx/ui_hover.mp3';
 import readyButtonSfx from '../assets/sfx/ready_button.mp3';
 import startGameSfx from '../assets/sfx/start_game.mp3';
@@ -131,6 +132,7 @@ export default function GameTable() {
   const [revealModalOpen, setRevealModalOpen] = useState(false);
   const [libraryRevealModalOpen, setLibraryRevealModalOpen] = useState(false);
   const [viewLibraryModalOpen, setViewLibraryModalOpen] = useState(false);
+  const [glossaryModalOpen, setGlossaryModalOpen] = useState(false);
   const [lifeModalOpen, setLifeModalOpen] = useState(false);
   const [lifeModalTarget, setLifeModalTarget] = useState<any>(null);
   const [userProfileModalOpen, setUserProfileModalOpen] = useState(false);
@@ -1249,6 +1251,11 @@ export default function GameTable() {
           sendAction={sendAction}
       />
 
+      <GlossaryModal 
+          isOpen={glossaryModalOpen}
+          onClose={() => setGlossaryModalOpen(false)}
+      />
+
       <ConfirmationModal
         isOpen={showExitModal}
         onClose={() => setShowExitModal(false)}
@@ -1515,6 +1522,7 @@ export default function GameTable() {
               setCreateTokenModalOpen={setCreateTokenModalOpen}
               setLibraryRevealModalOpen={setLibraryRevealModalOpen}
               setViewLibraryModalOpen={setViewLibraryModalOpen}
+              setGlossaryModalOpen={setGlossaryModalOpen}
           />
       </div>
 

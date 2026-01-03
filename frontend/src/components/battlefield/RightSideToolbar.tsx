@@ -11,6 +11,7 @@ interface RightSideToolbarProps {
     setCreateTokenModalOpen: (open: boolean) => void;
     setLibraryRevealModalOpen: (open: boolean) => void;
     setViewLibraryModalOpen: (open: boolean) => void;
+    setGlossaryModalOpen: (open: boolean) => void;
 }
 
 export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
@@ -22,7 +23,8 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
     setRevealModalOpen,
     setCreateTokenModalOpen,
     setLibraryRevealModalOpen,
-    setViewLibraryModalOpen
+    setViewLibraryModalOpen,
+    setGlossaryModalOpen
 }) => {
     return (
         <div className="w-24 flex flex-col gap-1 py-0 items-center bg-gray-800/50 rounded border border-gray-700 overflow-auto [scrollbar-width:none]">
@@ -110,6 +112,15 @@ export const RightSideToolbar: React.FC<RightSideToolbarProps> = ({
             >
                 <img src={viewLibraryIcon} alt="View Library" className="w-6 h-6 object-contain" draggable={false} />
                 <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">VIEW LIBRARY</span>
+            </button>
+
+            <button 
+                className="w-full h-fit py-1 rounded bg-gradient-to-b from-indigo-900 to-purple-900 hover:from-indigo-800 hover:to-purple-800 flex flex-col items-center justify-center gap-0 text-xs font-bold text-gray-300 transition-all duration-300 shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                title="Glossary / Glosario"
+                onClick={() => setGlossaryModalOpen(true)}
+            >
+                <span className="text-xl animate-pulse">✨</span>
+                <span className="writing-vertical-rl text-[10px] tracking-wider uppercase">Glossary</span>
             </button>
         </div>
     );
