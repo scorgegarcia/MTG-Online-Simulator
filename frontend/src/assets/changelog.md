@@ -3,6 +3,7 @@
 ![](https://i.ibb.co/rRTbTjcH/image.png)
 ### New Features
 - **Nuevo Editor y Visualizador de Cartas Personalizadas**: Se agrega la posibilidad de poder crear cartas a partir de un editor completo de cartas, o tambien poder traer tu carta creada por fuera, solo proporcionarías la URL de la imagen de la carta completa. o si usas el editor completo, puedes traer la imagen del arte de tu carta a la imagen de la carta.
+- **Backups diarios de la DB**: Se agrega backups diarios de la base de datos, todos los días a las 00:00 horas, por si algo sale terriblemente mal jajaja
 
 ![](https://i.ibb.co/F4tJtvjB/image.png)
 [![](https://img.youtube.com/vi/HmtAUtLakPw/0.jpg)](https://youtu.be/HmtAUtLakPw)
