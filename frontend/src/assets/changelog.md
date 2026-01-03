@@ -12,6 +12,7 @@
 ## Changes
 - **Mejor retroalimentacion al usuario**: Agregados sonidos para interacciones con hover, clics, feedback de audio y visual para diversos menús, botones y acciones como agregar cartas personalizadas desde su modal, donde no se puede ver si realmente se agregó, porque el modal esta encima, pero ahora se escucha y sale un "toast" indicando que la acción se realizó.
 - **Mejorado el Drag and Drop**: Se mejoró el drag and drop para que sea más intuitivo y ahora se pueden acomodar las cartas en el campo de batalla de manera más natural, permitiendo reacomodarlas dentro de la misma zona.
+![](https://i.ibb.co/MDpBPkqd/image.png)
 ## [25.12.30]
 ![](https://i.ibb.co/NnW4yKDL/image.png)
 ### New Features
